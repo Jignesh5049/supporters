@@ -16,7 +16,7 @@ import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function EnquiryModal() {
-  const { enquiryModal, closeEnquiryModal, showToast } = useApp();
+  const { enquiryModal, closeEnquiryModal, showToast, openConversationWithBusiness } = useApp();
   const [quantity, setQuantity] = useState('10');
   const [phone, setPhone] = useState('+91 98795 23410');
   const [message, setMessage] = useState('');
@@ -25,11 +25,21 @@ export function EnquiryModal() {
   if (!enquiryModal.isOpen) return null;
 
   const handleSubmit = () => {
+    const bizId = enquiryModal.targetBusinessId;
+    const bizName = enquiryModal.targetBusinessName || 'Supplier';
+    const targetTitle = enquiryModal.targetTitle || 'Business Quotation';
+
     closeEnquiryModal();
-    showToast(
-      `Enquiry submitted to ${enquiryModal.targetBusinessName || 'Supplier'}! They will respond shortly.`,
-      'success'
-    );
+
+    if (bizId) {
+      const summaryMsg = `Quotation Request: ${targetTitle}\n• Required Quantity: ${quantity || '1'}\n• Delivery City: ${city}${phone ? `\n• Phone: ${phone}` : ''}${message ? `\n• Requirements: ${message}` : ''}`;
+      openConversationWithBusiness(bizId, {
+        initialMessage: summaryMsg,
+      });
+      showToast(`Enquiry sent directly to ${bizName}!`, 'success');
+    } else {
+      showToast(`Enquiry submitted to ${bizName}! They will respond shortly.`, 'success');
+    }
   };
 
   return (

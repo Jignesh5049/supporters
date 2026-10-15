@@ -6,14 +6,15 @@ import {
   Switch,
   ScrollView,
   StyleSheet,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function SettingsScreen() {
-  const { currentUser, showToast, navigate } = useApp();
+  const { currentUser, showToast, navigate, signOut } = useApp();
 
   const [rfqNotifications, setRfqNotifications] = useState(true);
   const [chatNotifications, setChatNotifications] = useState(true);
@@ -21,18 +22,27 @@ export function SettingsScreen() {
   const [profilePublic, setProfilePublic] = useState(true);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out of Supporters',
-      'Are you sure you want to log out of your session?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => showToast('Signed out of Supporters', 'info'),
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmed = typeof window !== 'undefined' ? window.confirm('Are you sure you want to log out of Supporters?') : true;
+      if (confirmed) {
+        signOut();
+      }
+    } else {
+      Alert.alert(
+        'Sign Out of Supporters',
+        'Are you sure you want to log out of your session?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: async () => {
+              await signOut();
+            },
+          },
+        ]
+      );
+    }
   };
 
   return (

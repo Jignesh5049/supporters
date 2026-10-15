@@ -110,6 +110,8 @@ export interface FeedPost {
   sharesCount: number;
   isLiked?: boolean;
   isSaved?: boolean;
+  authorId?: string;
+  isOwnPost?: boolean;
 }
 
 export interface Message {
@@ -658,6 +660,24 @@ export const MOCK_SERVICES: Service[] = [
 // 6. FEED POSTS
 // ==========================================
 export const MOCK_POSTS: FeedPost[] = [
+  {
+    id: 'post-user-1',
+    businessId: 'b-user',
+    businessName: 'Aarav Mehta',
+    businessAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    businessVerified: false,
+    location: 'Ahmedabad',
+    createdAt: '30m ago',
+    postType: 'update',
+    content: 'Connecting with regional suppliers and vendors for upcoming commercial hospitality supplies. Please message us directly if you supply hotel-grade electronics or custom woodwork!',
+    likesCount: 18,
+    commentsCount: 3,
+    sharesCount: 2,
+    isLiked: false,
+    isSaved: false,
+    authorId: 'user-me',
+    isOwnPost: true
+  },
   {
     id: 'post-1',
     businessId: 'b-1',

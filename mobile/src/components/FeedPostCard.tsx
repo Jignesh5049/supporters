@@ -7,7 +7,8 @@ import {
   StyleSheet,
   Platform,
   Modal,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Alert
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { FeedPost } from '../../mock';
@@ -27,17 +28,40 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
     deletePost,
     openEnquiryModal,
     openShareModal,
+    openConversationWithBusiness,
     navigate,
-    showToast
+    showToast,
+    currentUser
   } = useApp();
 
   const [menuVisible, setMenuVisible] = useState(false);
   const isLiked = likedPostIds.includes(post.id);
   const isSaved = savedPostIds.includes(post.id);
 
+  // Check if this post was authored by the logged-in user / account
+  const isOwnPost = Boolean(
+    post.isOwnPost ||
+    (post.authorId && (
+      post.authorId === currentUser.email ||
+      post.authorId === 'user-me' ||
+      post.authorId === currentUser.username
+    ))
+  );
+
   const handleDelete = () => {
     setMenuVisible(false);
-    deletePost(post.id);
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to permanently delete this post from the feed? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deletePost(post.id),
+        },
+      ]
+    );
   };
 
   const hasAttachedItem = post.attachedProduct || post.attachedService;
@@ -161,19 +185,20 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           <View style={styles.attachedActionsRow}>
             <TouchableOpacity
               onPress={() =>
-                openEnquiryModal({
-                  title:
-                    post.attachedProduct?.title ||
-                    post.attachedService?.title ||
-                    'Product Enquiry',
-                  businessName: post.businessName,
-                  businessId: post.businessId,
+                openConversationWithBusiness(post.businessId, {
+                  initialMessage: post.attachedProduct
+                    ? `Namaste! I am interested in "${post.attachedProduct.title}" (₹${post.attachedProduct.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`
+                    : post.attachedService
+                    ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
+                    : undefined,
+                  attachedProduct: post.attachedProduct,
+                  attachedService: post.attachedService,
                 })
               }
               style={styles.enquiryBtn}
               activeOpacity={0.85}
             >
-              <Feather name="send" size={12} color="#FFFFFF" />
+              <Feather name="message-square" size={12} color="#FFFFFF" />
               <Text style={styles.enquiryBtnText}>Contact Supplier</Text>
             </TouchableOpacity>
 
@@ -193,10 +218,12 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
       {/* Social Stats Counters */}
       <View style={styles.countersRow}>
         <View style={styles.likeCounter}>
-          <View style={[styles.thumbCircle, isLiked && styles.thumbCircleActive]}>
-            <Ionicons name="thumbs-up" size={10} color="#FFFFFF" />
+          <View style={[styles.likeHeartCircle, isLiked && styles.likeHeartCircleActive]}>
+            <Ionicons name="heart" size={10} color="#FFFFFF" />
           </View>
-          <Text style={styles.counterText}>{post.likesCount} likes</Text>
+          <Text style={styles.counterText}>
+            {post.likesCount} {post.likesCount === 1 ? 'like' : 'likes'}
+          </Text>
         </View>
 
         <Text style={styles.counterText}>
@@ -208,15 +235,15 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
       <View style={styles.actionBar}>
         <TouchableOpacity
           onPress={() => toggleLikePost(post.id)}
-          style={[styles.actionButton, isLiked && styles.actionButtonActive]}
+          style={[styles.actionButton, isLiked && styles.likeButtonActive]}
           activeOpacity={0.7}
         >
           <Ionicons
-            name={isLiked ? "thumbs-up" : "thumbs-up-outline"}
-            size={17}
-            color={isLiked ? colors.primary : '#667085'}
+            name={isLiked ? "heart" : "heart-outline"}
+            size={18}
+            color={isLiked ? '#E11D48' : '#64748B'}
           />
-          <Text style={[styles.actionLabel, isLiked && styles.actionLabelActive]}>
+          <Text style={[styles.actionLabel, isLiked && styles.likeLabelActive]}>
             {isLiked ? 'Liked' : 'Like'}
           </Text>
         </TouchableOpacity>
@@ -349,24 +376,27 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     </View>
                   </TouchableOpacity>
 
-                  <View style={styles.menuDivider} />
-
-                  {/* Delete Post (Requested Option) */}
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={handleDelete}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.menuItemIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                      <Feather name="trash-2" size={18} color="#DC2626" />
-                    </View>
-                    <View style={styles.menuItemTextCol}>
-                      <Text style={[styles.menuItemTitle, { color: '#DC2626', fontWeight: '700' }]}>
-                        Delete Post
-                      </Text>
-                      <Text style={styles.menuItemSubtitle}>Permanently remove this post from the feed</Text>
-                    </View>
-                  </TouchableOpacity>
+                  {/* Delete Post - Only rendered for posts authored by current account */}
+                  {isOwnPost && (
+                    <>
+                      <View style={styles.menuDivider} />
+                      <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={handleDelete}
+                        activeOpacity={0.7}
+                      >
+                        <View style={[styles.menuItemIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                          <Feather name="trash-2" size={18} color="#DC2626" />
+                        </View>
+                        <View style={styles.menuItemTextCol}>
+                          <Text style={[styles.menuItemTitle, { color: '#DC2626', fontWeight: '700' }]}>
+                            Delete Post
+                          </Text>
+                          <Text style={styles.menuItemSubtitle}>Permanently remove this post from the feed</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )}
 
                   {/* Report Post */}
                   <TouchableOpacity
@@ -620,18 +650,18 @@ const styles = StyleSheet.create({
   likeCounter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  thumbCircle: {
+  likeHeartCircle: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#667085',
+    backgroundColor: '#94A3B8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  thumbCircleActive: {
-    backgroundColor: colors.primary,
+  likeHeartCircleActive: {
+    backgroundColor: '#E11D48',
   },
   counterText: {
     fontSize: 11,
@@ -658,6 +688,9 @@ const styles = StyleSheet.create({
   actionButtonActive: {
     backgroundColor: colors.primaryLight,
   },
+  likeButtonActive: {
+    backgroundColor: '#FFF1F2',
+  },
   actionLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -665,6 +698,10 @@ const styles = StyleSheet.create({
   },
   actionLabelActive: {
     color: colors.primary,
+    fontWeight: '800',
+  },
+  likeLabelActive: {
+    color: '#E11D48',
     fontWeight: '800',
   },
   modalBackdrop: {

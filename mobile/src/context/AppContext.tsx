@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { BackHandler } from 'react-native';
 import {
   FeedPost,
   Product,
@@ -18,6 +19,13 @@ import {
   MOCK_REFERRAL_DATA,
   ReferralStat
 } from '../../mock';
+import {
+  authService,
+  SignInCredentials,
+  SignUpData,
+  AuthResult,
+  AuthUser,
+} from '../services/authService';
 
 export interface ToastMessage {
   id: string;
@@ -50,13 +58,27 @@ export type ScreenRoute =
   | 'referral'
   | 'subscription'
   | 'settings'
-  | 'business_detail';
+  | 'business_detail'
+  | 'sign_in'
+  | 'sign_up'
+  | 'forgot_password';
 
 interface AppContextType {
   // Navigation
   currentRoute: ScreenRoute;
+  routeHistory: ScreenRoute[];
   navigate: (route: ScreenRoute, params?: any) => void;
+  goBack: () => boolean;
   routeParams: any;
+
+  // Authentication
+  isAuthenticated: boolean;
+  isLoadingAuth: boolean;
+  signIn: (credentials: SignInCredentials) => Promise<AuthResult>;
+  signUp: (data: SignUpData) => Promise<AuthResult>;
+  signOut: () => Promise<void>;
+  googleSignIn: () => Promise<AuthResult>;
+  forgotPassword: (email: string) => Promise<AuthResult>;
 
   // Drawer
   drawerOpen: boolean;
@@ -110,6 +132,14 @@ interface AppContextType {
     attachedService?: any
   ) => void;
   unreadMessagesCount: number;
+  openConversationWithBusiness: (
+    businessId: string,
+    options?: {
+      initialMessage?: string;
+      attachedProduct?: any;
+      attachedService?: any;
+    }
+  ) => void;
 
   // Notifications
   notifications: NotificationItem[];
@@ -139,11 +169,20 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const AUTH_ROUTES: ScreenRoute[] = ['sign_in', 'sign_up', 'forgot_password'];
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('home');
+  // Navigation & History
+  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('sign_in');
+  const [routeHistory, setRouteHistory] = useState<ScreenRoute[]>([]);
   const [routeParams, setRouteParams] = useState<any>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+
+  // Data states
   const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
   const [posts, setPosts] = useState<FeedPost[]>(MOCK_POSTS);
   const [products] = useState<Product[]>(MOCK_PRODUCTS);
@@ -166,18 +205,197 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [shareModal, setShareModal] = useState<ShareTarget>({ isOpen: false, title: '', url: '' });
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  const navigate = (route: ScreenRoute, params: any = {}) => {
-    setCurrentRoute(route);
-    setRouteParams(params);
-    setDrawerOpen(false);
-  };
-
-  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToast({ id, message, type });
     setTimeout(() => {
       setToast((current) => (current?.id === id ? null : current));
     }, 3500);
+  }, []);
+
+  // Restore session on app mount
+  useEffect(() => {
+    const restoreUserSession = async () => {
+      setIsLoadingAuth(true);
+      try {
+        const session = await authService.restoreSession();
+        if (session && session.user) {
+          setIsAuthenticated(true);
+          setCurrentRoute('home');
+          setCurrentUser((prev) => ({
+            ...prev,
+            name: session.user.name,
+            email: session.user.email,
+            username: session.user.username || prev.username,
+            avatar: session.user.avatar || prev.avatar,
+          }));
+        } else {
+          setIsAuthenticated(false);
+          setCurrentRoute('sign_in');
+        }
+      } catch {
+        setIsAuthenticated(false);
+        setCurrentRoute('sign_in');
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    restoreUserSession();
+  }, []);
+
+  // Guarded Navigation
+  const navigate = useCallback(
+    (targetRoute: ScreenRoute, params: any = {}) => {
+      const isAuthTarget = AUTH_ROUTES.includes(targetRoute);
+
+      // Guard: Unauthenticated users cannot access protected screens
+      if (!isAuthenticated && !isAuthTarget) {
+        showToast('Please sign in to access this screen', 'info');
+        setCurrentRoute('sign_in');
+        setRouteParams({});
+        setDrawerOpen(false);
+        return;
+      }
+
+      // Guard: Authenticated users cannot navigate back to auth screens without signing out
+      if (isAuthenticated && isAuthTarget) {
+        setCurrentRoute('home');
+        setRouteParams({});
+        setDrawerOpen(false);
+        return;
+      }
+
+      // Record in history if changing routes
+      if (targetRoute !== currentRoute) {
+        setRouteHistory((prev) => [...prev, currentRoute]);
+      }
+
+      setCurrentRoute(targetRoute);
+      setRouteParams(params);
+      setDrawerOpen(false);
+    },
+    [isAuthenticated, currentRoute, showToast]
+  );
+
+  // Hardware and In-App Back Navigation
+  const goBack = useCallback((): boolean => {
+    if (!isAuthenticated) {
+      if (currentRoute === 'sign_up' || currentRoute === 'forgot_password') {
+        setCurrentRoute('sign_in');
+        return true;
+      }
+      // On sign_in, let system handle exit
+      return false;
+    }
+
+    // When authenticated
+    if (routeHistory.length > 0) {
+      const newHistory = [...routeHistory];
+      let previous = newHistory.pop();
+
+      // Ensure we don't go back to auth routes while logged in
+      while (previous && AUTH_ROUTES.includes(previous) && newHistory.length > 0) {
+        previous = newHistory.pop();
+      }
+
+      if (previous && !AUTH_ROUTES.includes(previous)) {
+        setRouteHistory(newHistory);
+        setCurrentRoute(previous);
+        return true;
+      }
+    }
+
+    // Default authenticated fall-back
+    if (currentRoute !== 'home') {
+      setCurrentRoute('home');
+      setRouteHistory([]);
+      return true;
+    }
+
+    // On home screen, let Android exit app
+    return false;
+  }, [isAuthenticated, currentRoute, routeHistory]);
+
+  // Android Hardware Back Button listener
+  useEffect(() => {
+    const handleHardwareBackPress = () => {
+      return goBack();
+    };
+
+    const backSubscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleHardwareBackPress
+    );
+
+    return () => {
+      backSubscription.remove();
+    };
+  }, [goBack]);
+
+  // Authentication Handlers
+  const signIn = async (credentials: SignInCredentials): Promise<AuthResult> => {
+    const result = await authService.signIn(credentials);
+    if (result.success && result.user) {
+      setIsAuthenticated(true);
+      setCurrentUser((prev) => ({
+        ...prev,
+        name: result.user!.name,
+        email: result.user!.email,
+        username: result.user!.username || prev.username,
+        avatar: result.user!.avatar || prev.avatar,
+      }));
+      setRouteHistory([]);
+      setCurrentRoute('home');
+    }
+    return result;
+  };
+
+  const signUp = async (data: SignUpData): Promise<AuthResult> => {
+    const result = await authService.signUp(data);
+    if (result.success && result.user) {
+      setIsAuthenticated(true);
+      setCurrentUser((prev) => ({
+        ...prev,
+        name: result.user!.name,
+        email: result.user!.email,
+        username: result.user!.username || prev.username,
+        avatar: result.user!.avatar || prev.avatar,
+      }));
+      setRouteHistory([]);
+      setCurrentRoute('home');
+    }
+    return result;
+  };
+
+  const signOut = async (): Promise<void> => {
+    await authService.signOut();
+    setIsAuthenticated(false);
+    setRouteHistory([]);
+    setCurrentRoute('sign_in');
+    setDrawerOpen(false);
+    showToast('Signed out of Supporters successfully', 'info');
+  };
+
+  const googleSignIn = async (): Promise<AuthResult> => {
+    const result = await authService.googleSignIn();
+    if (result.success && result.user) {
+      setIsAuthenticated(true);
+      setCurrentUser((prev) => ({
+        ...prev,
+        name: result.user!.name,
+        email: result.user!.email,
+        username: result.user!.username || prev.username,
+        avatar: result.user!.avatar || prev.avatar,
+      }));
+      setRouteHistory([]);
+      setCurrentRoute('home');
+    }
+    return result;
+  };
+
+  const forgotPassword = async (email: string): Promise<AuthResult> => {
+    return await authService.forgotPassword(email);
   };
 
   const toggleLikePost = (postId: string) => {
@@ -268,13 +486,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     attachedService?: FeedPost['attachedService'];
     offerTag?: string;
   }) => {
+    const userBusiness = businesses.find((b) => b.id === currentUser.businessId);
+
     const newPost: FeedPost = {
       id: `post-${Date.now()}`,
-      businessId: 'b-1',
-      businessName: 'Shree Electronics & Systems',
-      businessAvatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
-      businessVerified: true,
-      location: 'Ahmedabad',
+      authorId: currentUser.email || 'user-me',
+      isOwnPost: true,
+      businessId: currentUser.businessId || 'b-user',
+      businessName: currentUser.hasBusiness && userBusiness ? userBusiness.name : currentUser.name,
+      businessAvatar: currentUser.avatar,
+      businessVerified: userBusiness ? userBusiness.verified : false,
+      location: currentUser.city || 'Ahmedabad',
       createdAt: 'Just now',
       postType: data.postType,
       content: data.content,
@@ -294,8 +516,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deletePost = (postId: string) => {
+    const postToDelete = posts.find((p) => p.id === postId);
+    if (!postToDelete) return;
+
+    const isOwn = Boolean(
+      postToDelete.isOwnPost ||
+      (postToDelete.authorId && (
+        postToDelete.authorId === currentUser.email ||
+        postToDelete.authorId === 'user-me' ||
+        postToDelete.authorId === currentUser.username
+      ))
+    );
+
+    if (!isOwn) {
+      showToast('You can only delete posts published by your own account', 'error');
+      return;
+    }
+
     setPosts((prev) => prev.filter((p) => p.id !== postId));
-    showToast('Post removed from feed', 'info');
+    showToast('Your post has been deleted from the feed', 'info');
   };
 
   const updateUserProfile = (data: Partial<UserProfile>) => {
@@ -336,6 +575,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
     showToast('Message sent', 'info');
   };
+
+  const openConversationWithBusiness = useCallback(
+    (
+      businessId: string,
+      options?: {
+        initialMessage?: string;
+        attachedProduct?: any;
+        attachedService?: any;
+      }
+    ) => {
+      // Find if a conversation already exists with this businessId
+      const existingConv = conversations.find((c) => c.businessId === businessId);
+
+      if (existingConv) {
+        setActiveConversationId(existingConv.id);
+        if (options?.initialMessage) {
+          sendMessage(
+            existingConv.id,
+            options.initialMessage,
+            options.attachedProduct,
+            options.attachedService
+          );
+        }
+        navigate('messages', {
+          businessId,
+          conversationId: existingConv.id,
+          openChat: true,
+        });
+        return;
+      }
+
+      // If no existing conversation, create a new one for this business
+      const biz = businesses.find((b) => b.id === businessId);
+      const newConvId = `conv-${Date.now()}`;
+      const initialText = options?.initialMessage;
+
+      const initialMessages = initialText
+        ? [
+            {
+              id: `msg-${Date.now()}`,
+              conversationId: newConvId,
+              senderId: 'user-me',
+              senderName: 'You',
+              text: initialText,
+              timestamp: 'Just now',
+              isMe: true,
+              attachedProduct: options?.attachedProduct,
+              attachedService: options?.attachedService,
+            },
+          ]
+        : [];
+
+      const newConv: Conversation = {
+        id: newConvId,
+        businessId,
+        businessName: biz?.name || 'Verified Supplier',
+        businessAvatar:
+          biz?.avatar ||
+          'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
+        businessVerified: biz?.verified ?? true,
+        businessCity: biz?.city || 'India',
+        lastMessage: initialText || 'Direct inquiry started',
+        lastMessageTime: 'Just now',
+        unreadCount: 0,
+        online: true,
+        messages: initialMessages,
+      };
+
+      setConversations((prev) => [newConv, ...prev]);
+      setActiveConversationId(newConvId);
+      navigate('messages', {
+        businessId,
+        conversationId: newConvId,
+        openChat: true,
+      });
+    },
+    [conversations, businesses, navigate, sendMessage]
+  );
 
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
@@ -381,7 +698,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentRoute,
         navigate,
+        goBack,
         routeParams,
+        isAuthenticated,
+        isLoadingAuth,
+        signIn,
+        signUp,
+        signOut,
+        googleSignIn,
+        forgotPassword,
         drawerOpen,
         setDrawerOpen,
         currentUser,
@@ -408,7 +733,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeConversationId,
         setActiveConversationId,
         sendMessage,
+        openConversationWithBusiness,
         unreadMessagesCount,
+        routeHistory,
         notifications,
         markNotificationAsRead,
         markAllNotificationsAsRead,

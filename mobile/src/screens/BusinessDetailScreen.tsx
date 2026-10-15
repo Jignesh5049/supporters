@@ -27,6 +27,7 @@ export function BusinessDetailScreen() {
     toggleFollowBusiness,
     openEnquiryModal,
     openShareModal,
+    openConversationWithBusiness,
     routeParams,
     navigate
   } = useApp();
@@ -156,15 +157,10 @@ export function BusinessDetailScreen() {
         <View style={styles.ctaRow}>
           <TouchableOpacity
             style={styles.primaryCta}
-            onPress={() =>
-              openEnquiryModal({
-                title: 'Direct Business Quotation Enquiry',
-                businessName: business.name,
-                businessId: business.id,
-              })
-            }
+            onPress={() => openConversationWithBusiness(business.id)}
+            activeOpacity={0.8}
           >
-            <Feather name="send" size={13} color="#FFFFFF" />
+            <Feather name="message-square" size={13} color="#FFFFFF" />
             <Text style={styles.primaryCtaText}>Contact Supplier</Text>
           </TouchableOpacity>
 

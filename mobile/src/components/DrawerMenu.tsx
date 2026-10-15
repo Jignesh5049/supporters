@@ -8,7 +8,8 @@ import {
   Image,
   ScrollView,
   TouchableWithoutFeedback,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +25,8 @@ export function DrawerMenu() {
     navigate,
     unreadNotificationsCount,
     unreadMessagesCount,
-    showToast
+    showToast,
+    signOut
   } = useApp();
 
   const handleNavigate = (route: any, params?: any) => {
@@ -34,18 +36,27 @@ export function DrawerMenu() {
 
   const handleLogout = () => {
     setDrawerOpen(false);
-    Alert.alert(
-      'Sign Out of Supporters',
-      'Are you sure you want to log out of your session?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => showToast('Signed out successfully', 'info')
-        }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmed = typeof window !== 'undefined' ? window.confirm('Are you sure you want to log out of Supporters?') : true;
+      if (confirmed) {
+        signOut();
+      }
+    } else {
+      Alert.alert(
+        'Sign Out of Supporters',
+        'Are you sure you want to log out of your session?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: async () => {
+              await signOut();
+            }
+          }
+        ]
+      );
+    }
   };
 
   return (

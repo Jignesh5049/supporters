@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -11,6 +11,12 @@ import { EnquiryModal } from './src/components/EnquiryModal';
 import { ShareModal } from './src/components/ShareModal';
 import { Toast } from './src/components/Toast';
 
+// Auth Screens
+import { SignInScreen } from './src/screens/SignInScreen';
+import { SignUpScreen } from './src/screens/SignUpScreen';
+import { ForgotPasswordScreen } from './src/screens/ForgotPasswordScreen';
+
+// Main App Screens
 import { HomeScreen } from './src/screens/HomeScreen';
 import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
@@ -25,8 +31,46 @@ import { BusinessDetailScreen } from './src/screens/BusinessDetailScreen';
 import { colors } from './src/styles/theme';
 
 function MainApp() {
-  const { currentRoute } = useApp();
+  const { currentRoute, isAuthenticated, isLoadingAuth } = useApp();
 
+  // Loading indicator while checking stored session
+  if (isLoadingAuth) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Authentication Flow
+  const isAuthRoute =
+    currentRoute === 'sign_in' ||
+    currentRoute === 'sign_up' ||
+    currentRoute === 'forgot_password';
+
+  if (!isAuthenticated || isAuthRoute) {
+    const renderAuthScreen = () => {
+      switch (currentRoute) {
+        case 'sign_up':
+          return <SignUpScreen />;
+        case 'forgot_password':
+          return <ForgotPasswordScreen />;
+        case 'sign_in':
+        default:
+          return <SignInScreen />;
+      }
+    };
+
+    return (
+      <SafeAreaView style={styles.authSafeArea} edges={['top', 'bottom']}>
+        <StatusBar style="dark" />
+        <View style={styles.authContentArea}>{renderAuthScreen()}</View>
+        <Toast />
+      </SafeAreaView>
+    );
+  }
+
+  // Authenticated Main Application Flow
   const renderCurrentScreen = () => {
     switch (currentRoute) {
       case 'home':
@@ -65,9 +109,7 @@ function MainApp() {
       <Header />
 
       {/* Active Screen Area */}
-      <View style={styles.contentArea}>
-        {renderCurrentScreen()}
-      </View>
+      <View style={styles.contentArea}>{renderCurrentScreen()}</View>
 
       {/* Persistent Bottom Tab Navigation with '+' FAB */}
       <BottomTabBar />
@@ -93,12 +135,31 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  authSafeArea: {
+    flex: 1,
+    height: '100%',
+    backgroundColor: colors.background,
+  },
+  authContentArea: {
+    flex: 1,
+    height: '100%',
+    backgroundColor: colors.background,
+  },
   safeArea: {
     flex: 1,
+    height: '100%',
     backgroundColor: '#FFFFFF',
   },
   contentArea: {
     flex: 1,
+    height: '100%',
     backgroundColor: colors.background,
   },
 });

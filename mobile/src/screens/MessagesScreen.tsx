@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,15 +21,39 @@ export function MessagesScreen() {
     activeConversationId,
     setActiveConversationId,
     sendMessage,
-    navigate
+    navigate,
+    routeParams,
+    routeHistory,
+    goBack,
   } = useApp();
 
-  const [inChatView, setInChatView] = useState(false);
+  const [inChatView, setInChatView] = useState(() =>
+    Boolean(routeParams?.openChat || routeParams?.conversationId || routeParams?.businessId)
+  );
   const [inputText, setInputText] = useState('');
   const [searchConv, setSearchConv] = useState('');
 
+  // Select active conversation by routeParams or activeConversationId
+  const targetConvId = routeParams?.conversationId;
   const activeConv =
-    conversations.find((c) => c.id === activeConversationId) || conversations[0];
+    (targetConvId && conversations.find((c) => c.id === targetConvId)) ||
+    (routeParams?.businessId && conversations.find((c) => c.businessId === routeParams.businessId)) ||
+    conversations.find((c) => c.id === activeConversationId) ||
+    conversations[0];
+
+  useEffect(() => {
+    if (routeParams?.openChat || routeParams?.conversationId || routeParams?.businessId) {
+      if (routeParams.conversationId) {
+        setActiveConversationId(routeParams.conversationId);
+      } else if (routeParams.businessId) {
+        const match = conversations.find((c) => c.businessId === routeParams.businessId);
+        if (match) {
+          setActiveConversationId(match.id);
+        }
+      }
+      setInChatView(true);
+    }
+  }, [routeParams?.businessId, routeParams?.conversationId, routeParams?.openChat]);
 
   const handleOpenConversation = (id: string) => {
     setActiveConversationId(id);
@@ -97,6 +121,17 @@ export function MessagesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyThreadContainer}>
+              <View style={styles.emptyThreadIconWrap}>
+                <Ionicons name="chatbubbles-outline" size={26} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyThreadTitle}>Chat with {activeConv.businessName}</Text>
+              <Text style={styles.emptyThreadSubtitle}>
+                Send a direct enquiry regarding product prices, bulk order MOQ, sample requests, or delivery timelines.
+              </Text>
+            </View>
+          }
           renderItem={({ item }) => {
             const isMe = item.isMe;
 
@@ -181,10 +216,19 @@ export function MessagesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerArea}>
-        <Text style={styles.screenHeading}>Messages & Quotations</Text>
-        <Text style={styles.screenSubheading}>
-          Direct communication with suppliers and clients
-        </Text>
+        <View style={styles.headerTitleRow}>
+          {routeHistory.length > 0 && (
+            <TouchableOpacity onPress={goBack} style={styles.headerBackBtn} activeOpacity={0.7}>
+              <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.screenHeading}>Messages & Quotations</Text>
+            <Text style={styles.screenSubheading}>
+              Direct communication with suppliers and clients
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.searchBar}>
           <Feather name="search" size={15} color="#667085" />
@@ -521,5 +565,42 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerBackBtn: {
+    padding: 4,
+    marginLeft: -4,
+  },
+  emptyThreadContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+  },
+  emptyThreadIconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyThreadTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  emptyThreadSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
