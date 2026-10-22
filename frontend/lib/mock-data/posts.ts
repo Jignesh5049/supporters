@@ -38,15 +38,16 @@ export const MOCK_POSTS: FeedPost[] = [
     createdAt: '4h ago',
     postType: 'offer',
     offerTag: 'FESTIVE WHOLESALE OFFER',
+    aspectRatio: '16:9',
     content: 'Grand Diwali & Wedding Season Booking Window Open! We are offering an exclusive 15% discount on bulk lots (10+ sarees) for boutique partners across India. Tested gold zari borders and rich pallu designs woven on our upgraded high-speed jacquard looms.',
     images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80'
+      '/images/surat_silk_craft.jpg'
     ],
     attachedProduct: {
       id: 'p-4',
       title: 'Banarasi Art Silk Zari Woven Saree Collection (Lot of 10 Pieces)',
       price: 14500,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+      image: '/images/surat_silk_craft.jpg',
       moq: 1,
       unit: 'Lot'
     },

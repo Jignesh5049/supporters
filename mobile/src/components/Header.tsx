@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -9,11 +9,44 @@ export function Header() {
     unreadNotificationsCount,
     currentUser,
     setDrawerOpen,
-    navigate
+    navigate,
+    isHeaderVisible,
+    currentRoute
   } = useApp();
 
+  const anim = useRef(new Animated.Value(1)).current;
+  const shouldShow = currentRoute !== 'home' || isHeaderVisible;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: shouldShow ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [shouldShow]);
+
+  const height = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 56],
+  });
+
+  const opacity = anim.interpolate({
+    inputRange: [0, 0.3, 1],
+    outputRange: [0, 0, 1],
+  });
+
   return (
-    <View style={styles.headerContainer}>
+    <Animated.View
+      style={[
+        styles.headerContainer,
+        {
+          height,
+          opacity,
+          borderBottomWidth: shouldShow ? 1 : 0,
+          overflow: 'hidden',
+        },
+      ]}
+    >
       {/* Left: Hamburger menu & Supporters Brand Logo */}
       <View style={styles.leftSection}>
         <TouchableOpacity
@@ -56,7 +89,7 @@ export function Header() {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

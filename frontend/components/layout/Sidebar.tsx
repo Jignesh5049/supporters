@@ -8,6 +8,7 @@ import { CURRENT_USER } from '@/lib/mock-data';
 import { Avatar } from '@/components/common/Avatar';
 import {
   Home,
+  Compass,
   Bookmark,
   MessageSquare,
   Bell,
@@ -18,7 +19,9 @@ import {
   Gift,
   Crown,
   Settings,
-  FileQuestion
+  FileQuestion,
+  Wallet,
+  FileText
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -29,6 +32,7 @@ function SidebarInner() {
 
   const mainLinks = [
     { label: 'Home', href: '/', icon: Home },
+    { label: 'Discover', href: '/discover', icon: Compass },
     { label: 'Saved', href: '/saved', icon: Bookmark },
     {
       label: 'Messages',
@@ -47,15 +51,17 @@ function SidebarInner() {
   ];
 
   const businessLinks = [
-    { label: 'My Business', href: '/business/manage', icon: Building },
+    { label: 'Business Hub', href: '/business/manage', icon: Building },
+    { label: 'Manage Posts', href: '/business/posts', icon: FileText },
     { label: 'My Products', href: '/business/products', icon: Package },
     { label: 'My Services', href: '/business/services', icon: Wrench },
     { label: 'My Enquiries', href: '/business/enquiries', icon: FileQuestion },
   ];
 
   const growthLinks = [
-    { label: 'Referral Program', href: '/referral', icon: Gift, highlight: 'text-[#A3238E]' },
-    { label: 'Subscription', href: '/subscription', icon: Crown, highlight: 'text-amber-500' },
+    { label: 'App Wallet', href: '/wallet', icon: Wallet, highlight: 'text-emerald-600 font-bold' },
+    { label: 'Refer & Earn', href: '/referral', icon: Gift, highlight: 'text-[#A3238E]' },
+    { label: 'Supporters Pro', href: '/subscription', icon: Crown, highlight: 'text-amber-500' },
   ];
 
   const utilityLinks = [

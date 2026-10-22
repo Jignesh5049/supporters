@@ -8,7 +8,11 @@ import {
   Business,
   Conversation,
   NotificationItem,
-  PostType
+  PostType,
+  ReferralStat,
+  WalletSummary,
+  WalletTransaction,
+  WithdrawalRequest
 } from '@/types';
 import {
   MOCK_POSTS,
@@ -16,7 +20,10 @@ import {
   MOCK_SERVICES,
   MOCK_BUSINESSES,
   MOCK_CONVERSATIONS,
-  MOCK_NOTIFICATIONS
+  MOCK_NOTIFICATIONS,
+  MOCK_REFERRAL_DATA,
+  MOCK_WALLET_DATA,
+  CURRENT_USER
 } from '@/lib/mock-data';
 
 export interface ToastMessage {
@@ -64,6 +71,7 @@ interface AppContextType {
     postType: PostType;
     content: string;
     images?: string[];
+    aspectRatio?: '16:9' | '9:16';
     attachedProduct?: FeedPost['attachedProduct'];
     attachedService?: FeedPost['attachedService'];
     offerTag?: string;
@@ -118,6 +126,26 @@ interface AppContextType {
   openEnquiryModal: (info: { title: string; businessName: string; businessId?: string }) => void;
   closeEnquiryModal: () => void;
 
+  // Referral & Wallet
+  referralData: ReferralStat;
+  walletData: WalletSummary;
+  requestWithdrawal: (params: {
+    amount: number;
+    method: 'UPI' | 'Bank Account';
+    upiId?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    bankName?: string;
+  }) => { success: boolean; message: string };
+
+  // Business Management
+  userBusiness: Business | undefined;
+  updateBusinessProfile: (data: Partial<Business>) => void;
+  updateBusinessPost: (postId: string, data: Partial<FeedPost>) => void;
+  setBusinessPostStatus: (postId: string, status: 'Published' | 'Draft' | 'Archived') => void;
+  deletePost: (postId: string) => void;
+
   // Confirmation Modal
   confirmationState: ConfirmationState;
   openConfirmationModal: (params: {
@@ -159,6 +187,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+  const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
+  const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -305,6 +335,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     postType: PostType;
     content: string;
     images?: string[];
+    aspectRatio?: '16:9' | '9:16';
     attachedProduct?: FeedPost['attachedProduct'];
     attachedService?: FeedPost['attachedService'];
     offerTag?: string;
@@ -320,6 +351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       postType: data.postType,
       content: data.content,
       images: data.images,
+      aspectRatio: data.aspectRatio || '16:9',
       attachedProduct: data.attachedProduct,
       attachedService: data.attachedService,
       offerTag: data.offerTag,
@@ -332,6 +364,101 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setPosts((prev) => [newPost, ...prev]);
     showToast('Your update has been published to Supporters feed!', 'success');
+  };
+
+  const deletePost = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    showToast('Post deleted from your business page', 'info');
+  };
+
+  // Business Management
+  const userBusiness = businesses.find((b) => b.id === (CURRENT_USER.businessId || 'b-1')) || businesses[0];
+
+  const updateBusinessProfile = (data: Partial<Business>) => {
+    const bizId = CURRENT_USER.businessId || 'b-1';
+    setBusinesses((prev) =>
+      prev.map((b) => (b.id === bizId ? { ...b, ...data } : b))
+    );
+    showToast('Business profile updated successfully!', 'success');
+  };
+
+  const updateBusinessPost = (postId: string, data: Partial<FeedPost>) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, ...data } : p))
+    );
+    showToast('Post updated successfully!', 'success');
+  };
+
+  const setBusinessPostStatus = (postId: string, status: 'Published' | 'Draft' | 'Archived') => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p))
+    );
+    showToast(`Post marked as ${status}`, 'info');
+  };
+
+  // Wallet & Withdrawals
+  const requestWithdrawal = (params: {
+    amount: number;
+    method: 'UPI' | 'Bank Account';
+    upiId?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    bankName?: string;
+  }): { success: boolean; message: string } => {
+    if (params.amount <= 0) {
+      return { success: false, message: 'Withdrawal amount must be greater than ₹0' };
+    }
+    if (params.amount > walletData.availableBalance) {
+      return { success: false, message: 'Amount exceeds your available wallet balance' };
+    }
+    if (params.amount < 100) {
+      return { success: false, message: 'Minimum withdrawal amount is ₹100' };
+    }
+
+    const refId = `WDL-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const newWithdrawal: WithdrawalRequest = {
+      id: `wd-${Date.now()}`,
+      referenceId: refId,
+      amount: params.amount,
+      method: params.method,
+      upiId: params.upiId,
+      accountHolderName: params.accountHolderName,
+      accountNumber: params.accountNumber,
+      ifscCode: params.ifscCode,
+      bankName: params.bankName,
+      status: 'Pending',
+      createdAt: 'Just now',
+      estimatedDate: 'Within 24-48 business hours'
+    };
+
+    const newTx: WalletTransaction = {
+      id: `tx-${Date.now()}`,
+      referenceId: refId,
+      title: `Withdrawal Request (${params.method})`,
+      amount: -params.amount,
+      type: 'withdrawal',
+      status: 'Pending',
+      createdAt: 'Just now',
+      withdrawalMethod: params.method,
+      payoutDetails:
+        params.method === 'UPI'
+          ? `UPI: ${params.upiId}`
+          : `${params.bankName || 'Bank'} A/C: ••••${params.accountNumber?.slice(-4) || 'XXXX'}`,
+      description: 'Payout requested to linked account. Under automated verification.'
+    };
+
+    setWalletData((prev) => ({
+      ...prev,
+      availableBalance: prev.availableBalance - params.amount,
+      pendingWithdrawals: prev.pendingWithdrawals + params.amount,
+      transactions: [newTx, ...prev.transactions],
+      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests]
+    }));
+
+    showToast(`Withdrawal request for ₹${params.amount.toLocaleString('en-IN')} submitted!`, 'success');
+    return { success: true, message: 'Withdrawal request submitted successfully' };
   };
 
   const sendMessage = (
@@ -465,7 +592,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         draftListing,
         saveDraftListing,
-        clearDraftListing
+        clearDraftListing,
+
+        referralData,
+        walletData,
+        requestWithdrawal,
+        userBusiness,
+        updateBusinessProfile,
+        updateBusinessPost,
+        setBusinessPostStatus,
+        deletePost
       }}
     >
       {children}

@@ -24,6 +24,19 @@ export interface Business {
   responseRate: string;
   tags: string[];
   isFollowed?: boolean;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  addressLine?: string;
+  area?: string;
+  pinCode?: string;
+  country?: string;
+  mapUrl?: string;
+  openingHours?: string;
+  availabilityStatus?: string;
+  priceRange?: string;
+  contactPerson?: string;
+  profileCompletion?: number;
 }
 
 export interface Product {
@@ -86,6 +99,7 @@ export interface FeedPost {
   postType: PostType;
   content: string;
   images?: string[];
+  aspectRatio?: '16:9' | '9:16';
   attachedProduct?: {
     id: string;
     title: string;
@@ -107,6 +121,7 @@ export interface FeedPost {
   sharesCount: number;
   isLiked?: boolean;
   isSaved?: boolean;
+  postStatus?: 'Published' | 'Draft' | 'Archived';
 }
 
 export interface Message {
@@ -182,16 +197,56 @@ export interface ReferralStat {
   totalReferrals: number;
   successful: number;
   pending: number;
+  failedOrIneligible: number;
   rewardsEarned: number;
+  maxRewardLimit: number;
   history: {
     id: string;
     name: string;
     businessName: string;
     city: string;
     date: string;
-    status: 'Successful' | 'Pending' | 'Reward Credited';
+    status: 'Successful' | 'Pending' | 'Ineligible' | 'Failed';
     rewardAmount: number;
+    notes?: string;
   }[];
+}
+
+export interface WalletTransaction {
+  id: string;
+  referenceId: string;
+  title: string;
+  amount: number;
+  type: 'referral_reward' | 'withdrawal' | 'bonus' | 'refund';
+  status: 'Completed' | 'Pending' | 'Failed' | 'Reversed';
+  createdAt: string;
+  description?: string;
+  withdrawalMethod?: 'UPI' | 'Bank Account';
+  payoutDetails?: string;
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  referenceId: string;
+  amount: number;
+  method: 'UPI' | 'Bank Account';
+  upiId?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  bankName?: string;
+  status: 'Pending' | 'Processing' | 'Completed' | 'Rejected';
+  createdAt: string;
+  estimatedDate?: string;
+}
+
+export interface WalletSummary {
+  availableBalance: number;
+  totalReferralEarnings: number;
+  totalWithdrawn: number;
+  pendingWithdrawals: number;
+  transactions: WalletTransaction[];
+  withdrawalRequests: WithdrawalRequest[];
 }
 
 export interface Review {

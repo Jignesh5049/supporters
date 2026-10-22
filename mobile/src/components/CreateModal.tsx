@@ -19,10 +19,24 @@ export function CreateModal() {
 
   const handleSelectOption = (tab: string) => {
     setCreateModalOpen(false);
-    navigate('create', { initialTab: tab });
+    if (tab === 'requirement') {
+      navigate('home', { openRequirement: true });
+    } else {
+      navigate('create', { initialTab: tab });
+    }
   };
 
   const options = [
+    {
+      id: 'requirement',
+      title: 'Post a Requirement',
+      badge: 'Buyer & Sourcing',
+      badgeBg: '#FEF3C7',
+      badgeColor: '#D97706',
+      desc: 'Looking for products or materials? Post requirements for sellers to reach out',
+      icon: 'document-text-outline' as const,
+      iconBg: '#F59E0B',
+    },
     {
       id: 'product',
       title: 'List a Product',

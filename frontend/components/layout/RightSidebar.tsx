@@ -30,7 +30,7 @@ export function RightSidebar() {
               </span>
             </div>
             <span className="text-[10px] font-semibold bg-[#A3238E] text-white px-2 py-0.5 rounded-full">
-              ₹250 / Business
+              Up to ₹500
             </span>
           </div>
 

@@ -42,20 +42,65 @@ function BusinessProfileContent() {
     posts,
     followedBusinessIds,
     toggleFollowBusiness,
-    openEnquiryModal
+    openEnquiryModal,
+    userBusiness
   } = useApp();
 
   const business = businesses.find((b) => b.id === businessId) || businesses[0];
   const isFollowing = followedBusinessIds.includes(business.id);
+  const isOwner = userBusiness?.id === business.id;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'services' | 'posts' | 'reviews'>('overview');
 
   const businessProducts = products.filter((p) => p.businessId === business.id);
   const businessServices = services.filter((s) => s.businessId === business.id);
-  const businessPosts = posts.filter((p) => p.businessId === business.id);
+  // Requirements: Only published posts should appear on the public storefront
+  const businessPosts = posts.filter(
+    (p) => p.businessId === business.id && p.postStatus !== 'Draft' && p.postStatus !== 'Archived'
+  );
+
+  const getInstagramUrl = (handleOrUrl?: string) => {
+    if (!handleOrUrl) return '#';
+    if (handleOrUrl.startsWith('http')) return handleOrUrl;
+    const cleanHandle = handleOrUrl.replace('@', '').trim();
+    return `https://instagram.com/${cleanHandle}`;
+  };
+
+  const getDirectionsUrl = () => {
+    if (business.mapUrl) return business.mapUrl;
+    const query = encodeURIComponent(
+      business.fullAddress || `${business.addressLine || ''} ${business.city} ${business.state}`.trim() || business.name
+    );
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  };
 
   return (
     <div className="space-y-6">
+      {/* Owner Switcher Banner */}
+      {isOwner && (
+        <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xs">
+              ✓
+            </div>
+            <div>
+              <p className="text-xs font-bold text-teal-900">
+                You are viewing your public storefront as customers see it
+              </p>
+              <p className="text-[11px] text-teal-700">
+                Switch to your owner management dashboard to edit products, posts, or settings
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/business/manage"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition-colors self-start sm:self-auto shrink-0"
+          >
+            <span>Open Business Hub (Manager)</span>
+          </Link>
+        </div>
+      )}
+
       {/* Top Breadcrumb/Subtitle */}
       <div className="flex items-center gap-3">
         <span className="text-xs text-[#667085]">
@@ -272,11 +317,54 @@ function BusinessProfileContent() {
 
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-[#2E3192] shrink-0 mt-0.5" />
-                  <div>
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <span className="font-semibold text-[#111111] block">Facility Address</span>
-                    <span>{business.fullAddress}</span>
+                    <span className="text-[#667085] block">
+                      {business.fullAddress || `${business.addressLine || ''}, ${business.city}, ${business.state}`}
+                    </span>
+                    <a
+                      href={getDirectionsUrl()}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 transition-colors"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      <span>Get Directions ↗</span>
+                    </a>
                   </div>
                 </div>
+
+                {business.openingHours && (
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-4 h-4 text-[#2E3192] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-[#111111] block">Opening Hours</span>
+                      <span className="text-[#667085]">{business.openingHours}</span>
+                      {business.availabilityStatus && (
+                        <span className="block text-[11px] font-bold text-emerald-600 mt-0.5">
+                          ● {business.availabilityStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {business.instagram && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-4 h-4 text-[#A3238E] font-bold shrink-0 mt-0.5">📷</div>
+                    <div>
+                      <span className="font-semibold text-[#111111] block">Instagram</span>
+                      <a
+                        href={getInstagramUrl(business.instagram)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#A3238E] font-bold hover:underline"
+                      >
+                        @{business.instagram.replace('@', '').split('/').pop()} ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {business.gstin && (
                   <div className="flex items-start gap-3">
@@ -310,7 +398,7 @@ function BusinessProfileContent() {
                     <div>
                       <span className="font-semibold text-[#111111] block">Official Website</span>
                       <a href={business.website} target="_blank" rel="noreferrer" className="text-[#00AEEF] hover:underline">
-                        {business.website}
+                        {business.website} ↗
                       </a>
                     </div>
                   </div>

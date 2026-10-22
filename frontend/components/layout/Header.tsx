@@ -21,7 +21,8 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Wallet
 } from 'lucide-react';
 
 export function Header() {
@@ -185,12 +186,20 @@ export function Header() {
                       <span>My Business Dashboard</span>
                     </Link>
                     <Link
+                      href="/wallet"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5 text-emerald-600 font-bold"
+                    >
+                      <Wallet className="w-4 h-4 text-emerald-600" />
+                      <span>App Wallet</span>
+                    </Link>
+                    <Link
                       href="/referral"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5 text-[#A3238E]"
                     >
                       <Gift className="w-4 h-4" />
-                      <span>Invite & Earn (Referral)</span>
+                      <span>Refer & Earn (Up to ₹500)</span>
                     </Link>
                     <Link
                       href="/subscription"
@@ -304,13 +313,24 @@ export function Header() {
                 <ChevronRight className="w-4 h-4 text-[#667085]" />
               </Link>
               <Link
+                href="/wallet"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC] text-emerald-600 font-bold"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                  <span>App Wallet</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-emerald-600" />
+              </Link>
+              <Link
                 href="/referral"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC] text-[#A3238E]"
               >
                 <div className="flex items-center gap-2.5">
                   <Gift className="w-4 h-4" />
-                  <span>Referral Program</span>
+                  <span>Refer & Earn (Up to ₹500)</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-[#A3238E]" />
               </Link>

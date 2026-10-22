@@ -17,7 +17,11 @@ import {
   MOCK_CONVERSATIONS,
   MOCK_NOTIFICATIONS,
   MOCK_REFERRAL_DATA,
-  ReferralStat
+  ReferralStat,
+  WalletSummary,
+  WalletTransaction,
+  WithdrawalRequest,
+  MOCK_WALLET_DATA
 } from '../../mock';
 import {
   authService,
@@ -59,6 +63,13 @@ export type ScreenRoute =
   | 'subscription'
   | 'settings'
   | 'business_detail'
+  | 'wallet'
+  | 'withdrawal'
+  | 'withdrawal_history'
+  | 'business_hub'
+  | 'business_edit'
+  | 'business_posts'
+  | 'business_settings'
   | 'sign_in'
   | 'sign_up'
   | 'forgot_password';
@@ -80,9 +91,11 @@ interface AppContextType {
   googleSignIn: () => Promise<AuthResult>;
   forgotPassword: (email: string) => Promise<AuthResult>;
 
-  // Drawer
+  // Drawer & Header
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
+  isHeaderVisible: boolean;
+  setHeaderVisible: (visible: boolean) => void;
 
   // User
   currentUser: UserProfile;
@@ -94,6 +107,7 @@ interface AppContextType {
     postType: PostType;
     content: string;
     images?: string[];
+    aspectRatio?: '16:9' | '9:16';
     attachedProduct?: FeedPost['attachedProduct'];
     attachedService?: FeedPost['attachedService'];
     offerTag?: string;
@@ -150,6 +164,24 @@ interface AppContextType {
   // Referral
   referralData: ReferralStat;
 
+  // Wallet & Withdrawals
+  walletData: WalletSummary;
+  requestWithdrawal: (params: {
+    amount: number;
+    method: 'UPI' | 'Bank Account';
+    upiId?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    bankName?: string;
+  }) => { success: boolean; message: string };
+
+  // Business Management (Owner interface)
+  userBusiness: Business | undefined;
+  updateBusinessProfile: (data: Partial<Business>) => void;
+  updateBusinessPost: (postId: string, data: Partial<FeedPost>) => void;
+  setBusinessPostStatus: (postId: string, status: 'Published' | 'Draft' | 'Archived') => void;
+
   // Modals
   enquiryModal: EnquiryTarget;
   openEnquiryModal: (info: { title: string; businessName: string; businessId?: string }) => void;
@@ -192,6 +224,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
   const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
+  const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
 
   const [likedPostIds, setLikedPostIds] = useState<string[]>(['post-2']);
   const [savedPostIds, setSavedPostIds] = useState<string[]>(['post-2']);
@@ -201,6 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [followedBusinessIds, setFollowedBusinessIds] = useState<string[]>(['b-2']);
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [isHeaderVisible, setHeaderVisible] = useState(true);
   const [enquiryModal, setEnquiryModal] = useState<EnquiryTarget>({ isOpen: false });
   const [shareModal, setShareModal] = useState<ShareTarget>({ isOpen: false, title: '', url: '' });
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -482,6 +516,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     postType: PostType;
     content: string;
     images?: string[];
+    aspectRatio?: '16:9' | '9:16';
     attachedProduct?: FeedPost['attachedProduct'];
     attachedService?: FeedPost['attachedService'];
     offerTag?: string;
@@ -501,6 +536,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       postType: data.postType,
       content: data.content,
       images: data.images,
+      aspectRatio: data.aspectRatio || '16:9',
       attachedProduct: data.attachedProduct,
       attachedService: data.attachedService,
       offerTag: data.offerTag,
@@ -540,6 +576,97 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateUserProfile = (data: Partial<UserProfile>) => {
     setCurrentUser((prev) => ({ ...prev, ...data }));
     showToast('Profile updated successfully!', 'success');
+  };
+
+  // Business Profile Management
+  const userBusiness = businesses.find((b) => b.id === currentUser.businessId) || businesses[0];
+
+  const updateBusinessProfile = (data: Partial<Business>) => {
+    if (!currentUser.businessId) return;
+    setBusinesses((prev) =>
+      prev.map((b) => (b.id === currentUser.businessId ? { ...b, ...data } : b))
+    );
+    showToast('Business details updated successfully!', 'success');
+  };
+
+  const updateBusinessPost = (postId: string, data: Partial<FeedPost>) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, ...data } : p))
+    );
+    showToast('Post updated successfully!', 'success');
+  };
+
+  const setBusinessPostStatus = (postId: string, status: 'Published' | 'Draft' | 'Archived') => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p))
+    );
+    showToast(`Post status updated to ${status}`, 'info');
+  };
+
+  // Wallet & Withdrawal Management
+  const requestWithdrawal = (params: {
+    amount: number;
+    method: 'UPI' | 'Bank Account';
+    upiId?: string;
+    accountHolderName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    bankName?: string;
+  }): { success: boolean; message: string } => {
+    if (params.amount <= 0) {
+      return { success: false, message: 'Withdrawal amount must be greater than ₹0' };
+    }
+    if (params.amount > walletData.availableBalance) {
+      return { success: false, message: 'Amount exceeds available wallet balance' };
+    }
+    if (params.amount < 100) {
+      return { success: false, message: 'Minimum withdrawal amount is ₹100' };
+    }
+
+    const newReqId = `wd-${Date.now()}`;
+    const refId = `WDL-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const newWithdrawal: WithdrawalRequest = {
+      id: newReqId,
+      referenceId: refId,
+      amount: params.amount,
+      method: params.method,
+      upiId: params.upiId,
+      accountHolderName: params.accountHolderName,
+      accountNumber: params.accountNumber,
+      ifscCode: params.ifscCode,
+      bankName: params.bankName,
+      status: 'Pending',
+      createdAt: 'Just now',
+      estimatedDate: 'Within 24-48 business hours',
+    };
+
+    const newTx: WalletTransaction = {
+      id: `tx-${Date.now()}`,
+      referenceId: refId,
+      title: `Withdrawal Request (${params.method})`,
+      amount: -params.amount,
+      type: 'withdrawal',
+      status: 'Pending',
+      createdAt: 'Just now',
+      withdrawalMethod: params.method,
+      payoutDetails:
+        params.method === 'UPI'
+          ? `UPI: ${params.upiId}`
+          : `${params.bankName || 'Bank'} A/C: ••••${params.accountNumber?.slice(-4) || 'XXXX'}`,
+      description: 'Payout requested to linked account. Under automated verification.',
+    };
+
+    setWalletData((prev) => ({
+      ...prev,
+      availableBalance: prev.availableBalance - params.amount,
+      pendingWithdrawals: prev.pendingWithdrawals + params.amount,
+      transactions: [newTx, ...prev.transactions],
+      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests],
+    }));
+
+    showToast(`Withdrawal of ₹${params.amount.toLocaleString('en-IN')} requested!`, 'success');
+    return { success: true, message: 'Withdrawal request submitted successfully' };
   };
 
   const sendMessage = (
@@ -741,6 +868,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         markAllNotificationsAsRead,
         unreadNotificationsCount,
         referralData,
+        walletData,
+        requestWithdrawal,
+        userBusiness,
+        updateBusinessProfile,
+        updateBusinessPost,
+        setBusinessPostStatus,
         enquiryModal,
         openEnquiryModal,
         closeEnquiryModal,
@@ -749,6 +882,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         closeShareModal,
         createModalOpen,
         setCreateModalOpen,
+        isHeaderVisible,
+        setHeaderVisible,
         toast,
         showToast
       }}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { CURRENT_USER } from '@/lib/mock-data';
 import { Avatar } from '@/components/common/Avatar';
@@ -13,7 +13,10 @@ import {
   Image as ImageIcon,
   X,
   Send,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  Trash2,
+  Maximize2
 } from 'lucide-react';
 
 export function CreatePostWidget() {
@@ -22,9 +25,33 @@ export function CreatePostWidget() {
   const [postType, setPostType] = useState<PostType>('update');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [offerTag, setOfferTag] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        setImageUrl(result);
+        // Auto detect ratio
+        const img = new window.Image();
+        img.onload = () => {
+          if (img.naturalHeight > img.naturalWidth * 1.1) {
+            setAspectRatio('9:16');
+          } else {
+            setAspectRatio('16:9');
+          }
+        };
+        img.src = result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const openWithCategory = (type: PostType) => {
     setPostType(type);
@@ -61,6 +88,7 @@ export function CreatePostWidget() {
       postType,
       content,
       images: imageUrl ? [imageUrl] : undefined,
+      aspectRatio,
       attachedProduct,
       attachedService,
       offerTag: postType === 'offer' ? (offerTag || 'SPECIAL OFFER') : undefined
@@ -69,6 +97,7 @@ export function CreatePostWidget() {
     // Reset and close
     setContent('');
     setImageUrl('');
+    setAspectRatio('16:9');
     setTitle('');
     setPrice('');
     setOfferTag('');
@@ -252,19 +281,79 @@ export function CreatePostWidget() {
                 </div>
               )}
 
-              {/* Image URL input */}
-              <div>
-                <label className="block text-xs font-semibold text-[#111111] mb-1">
-                  Optional Image URL
-                </label>
+              {/* Image Upload Section */}
+              <div className="space-y-3 pt-1 border-t border-[#E5E7EB]">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-[#111111]">
+                    Post Media Photo
+                  </label>
+                  <span className="text-[11px] text-[#667085]">Auto-detects image orientation</span>
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                {imageUrl ? (
+                  <div className="relative border border-[#E5E7EB] rounded-xl overflow-hidden bg-gray-50">
+                    <div
+                      className={`w-full relative mx-auto overflow-hidden bg-black/5 ${
+                        aspectRatio === '9:16' ? 'max-w-[220px] aspect-[9/16]' : 'aspect-16/9'
+                      }`}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt="Uploaded preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-black/60 text-white backdrop-blur-xs">
+                        {aspectRatio}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrl('');
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="p-1 rounded-lg bg-red-600/90 text-white hover:bg-red-700 transition-colors shadow-sm"
+                        title="Remove image"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-[#CBD5E1] hover:border-[#2E3192] bg-[#F8FAFC] hover:bg-[#F1F5F9] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white shadow-2xs flex items-center justify-center text-[#2E3192] group-hover:scale-105 transition-transform mb-2">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-[#0F172A]">
+                      Click to upload image <span className="font-normal text-[#64748B]">({aspectRatio} format)</span>
+                    </p>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                      Supports JPG, PNG, WebP up to 10MB
+                    </p>
+                  </div>
+                )}
+
+                {/* Or paste direct URL */}
                 <div className="relative">
-                  <ImageIcon className="w-4 h-4 text-[#667085] absolute left-3 top-2.5 pointer-events-none" />
+                  <ImageIcon className="w-3.5 h-3.5 text-[#94A3B8] absolute left-3 top-2.5 pointer-events-none" />
                   <input
                     type="url"
-                    value={imageUrl}
+                    value={imageUrl.startsWith('data:') ? '' : imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#2E3192]"
+                    placeholder="Or paste external image URL..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#2E3192] text-[#334155]"
                   />
                 </div>
               </div>

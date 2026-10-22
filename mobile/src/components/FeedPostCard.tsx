@@ -133,14 +133,36 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
         <Text style={styles.contentText}>{post.content}</Text>
       </View>
 
-      {/* Attached Media / Image */}
+      {/* Attached Media / Image without ratio badge */}
       {post.images && post.images.length > 0 && (
-        <View style={styles.imageContainer}>
+        <View style={post.aspectRatio === '9:16' ? styles.imageContainer916 : styles.imageContainer169}>
           <Image
             source={{ uri: post.images[0] }}
             style={styles.postImage}
             resizeMode="cover"
           />
+        </View>
+      )}
+
+      {/* Buyer Requirement Action Banner for Sellers */}
+      {(post.offerTag?.includes('REQUIREMENT') || post.content.includes('BUYER REQUIREMENT')) && (
+        <View style={styles.requirementBanner}>
+          <View style={styles.requirementBadge}>
+            <Feather name="check-circle" size={12} color="#0284C7" />
+            <Text style={styles.requirementBadgeText}>VERIFIED BUYER REQUIREMENT</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.quoteSellerBtn}
+            onPress={() =>
+              openConversationWithBusiness(post.businessId, {
+                initialMessage: `Hello! We saw your requirement posted on Supporters. We can supply this product/service. Let's discuss specs and offer price.`,
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <Feather name="send" size={13} color="#FFFFFF" />
+            <Text style={styles.quoteSellerBtnText}>Send Quote / Contact Buyer</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -151,7 +173,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
             {(post.attachedProduct?.image || post.attachedService?.image) && (
               <Image
                 source={{
-                  uri: post.attachedProduct?.image || post.attachedService?.image,
+                  uri: (post.attachedProduct?.image || post.attachedService?.image) as string,
                 }}
                 style={styles.attachedImage}
               />
@@ -548,17 +570,68 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: 19,
   },
-  imageContainer: {
+  imageContainer169: {
     width: '100%',
-    height: 220,
-    backgroundColor: '#F3F4F6',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#0F172A',
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.borderLight,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  imageContainer916: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+    maxHeight: 520,
+    backgroundColor: '#0F172A',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.borderLight,
+    position: 'relative',
+    overflow: 'hidden',
   },
   postImage: {
     width: '100%',
     height: '100%',
+  },
+  requirementBanner: {
+    marginHorizontal: 12,
+    marginVertical: 8,
+    padding: 10,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  requirementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  requirementBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0369A1',
+  },
+  quoteSellerBtn: {
+    backgroundColor: '#0284C7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  quoteSellerBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   attachedContainer: {
     margin: 10,

@@ -126,7 +126,7 @@ export const MOCK_PRODUCTS: Product[] = [
     minOrderQuantity: 1,
     unit: 'Lots (10 Sarees)',
     images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+      '/images/surat_silk_craft.jpg',
       'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Exquisite jacquard loom woven Banarasi art silk sarees with gold and copper antique zari borders and grand pallu motifs. Includes unstitched running brocade blouse piece (0.80m). Tailored for boutique resellers and wedding season retail counters.',

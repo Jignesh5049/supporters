@@ -1,9 +1,11 @@
-// Supporters App - Comprehensive Mock Data & TypeScript Definitions
-// Edit this file to connect real API endpoints or databases.
+import { Image } from 'react-native';
 
 export type BusinessType = 'Manufacturer' | 'Wholesaler' | 'Retailer' | 'Distributor' | 'Service Provider' | 'Brand';
 export type PostType = 'product' | 'service' | 'update' | 'offer' | 'testimonial';
 export type NotificationCategory = 'All' | 'Business' | 'Messages' | 'Enquiries' | 'Referrals' | 'Subscription';
+
+// High-resolution 16:9 Surat Silk Craft showcase image matching feed aspect ratio perfectly
+const SURAT_SILK_IMAGE = Image.resolveAssetSource(require('./assets/surat_silk_craft.jpg'))?.uri || 'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=1200&h=675&fit=crop&q=80';
 
 export interface Business {
   id: string;
@@ -29,6 +31,19 @@ export interface Business {
   responseRate: string;
   tags: string[];
   isFollowed?: boolean;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  addressLine?: string;
+  area?: string;
+  pinCode?: string;
+  country?: string;
+  mapUrl?: string;
+  openingHours?: string;
+  availabilityStatus?: string;
+  priceRange?: string;
+  contactPerson?: string;
+  profileCompletion?: number;
 }
 
 export interface Product {
@@ -89,6 +104,7 @@ export interface FeedPost {
   postType: PostType;
   content: string;
   images?: string[];
+  aspectRatio?: '16:9' | '9:16';
   attachedProduct?: {
     id: string;
     title: string;
@@ -112,6 +128,7 @@ export interface FeedPost {
   isSaved?: boolean;
   authorId?: string;
   isOwnPost?: boolean;
+  postStatus?: 'Published' | 'Draft' | 'Archived';
 }
 
 export interface Message {
@@ -194,16 +211,56 @@ export interface ReferralStat {
   totalReferrals: number;
   successful: number;
   pending: number;
+  failedOrIneligible: number;
   rewardsEarned: number;
+  maxRewardLimit: number;
   history: {
     id: string;
     name: string;
     businessName: string;
     city: string;
     date: string;
-    status: 'Successful' | 'Pending' | 'Reward Credited';
+    status: 'Successful' | 'Pending' | 'Ineligible' | 'Failed';
     rewardAmount: number;
+    notes?: string;
   }[];
+}
+
+export interface WalletTransaction {
+  id: string;
+  referenceId: string;
+  title: string;
+  amount: number;
+  type: 'referral_reward' | 'withdrawal' | 'bonus' | 'refund';
+  status: 'Completed' | 'Pending' | 'Failed' | 'Reversed';
+  createdAt: string;
+  description?: string;
+  withdrawalMethod?: 'UPI' | 'Bank Account';
+  payoutDetails?: string;
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  referenceId: string;
+  amount: number;
+  method: 'UPI' | 'Bank Account';
+  upiId?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  bankName?: string;
+  status: 'Pending' | 'Processing' | 'Completed' | 'Rejected';
+  createdAt: string;
+  estimatedDate?: string;
+}
+
+export interface WalletSummary {
+  availableBalance: number;
+  totalReferralEarnings: number;
+  totalWithdrawn: number;
+  pendingWithdrawals: number;
+  transactions: WalletTransaction[];
+  withdrawalRequests: WithdrawalRequest[];
 }
 
 // ==========================================
@@ -549,7 +606,7 @@ export const MOCK_PRODUCTS: Product[] = [
     minOrderQuantity: 1,
     unit: 'Lots (10 Sarees)',
     images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+      SURAT_SILK_IMAGE,
       'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Exquisite jacquard loom woven Banarasi art silk sarees with gold and copper antique zari borders and grand pallu motifs. Includes unstitched blouse piece.',
@@ -715,15 +772,16 @@ export const MOCK_POSTS: FeedPost[] = [
     createdAt: '4h ago',
     postType: 'offer',
     offerTag: 'FESTIVE WHOLESALE OFFER',
+    aspectRatio: '16:9',
     content: 'Grand Diwali & Wedding Season Booking Window Open! We are offering an exclusive 15% discount on bulk lots (10+ sarees) for boutique partners across India. Tested gold zari borders and rich pallu designs woven on our upgraded high-speed jacquard looms.',
     images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80'
+      SURAT_SILK_IMAGE
     ],
     attachedProduct: {
       id: 'p-4',
       title: 'Banarasi Art Silk Zari Woven Saree Collection (Lot of 10 Pieces)',
       price: 14500,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+      image: SURAT_SILK_IMAGE,
       moq: 1,
       unit: 'Lot'
     },
@@ -989,37 +1047,96 @@ export const MOCK_NOTIFICATIONS: NotificationItem[] = [
 // ==========================================
 export const MOCK_REFERRAL_DATA: ReferralStat = {
   code: 'SUPPORT123',
-  totalReferrals: 18,
-  successful: 12,
-  pending: 6,
-  rewardsEarned: 3000,
+  totalReferrals: 5,
+  successful: 3,
+  pending: 1,
+  failedOrIneligible: 1,
+  rewardsEarned: 500, // Capped at ₹500 (₹300 milestone 1 + ₹200 milestone 2)
+  maxRewardLimit: 500,
   history: [
     {
       id: 'ref-1',
-      name: 'Bhavin Textiles Ltd',
-      businessName: 'Bhavin Textiles',
+      name: 'Bhavin Patel',
+      businessName: 'Bhavin Textiles Ltd',
       city: 'Surat',
-      date: 'Yesterday',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Yesterday, 4:30 PM',
+      status: 'Successful',
+      rewardAmount: 300,
+      notes: '1st Referral Milestone Achieved'
     },
     {
       id: 'ref-2',
-      name: 'Sunil Machinery Works',
-      businessName: 'Sunil Engg Works',
+      name: 'Sunil Parmar',
+      businessName: 'Sunil Machinery Works',
       city: 'Rajkot',
-      date: 'Oct 2, 2026',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Oct 14, 2026',
+      status: 'Successful',
+      rewardAmount: 200,
+      notes: '2nd Referral Milestone Achieved'
     },
     {
       id: 'ref-3',
-      name: 'Deepak Agro Foods',
-      businessName: 'Deepak Agro',
+      name: 'Deepak Shah',
+      businessName: 'Deepak Agro & Spices',
       city: 'Anand',
-      date: 'Sep 28, 2026',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Oct 19, 2026',
+      status: 'Pending',
+      rewardAmount: 0,
+      notes: 'Catalogue verification in progress'
+    },
+    {
+      id: 'ref-4',
+      name: 'Patel Electronics',
+      businessName: 'Patel Component Mart',
+      city: 'Ahmedabad',
+      date: 'Oct 20, 2026',
+      status: 'Successful',
+      rewardAmount: 0,
+      notes: 'Capped: Maximum reward of ₹500 already reached'
+    },
+    {
+      id: 'ref-5',
+      name: 'Royal Hardware',
+      businessName: 'Royal Tools & Fasteners',
+      city: 'Vadodara',
+      date: 'Oct 21, 2026',
+      status: 'Ineligible',
+      rewardAmount: 0,
+      notes: 'Duplicate mobile number / Existing account'
     }
   ]
 };
+
+// ==========================================
+// 10. WALLET & WITHDRAWALS DATA
+// ==========================================
+export const MOCK_WALLET_DATA: WalletSummary = {
+  availableBalance: 500,
+  totalReferralEarnings: 500,
+  totalWithdrawn: 0,
+  pendingWithdrawals: 0,
+  transactions: [
+    {
+      id: 'tx-1',
+      referenceId: 'TXN-REF-30001',
+      title: 'Bhavin Textiles',
+      amount: 300,
+      type: 'referral_reward',
+      status: 'Completed',
+      createdAt: 'Yesterday, 4:35 PM',
+      description: 'Referral reward credited to wallet'
+    },
+    {
+      id: 'tx-2',
+      referenceId: 'TXN-REF-20002',
+      title: 'Sunil Machinery',
+      amount: 200,
+      type: 'referral_reward',
+      status: 'Completed',
+      createdAt: 'Oct 14, 2026, 11:20 AM',
+      description: 'Referral reward credited to wallet'
+    }
+  ],
+  withdrawalRequests: []
+};
+

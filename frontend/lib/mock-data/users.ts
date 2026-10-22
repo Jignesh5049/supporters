@@ -1,4 +1,4 @@
-import { UserProfile, ReferralStat, Review } from '@/types';
+import { UserProfile, ReferralStat, Review, WalletSummary } from '@/types';
 
 export const CURRENT_USER: UserProfile = {
   name: 'Aarav Mehta',
@@ -20,57 +20,94 @@ export const CURRENT_USER: UserProfile = {
 
 export const MOCK_REFERRAL_DATA: ReferralStat = {
   code: 'SUPPORT123',
-  totalReferrals: 18,
-  successful: 12,
-  pending: 6,
-  rewardsEarned: 3000,
+  totalReferrals: 5,
+  successful: 3,
+  pending: 1,
+  failedOrIneligible: 1,
+  rewardsEarned: 500, // Capped at ₹500 (₹300 milestone 1 + ₹200 milestone 2)
+  maxRewardLimit: 500,
   history: [
     {
       id: 'ref-1',
-      name: 'Bhavin Textiles Ltd',
-      businessName: 'Bhavin Textiles',
+      name: 'Bhavin Patel',
+      businessName: 'Bhavin Textiles Ltd',
       city: 'Surat',
-      date: 'Yesterday',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Yesterday, 4:30 PM',
+      status: 'Successful',
+      rewardAmount: 300,
+      notes: '1st Referral Milestone Achieved'
     },
     {
       id: 'ref-2',
-      name: 'Sunil Machinery Works',
-      businessName: 'Sunil Engg Works',
+      name: 'Sunil Parmar',
+      businessName: 'Sunil Machinery Works',
       city: 'Rajkot',
-      date: 'Oct 2, 2026',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Oct 14, 2026',
+      status: 'Successful',
+      rewardAmount: 200,
+      notes: '2nd Referral Milestone Achieved'
     },
     {
       id: 'ref-3',
-      name: 'Deepak Agro Foods',
-      businessName: 'Deepak Agro',
+      name: 'Deepak Shah',
+      businessName: 'Deepak Agro & Spices',
       city: 'Anand',
-      date: 'Sep 28, 2026',
-      status: 'Reward Credited',
-      rewardAmount: 250
+      date: 'Oct 19, 2026',
+      status: 'Pending',
+      rewardAmount: 0,
+      notes: 'Catalogue verification in progress'
     },
     {
       id: 'ref-4',
-      name: 'Kiran Ceramic Tiles',
-      businessName: 'Kiran Ceramics',
-      city: 'Morbi',
-      date: 'Sep 24, 2026',
-      status: 'Pending',
-      rewardAmount: 250
+      name: 'Patel Electronics',
+      businessName: 'Patel Component Mart',
+      city: 'Ahmedabad',
+      date: 'Oct 20, 2026',
+      status: 'Successful',
+      rewardAmount: 0,
+      notes: 'Capped: Maximum reward of ₹500 already reached'
     },
     {
       id: 'ref-5',
-      name: 'Apex Precision Tools',
-      businessName: 'Apex Tools & Gears',
-      city: 'Rajkot',
-      date: 'Sep 19, 2026',
-      status: 'Successful',
-      rewardAmount: 250
+      name: 'Royal Hardware',
+      businessName: 'Royal Tools & Fasteners',
+      city: 'Vadodara',
+      date: 'Oct 21, 2026',
+      status: 'Ineligible',
+      rewardAmount: 0,
+      notes: 'Duplicate mobile number / Existing account'
     }
   ]
+};
+
+export const MOCK_WALLET_DATA: WalletSummary = {
+  availableBalance: 500,
+  totalReferralEarnings: 500,
+  totalWithdrawn: 0,
+  pendingWithdrawals: 0,
+  transactions: [
+    {
+      id: 'tx-1',
+      referenceId: 'TXN-REF-30001',
+      title: 'Bhavin Textiles',
+      amount: 300,
+      type: 'referral_reward',
+      status: 'Completed',
+      createdAt: 'Yesterday, 4:35 PM',
+      description: 'Referral reward credited to wallet'
+    },
+    {
+      id: 'tx-2',
+      referenceId: 'TXN-REF-20002',
+      title: 'Sunil Machinery',
+      amount: 200,
+      type: 'referral_reward',
+      status: 'Completed',
+      createdAt: 'Oct 14, 2026, 11:20 AM',
+      description: 'Referral reward credited to wallet'
+    }
+  ],
+  withdrawalRequests: []
 };
 
 export const MOCK_REVIEWS: Review[] = [

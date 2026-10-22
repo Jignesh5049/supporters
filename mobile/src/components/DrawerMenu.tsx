@@ -116,7 +116,15 @@ export function DrawerMenu() {
             </TouchableOpacity>
 
             {/* Growth & Business */}
-            <Text style={styles.sectionHeader}>GROWTH & MEMBERSHIP</Text>
+            <Text style={styles.sectionHeader}>EARNINGS & BUSINESS</Text>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigate('wallet')}
+            >
+              <Feather name="credit-card" size={18} color={colors.primary} />
+              <Text style={styles.menuItemText}>App Wallet</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuItem}
@@ -124,11 +132,19 @@ export function DrawerMenu() {
             >
               <Feather name="gift" size={18} color={colors.accentMagenta} />
               <Text style={[styles.menuItemText, { color: colors.accentMagenta }]}>
-                Invite & Earn
+                Refer & Earn
               </Text>
               <View style={styles.rewardTag}>
-                <Text style={styles.rewardTagText}>₹250 / Ref</Text>
+                <Text style={styles.rewardTagText}>Up to ₹500</Text>
               </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigate('business_hub')}
+            >
+              <Feather name="briefcase" size={18} color="#0D9488" />
+              <Text style={styles.menuItemText}>Business Hub (Manager)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

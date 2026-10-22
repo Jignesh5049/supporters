@@ -28,6 +28,13 @@ import { ReferralScreen } from './src/screens/ReferralScreen';
 import { SubscriptionScreen } from './src/screens/SubscriptionScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { BusinessDetailScreen } from './src/screens/BusinessDetailScreen';
+import { WalletScreen } from './src/screens/WalletScreen';
+import { WithdrawalScreen } from './src/screens/WithdrawalScreen';
+import { WithdrawalHistoryScreen } from './src/screens/WithdrawalHistoryScreen';
+import { BusinessHubScreen } from './src/screens/BusinessHubScreen';
+import { BusinessEditScreen } from './src/screens/BusinessEditScreen';
+import { BusinessPostsScreen } from './src/screens/BusinessPostsScreen';
+import { BusinessSettingsScreen } from './src/screens/BusinessSettingsScreen';
 import { colors } from './src/styles/theme';
 
 function MainApp() {
@@ -96,6 +103,20 @@ function MainApp() {
         return <SettingsScreen />;
       case 'business_detail':
         return <BusinessDetailScreen />;
+      case 'wallet':
+        return <WalletScreen />;
+      case 'withdrawal':
+        return <WithdrawalScreen />;
+      case 'withdrawal_history':
+        return <WithdrawalHistoryScreen />;
+      case 'business_hub':
+        return <BusinessHubScreen />;
+      case 'business_edit':
+        return <BusinessEditScreen />;
+      case 'business_posts':
+        return <BusinessPostsScreen />;
+      case 'business_settings':
+        return <BusinessSettingsScreen />;
       default:
         return <HomeScreen />;
     }

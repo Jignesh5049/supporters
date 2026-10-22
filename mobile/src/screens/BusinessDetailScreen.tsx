@@ -29,7 +29,8 @@ export function BusinessDetailScreen() {
     openShareModal,
     openConversationWithBusiness,
     routeParams,
-    navigate
+    navigate,
+    currentUser
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'products' | 'services' | 'posts' | 'about'>('products');
@@ -37,14 +38,44 @@ export function BusinessDetailScreen() {
   const businessId = routeParams?.businessId || 'b-1';
   const business = businesses.find((b) => b.id === businessId) || businesses[0];
 
+  const isOwner = currentUser?.businessId === business.id;
+
   const businessProducts = products.filter((p) => p.businessId === business.id);
   const businessServices = services.filter((s) => s.businessId === business.id);
-  const businessPosts = posts.filter((p) => p.businessId === business.id);
+  // Requirement: Only published posts should appear on the public page
+  const businessPosts = posts.filter(
+    (p) => p.businessId === business.id && p.postStatus !== 'Draft' && p.postStatus !== 'Archived'
+  );
 
   const isFollowing = followedBusinessIds.includes(business.id);
 
   const handleCall = () => {
     Linking.openURL(`tel:${business.phone}`);
+  };
+
+  const handleOpenInstagram = () => {
+    if (!business.instagram) return;
+    const handle = business.instagram.replace('@', '').trim();
+    const url = business.instagram.startsWith('http')
+      ? business.instagram
+      : `https://instagram.com/${handle}`;
+    Linking.openURL(url);
+  };
+
+  const handleOpenWebsite = () => {
+    if (!business.website) return;
+    const url = business.website.startsWith('http')
+      ? business.website
+      : `https://${business.website}`;
+    Linking.openURL(url);
+  };
+
+  const handleGetDirections = () => {
+    const query = encodeURIComponent(
+      business.fullAddress || `${business.addressLine || ''} ${business.city || ''} ${business.state || ''}`.trim() || business.name
+    );
+    const url = business.mapUrl || `https://www.google.com/maps/search/?api=1&query=${query}`;
+    Linking.openURL(url);
   };
 
   return (
@@ -69,6 +100,24 @@ export function BusinessDetailScreen() {
           <Feather name="share-2" size={18} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
+
+      {/* Owner Manager Switcher Banner */}
+      {isOwner && (
+        <TouchableOpacity
+          style={styles.ownerBanner}
+          onPress={() => navigate('business_hub')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.ownerBannerLeft}>
+            <Ionicons name="settings-sharp" size={16} color="#0D9488" />
+            <View>
+              <Text style={styles.ownerBannerTitle}>You are viewing your public storefront</Text>
+              <Text style={styles.ownerBannerSub}>Switch to Business Hub Manager to edit profile & posts</Text>
+            </View>
+          </View>
+          <Feather name="chevron-right" size={18} color="#0D9488" />
+        </TouchableOpacity>
+      )}
 
       {/* Cover */}
       <View style={styles.coverContainer}>
@@ -285,14 +334,73 @@ export function BusinessDetailScreen() {
 
         {activeTab === 'posts' && (
           <View>
-            {businessPosts.map((post) => (
-              <FeedPostCard key={post.id} post={post} />
-            ))}
+            {businessPosts.length === 0 ? (
+              <View style={styles.emptyPostsBox}>
+                <Feather name="file-text" size={36} color="#94A3B8" />
+                <Text style={styles.emptyPostsTitle}>No Updates Yet</Text>
+                <Text style={styles.emptyPostsSub}>
+                  This business has not published any updates recently.
+                </Text>
+                {isOwner && (
+                  <TouchableOpacity
+                    style={styles.createPostBtn}
+                    onPress={() => navigate('business_posts')}
+                  >
+                    <Feather name="plus-circle" size={15} color="#FFFFFF" />
+                    <Text style={styles.createPostBtnText}>Create Post as Owner</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              businessPosts.map((post) => (
+                <FeedPostCard key={post.id} post={post} />
+              ))
+            )}
           </View>
         )}
 
         {activeTab === 'about' && (
           <View style={styles.aboutContainer}>
+            {/* Quick Action Badges: Instagram, Website, Directions */}
+            <View style={styles.quickActionsRow}>
+              {business.instagram && (
+                <TouchableOpacity
+                  style={styles.socialActionBtn}
+                  onPress={handleOpenInstagram}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="logo-instagram" size={15} color="#E1306C" />
+                  <Text style={styles.socialActionText} numberOfLines={1}>
+                    @{business.instagram.replace('@', '').split('/').pop()}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {business.website && (
+                <TouchableOpacity
+                  style={styles.socialActionBtn}
+                  onPress={handleOpenWebsite}
+                  activeOpacity={0.8}
+                >
+                  <Feather name="globe" size={14} color={colors.primary} />
+                  <Text style={styles.socialActionText} numberOfLines={1}>
+                    Visit Website
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.socialActionBtn, styles.directionsBtn]}
+                onPress={handleGetDirections}
+                activeOpacity={0.8}
+              >
+                <Feather name="navigation" size={14} color="#0D9488" />
+                <Text style={[styles.socialActionText, { color: '#0D9488', fontWeight: '700' }]}>
+                  Get Directions
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.aboutTitle}>Company Overview</Text>
             <Text style={styles.aboutText}>{business.about}</Text>
 
@@ -311,11 +419,55 @@ export function BusinessDetailScreen() {
                   <Text style={styles.colValue}>{business.gstin}</Text>
                 </View>
               )}
+              {business.openingHours && (
+                <View style={styles.tableRow}>
+                  <Text style={styles.colLabel}>Opening Hours:</Text>
+                  <Text style={styles.colValue}>{business.openingHours}</Text>
+                </View>
+              )}
+              {business.availabilityStatus && (
+                <View style={styles.tableRow}>
+                  <Text style={styles.colLabel}>Availability:</Text>
+                  <Text style={[styles.colValue, { color: '#059669', fontWeight: '700' }]}>
+                    ● {business.availabilityStatus}
+                  </Text>
+                </View>
+              )}
+              {business.priceRange && (
+                <View style={styles.tableRow}>
+                  <Text style={styles.colLabel}>Price Range:</Text>
+                  <Text style={styles.colValue}>{business.priceRange}</Text>
+                </View>
+              )}
               <View style={styles.tableRow}>
                 <Text style={styles.colLabel}>Full Address:</Text>
-                <Text style={styles.colValue}>{business.fullAddress}</Text>
+                <Text style={styles.colValue}>
+                  {business.fullAddress || `${business.addressLine || ''}, ${business.area || ''}, ${business.city}, ${business.state} - ${business.pinCode || ''}`}
+                </Text>
               </View>
             </View>
+
+            {/* Clickable Direction Card */}
+            <TouchableOpacity
+              style={styles.directionCard}
+              onPress={handleGetDirections}
+              activeOpacity={0.8}
+            >
+              <View style={styles.directionLeft}>
+                <View style={styles.directionPinCircle}>
+                  <Feather name="map-pin" size={16} color="#0D9488" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.directionCardTitle}>Navigate with Maps</Text>
+                  <Text style={styles.directionCardSub} numberOfLines={1}>
+                    {business.city}, {business.state}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.directionActionPill}>
+                <Text style={styles.directionActionText}>Directions ↗</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -351,9 +503,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   coverContainer: {
-    height: 120,
+    height: 200,
     width: '100%',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#0F172A',
   },
   coverImage: {
     width: '100%',
@@ -369,17 +521,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: -30,
+    marginTop: -46,
     marginBottom: 8,
   },
   avatarWrapper: {
     position: 'relative',
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 3,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 4,
     borderColor: '#FFFFFF',
     backgroundColor: '#E5E7EB',
   },
@@ -387,13 +539,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.accentCyan,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
   },
   actionPillsRow: {
@@ -703,5 +855,139 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11,
     color: colors.textSecondary,
+  },
+  ownerBanner: {
+    backgroundColor: '#F0FDFA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCFBF1',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ownerBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  ownerBannerTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F766E',
+  },
+  ownerBannerSub: {
+    fontSize: 10,
+    color: '#115E59',
+    marginTop: 1,
+  },
+  emptyPostsBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyPostsTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginTop: 10,
+  },
+  emptyPostsSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  createPostBtn: {
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  createPostBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  socialActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  directionsBtn: {
+    backgroundColor: '#F0FDFA',
+    borderColor: '#99F6E4',
+  },
+  socialActionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  directionCard: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  directionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  directionPinCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#CCFBF1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  directionCardTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  directionCardSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  directionActionPill: {
+    backgroundColor: '#0D9488',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  directionActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

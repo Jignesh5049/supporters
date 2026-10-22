@@ -179,14 +179,49 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
 
         {/* Primary Image / Media if present */}
         {post.images && post.images.length > 0 && (
-          <div className="w-full relative aspect-16/9 bg-gray-100 overflow-hidden border-y border-[#E5E7EB]">
-            <Image
-              src={post.images[0]}
-              alt={post.attachedProduct?.title || post.businessName}
-              fill
-              className="object-cover"
-              unoptimized
-            />
+          <div className="w-full bg-[#0F172A] overflow-hidden border-y border-[#E5E7EB] flex items-center justify-center">
+            <div
+              className={`relative overflow-hidden w-full ${
+                post.aspectRatio === '9:16'
+                  ? 'max-w-[340px] aspect-[9/16] my-2 rounded-xl shadow-md'
+                  : 'aspect-16/9'
+              }`}
+            >
+              <Image
+                src={post.images[0]}
+                alt={post.attachedProduct?.title || post.businessName}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Buyer Requirement Action Banner for Sellers */}
+        {(post.offerTag?.includes('REQUIREMENT') || post.content.includes('BUYER REQUIREMENT')) && (
+          <div className="m-4 sm:m-5 p-3.5 rounded-xl bg-sky-50 border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full">
+                📌 Verified Buyer Requirement
+              </span>
+              <span className="text-xs text-sky-700 hidden sm:inline">
+                Suppliers can submit wholesale quotes
+              </span>
+            </div>
+            <button
+              onClick={() =>
+                openEnquiryModal({
+                  title: `Supplier Quote for: ${post.attachedProduct?.title || 'Buyer Requirement'}`,
+                  businessName: post.businessName,
+                  businessId: post.businessId,
+                })
+              }
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-colors shadow-2xs self-start sm:self-auto"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Contact Buyer / Send Quote</span>
+            </button>
           </div>
         )}
 
