@@ -22,11 +22,12 @@ import {
 
 export default function BusinessSettingsPage() {
   const router = useRouter();
-  const { userBusiness, openConfirmationModal, showToast } = useApp();
+  const { userBusiness, updateBusinessProfile, openConfirmationModal, showToast } = useApp();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [buyerEnquiriesAlert, setBuyerEnquiriesAlert] = useState(true);
   const [storefrontActive, setStorefrontActive] = useState(true);
+  const [showPhone, setShowPhone] = useState(userBusiness?.showPhone ?? true);
 
   const handleDeactivateBusiness = () => {
     openConfirmationModal({
@@ -139,6 +140,49 @@ export default function BusinessSettingsPage() {
           </div>
           <ChevronRight className="w-4 h-4 text-[#667085]" />
         </Link>
+      </div>
+
+      {/* Storefront & Catalog Preferences */}
+      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xs space-y-4">
+        <h2 className="text-sm font-bold text-[#111111] uppercase tracking-wider text-xs pb-2 border-b border-gray-100">
+          Storefront & Catalog Preferences
+        </h2>
+
+        <div className="flex items-center justify-between py-2">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-[#111111]">Show Number on Catalog</p>
+              <span
+                className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
+                  showPhone
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                {showPhone ? 'VISIBLE' : 'HIDDEN'}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#667085]">
+              Allow visiting buyers to view and call your direct contact number ({userBusiness?.phone}) on your catalog
+            </p>
+          </div>
+          <input
+            type="checkbox"
+            checked={showPhone}
+            onChange={(e) => {
+              const val = e.target.checked;
+              setShowPhone(val);
+              updateBusinessProfile({ showPhone: val });
+              showToast(
+                val
+                  ? 'Phone number will now be shown on your catalog'
+                  : 'Phone number is now hidden from your catalog',
+                'info'
+              );
+            }}
+            className="w-4 h-4 accent-[#2E3192] cursor-pointer ml-3 shrink-0"
+          />
+        </div>
       </div>
 
       {/* Notifications Preferences */}

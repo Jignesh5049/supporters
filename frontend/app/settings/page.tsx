@@ -26,7 +26,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { openConfirmationModal, showToast } = useApp();
+  const { openConfirmationModal, showToast, userBusiness, updateBusinessProfile } = useApp();
 
   const [activeSection, setActiveSection] = useState<'account' | 'preferences' | 'privacy' | 'business' | 'subscription' | 'support' | 'legal'>('account');
 
@@ -36,9 +36,23 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState(CURRENT_USER.phone);
   const [bio, setBio] = useState(CURRENT_USER.bio);
   const [profileVisibility, setProfileVisibility] = useState('public');
+  const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
+    userBusiness?.showPhone ?? CURRENT_USER.showPhone ?? true
+  );
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
   const [language, setLanguage] = useState('English');
+
+  const handleToggleShowPhone = (val: boolean) => {
+    setShowPhoneOnCatalog(val);
+    updateBusinessProfile({ showPhone: val });
+    showToast(
+      val
+        ? 'Phone number will now be shown on your catalog'
+        : 'Phone number is now hidden from your catalog',
+      'info'
+    );
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,6 +340,34 @@ export default function SettingsPage() {
                       </div>
                     </label>
                   </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#E5E7EB]">
+                  <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#111111]">Show Number on Catalog</span>
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
+                            showPhoneOnCatalog
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {showPhoneOnCatalog ? 'VISIBLE' : 'HIDDEN'}
+                        </span>
+                      </div>
+                      <span className="text-[#667085] text-[11px] block">
+                        Allow buyers to view your contact number ({phone || userBusiness?.phone}) directly on your catalog storefront
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={showPhoneOnCatalog}
+                      onChange={(e) => handleToggleShowPhone(e.target.checked)}
+                      className="w-4 h-4 text-[#2E3192] rounded cursor-pointer ml-3 shrink-0"
+                    />
+                  </label>
                 </div>
               </div>
             </div>

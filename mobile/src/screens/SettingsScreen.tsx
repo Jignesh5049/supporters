@@ -14,12 +14,35 @@ import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function SettingsScreen() {
-  const { currentUser, showToast, navigate, signOut } = useApp();
+  const {
+    currentUser,
+    userBusiness,
+    updateBusinessProfile,
+    updateUserProfile,
+    showToast,
+    navigate,
+    signOut
+  } = useApp();
 
   const [rfqNotifications, setRfqNotifications] = useState(true);
   const [chatNotifications, setChatNotifications] = useState(true);
   const [marketingNotifications, setMarketingNotifications] = useState(false);
   const [profilePublic, setProfilePublic] = useState(true);
+  const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
+    userBusiness?.showPhone ?? currentUser.showPhone ?? true
+  );
+
+  const handleToggleShowPhone = (val: boolean) => {
+    setShowPhoneOnCatalog(val);
+    updateBusinessProfile({ showPhone: val });
+    updateUserProfile({ showPhone: val });
+    showToast(
+      val
+        ? 'Phone number will now be shown on your catalog'
+        : 'Phone number is now hidden from your catalog',
+      'info'
+    );
+  };
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -143,6 +166,42 @@ export function SettingsScreen() {
             <Switch
               value={profilePublic}
               onValueChange={setProfilePublic}
+              trackColor={{ false: '#D1D5DB', true: colors.primary }}
+            />
+          </View>
+
+          <View style={styles.rowDivider} />
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleTextCol}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.rowTitle}>Show Number on Catalog</Text>
+                <View
+                  style={{
+                    backgroundColor: showPhoneOnCatalog ? '#ECFDF5' : '#F3F4F6',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontWeight: '800',
+                      color: showPhoneOnCatalog ? '#065F46' : '#6B7280',
+                    }}
+                  >
+                    {showPhoneOnCatalog ? 'VISIBLE' : 'HIDDEN'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.rowSub}>
+                Allow buyers to view your contact number ({currentUser.phone || userBusiness?.phone}) directly on your catalog storefront
+              </Text>
+            </View>
+            <Switch
+              value={showPhoneOnCatalog}
+              onValueChange={handleToggleShowPhone}
               trackColor={{ false: '#D1D5DB', true: colors.primary }}
             />
           </View>

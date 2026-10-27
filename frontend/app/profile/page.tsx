@@ -10,6 +10,7 @@ import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ServiceCard } from '@/components/service/ServiceCard';
 import { EmptyState } from '@/components/common/EmptyState';
+import { FollowListModal } from '@/components/common/FollowListModal';
 import {
   MapPin,
   Calendar,
@@ -30,6 +31,7 @@ export default function ProfilePage() {
   const { posts, products, services, savedProductIds, savedPostIds, businesses } = useApp();
 
   const [activeTab, setActiveTab] = useState<'posts' | 'business' | 'saved' | 'enquiries' | 'reviews'>('posts');
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
   const myPosts = posts.filter((p) => p.businessId === CURRENT_USER.businessId);
   const myBusiness = businesses.find((b) => b.id === CURRENT_USER.businessId);
@@ -55,16 +57,18 @@ export default function ProfilePage() {
 
         {/* Profile Card Body */}
         <div className="px-6 sm:px-8 pb-6 pt-0 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-4">
-            <div className="flex items-end gap-4">
-              <Avatar
-                src={CURRENT_USER.avatar}
-                name={CURRENT_USER.name}
-                size="xl"
-                verified
-                className="ring-4 ring-white shadow-md bg-white"
-              />
-              <div className="space-y-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="-mt-14 sm:-mt-16 shrink-0">
+                <Avatar
+                  src={CURRENT_USER.avatar}
+                  name={CURRENT_USER.name}
+                  size="xl"
+                  verified
+                  className="ring-4 ring-white shadow-md bg-white"
+                />
+              </div>
+              <div className="space-y-0.5 pt-1 sm:pt-0 sm:pb-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-[#111111]">
                     {CURRENT_USER.name}
@@ -77,7 +81,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 sm:pb-1">
               <Link
                 href="/settings"
                 className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#111111] bg-[#F7F8FC] hover:bg-gray-100 border border-[#E5E7EB] rounded-xl transition-colors"
@@ -115,22 +119,20 @@ export default function ProfilePage() {
             </span>
           </div>
 
-          {/* Social Counts */}
+          {/* Social Counts - Followers removed, only Following and Businesses */}
           <div className="flex items-center gap-6 mt-4 pt-3 border-t border-[#E5E7EB] text-xs">
-            <div>
-              <span className="font-extrabold text-[#111111] mr-1">
-                {CURRENT_USER.followersCount}
-              </span>
-              <span className="text-[#667085]">Followers</span>
-            </div>
-            <div>
-              <span className="font-extrabold text-[#111111] mr-1">
+            <button
+              type="button"
+              onClick={() => setShowFollowingModal(true)}
+              className="flex items-center gap-1.5 hover:text-[#2E3192] transition-colors cursor-pointer group text-left"
+            >
+              <span className="font-extrabold text-[#111111] group-hover:text-[#2E3192] underline decoration-dotted decoration-gray-300">
                 {CURRENT_USER.followingCount}
               </span>
-              <span className="text-[#667085]">Following</span>
-            </div>
-            <div>
-              <span className="font-extrabold text-[#111111] mr-1">
+              <span className="text-[#667085] group-hover:text-[#2E3192]">Following</span>
+            </button>
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-[#111111]">
                 {CURRENT_USER.businessesCount}
               </span>
               <span className="text-[#667085]">Businesses</span>
@@ -288,6 +290,25 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Instagram-style Following Modal */}
+      <FollowListModal
+        isOpen={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        title="Following"
+        subtitle={`${CURRENT_USER.name} · ${CURRENT_USER.followingCount} Following`}
+        items={businesses.map((b) => ({
+          id: b.id,
+          name: b.name,
+          username: b.slug,
+          avatar: b.avatar,
+          verified: b.verified,
+          category: b.category,
+          city: b.city,
+          businessType: b.businessType,
+          isFollowed: true,
+        }))}
+      />
     </div>
   );
 }

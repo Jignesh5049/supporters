@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FeedPost,
   Product,
@@ -109,6 +110,14 @@ interface AppContextType {
     attachedService?: any
   ) => void;
   unreadMessagesCount: number;
+  openConversationWithBusiness: (
+    businessId: string,
+    options?: {
+      initialMessage?: string;
+      attachedProduct?: any;
+      attachedService?: any;
+    }
+  ) => void;
 
   // Notifications
   notifications: NotificationItem[];
@@ -171,6 +180,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [posts, setPosts] = useState<FeedPost[]>(MOCK_POSTS);
   const [products] = useState<Product[]>(MOCK_PRODUCTS);
   const [services] = useState<Service[]>(MOCK_SERVICES);
@@ -495,6 +505,75 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('Message sent', 'info');
   };
 
+  const openConversationWithBusiness = (
+    businessId: string,
+    options?: {
+      initialMessage?: string;
+      attachedProduct?: any;
+      attachedService?: any;
+    }
+  ) => {
+    // 1. Check if conversation already exists
+    const existingConv = conversations.find((c) => c.businessId === businessId);
+
+    if (existingConv) {
+      setActiveConversationId(existingConv.id);
+      if (options?.initialMessage) {
+        sendMessage(
+          existingConv.id,
+          options.initialMessage,
+          options.attachedProduct,
+          options.attachedService
+        );
+      }
+      showToast(`Opening chat with ${existingConv.businessName}...`, 'info');
+      router.push('/messages');
+      return;
+    }
+
+    // 2. If no existing conversation, create a new one
+    const biz = businesses.find((b) => b.id === businessId);
+    const newConvId = `conv-${Date.now()}`;
+    const initialText = options?.initialMessage;
+
+    const initialMessages = initialText
+      ? [
+          {
+            id: `msg-${Date.now()}`,
+            conversationId: newConvId,
+            senderId: 'user-me',
+            senderName: 'You',
+            text: initialText,
+            timestamp: 'Just now',
+            isMe: true,
+            attachedProduct: options?.attachedProduct,
+            attachedService: options?.attachedService,
+          },
+        ]
+      : [];
+
+    const newConversation: Conversation = {
+      id: newConvId,
+      businessId,
+      businessName: biz?.name || 'Verified Supplier',
+      businessAvatar:
+        biz?.avatar ||
+        'https://images.unsplash.com/photo-1560179704-617a1a2e8172?auto=format&fit=crop&w=120&q=80',
+      businessVerified: biz?.verified ?? true,
+      businessCity: biz?.city || 'India',
+      lastMessage: initialText || 'Started conversation',
+      lastMessageTime: 'Just now',
+      unreadCount: 0,
+      online: true,
+      messages: initialMessages,
+    };
+
+    setConversations((prev) => [newConversation, ...prev]);
+    setActiveConversationId(newConvId);
+    showToast(`Started direct chat with ${newConversation.businessName}!`, 'success');
+    router.push('/messages');
+  };
+
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -567,6 +646,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeConversationId,
         setActiveConversationId,
         sendMessage,
+        openConversationWithBusiness,
         unreadMessagesCount,
 
         notifications,

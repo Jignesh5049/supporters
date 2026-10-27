@@ -63,6 +63,7 @@ export type ScreenRoute =
   | 'subscription'
   | 'settings'
   | 'business_detail'
+  | 'product_detail'
   | 'wallet'
   | 'withdrawal'
   | 'withdrawal_history'
@@ -582,9 +583,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const userBusiness = businesses.find((b) => b.id === currentUser.businessId) || businesses[0];
 
   const updateBusinessProfile = (data: Partial<Business>) => {
-    if (!currentUser.businessId) return;
+    const targetId = currentUser.businessId || userBusiness?.id || 'b-1';
     setBusinesses((prev) =>
-      prev.map((b) => (b.id === currentUser.businessId ? { ...b, ...data } : b))
+      prev.map((b) => (b.id === targetId ? { ...b, ...data } : b))
     );
     showToast('Business details updated successfully!', 'success');
   };

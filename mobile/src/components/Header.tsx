@@ -75,19 +75,21 @@ export function Header() {
 
       {/* Right: Notifications */}
       <View style={styles.rightSection}>
-        <TouchableOpacity
-          onPress={() => navigate('notifications')}
-          style={styles.iconButton}
-          activeOpacity={0.7}
-          accessibilityLabel="Notifications"
-        >
-          <Feather name="bell" size={20} color="#475467" />
-          {unreadNotificationsCount > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {currentRoute !== 'notifications' && (
+          <TouchableOpacity
+            onPress={() => navigate('notifications')}
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Notifications"
+          >
+            <Feather name="bell" size={20} color="#475467" />
+            {unreadNotificationsCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </Animated.View>
   );

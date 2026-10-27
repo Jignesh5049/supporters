@@ -28,6 +28,7 @@ import { ReferralScreen } from './src/screens/ReferralScreen';
 import { SubscriptionScreen } from './src/screens/SubscriptionScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { BusinessDetailScreen } from './src/screens/BusinessDetailScreen';
+import { ProductDetailScreen } from './src/screens/ProductDetailScreen';
 import { WalletScreen } from './src/screens/WalletScreen';
 import { WithdrawalScreen } from './src/screens/WithdrawalScreen';
 import { WithdrawalHistoryScreen } from './src/screens/WithdrawalHistoryScreen';
@@ -103,6 +104,8 @@ function MainApp() {
         return <SettingsScreen />;
       case 'business_detail':
         return <BusinessDetailScreen />;
+      case 'product_detail':
+        return <ProductDetailScreen />;
       case 'wallet':
         return <WalletScreen />;
       case 'withdrawal':

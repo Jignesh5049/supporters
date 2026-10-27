@@ -259,6 +259,28 @@ export default function ReferralPage() {
         </div>
       </div>
 
+      {/* Wallet Callout Banner */}
+      <div className="bg-[#2E3192] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xs">
+        <div className="flex items-center gap-3.5 flex-1 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-white">App Wallet Balance</h3>
+            <p className="text-xs text-white/85 line-clamp-2 mt-0.5">
+              Referral credits appear in your wallet for withdrawal
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/wallet"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/25 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition-all shrink-0 self-start sm:self-auto shadow-2xs"
+        >
+          <span>View Wallet</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-xs space-y-1">

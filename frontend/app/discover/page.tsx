@@ -17,7 +17,16 @@ import {
   X,
   Building2,
   Package,
-  Wrench
+  Wrench,
+  Tv,
+  Shirt,
+  Utensils,
+  Sprout,
+  Cpu,
+  Hammer,
+  Briefcase,
+  Star,
+  MapPin
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -48,6 +57,87 @@ function DiscoverContent() {
     'Custom ERP'
   ];
 
+  // Trade Categories matching mobile DiscoverScreen
+  const tradeCategories = [
+    {
+      id: 'electronics',
+      name: 'Electronics',
+      categoryKey: 'Electronics',
+      bgColor: '#EEF0FA',
+      iconColor: '#2E3192',
+      icon: Tv,
+    },
+    {
+      id: 'fashion',
+      name: 'Fashion',
+      categoryKey: 'Fashion',
+      bgColor: '#FCE7F3',
+      iconColor: '#A3238E',
+      icon: Shirt,
+    },
+    {
+      id: 'food',
+      name: 'Food & FMCG',
+      categoryKey: 'Food',
+      bgColor: '#E0F2FE',
+      iconColor: '#0284C7',
+      icon: Utensils,
+    },
+    {
+      id: 'agri',
+      name: 'Agri Trade',
+      categoryKey: 'Agriculture',
+      bgColor: '#F3E8FF',
+      iconColor: '#4338CA',
+      icon: Sprout,
+    },
+    {
+      id: 'machinery',
+      name: 'Machinery',
+      categoryKey: 'Technology',
+      bgColor: '#EDE9FE',
+      iconColor: '#334155',
+      icon: Cpu,
+    },
+    {
+      id: 'hardware',
+      name: 'Hardware',
+      categoryKey: 'Construction',
+      bgColor: '#DBEAFE',
+      iconColor: '#2E3192',
+      icon: Hammer,
+    },
+    {
+      id: 'beauty',
+      name: 'Beauty/Care',
+      categoryKey: 'Beauty',
+      bgColor: '#FCE7F3',
+      iconColor: '#A3238E',
+      icon: Sparkles,
+    },
+    {
+      id: 'services',
+      name: 'Services',
+      categoryKey: 'Services',
+      bgColor: '#E0F2FE',
+      iconColor: '#0284C7',
+      icon: Briefcase,
+    },
+  ];
+
+  const matchCategory = (itemCategory: string, selected: string) => {
+    if (selected === 'All') return true;
+    const cat = (itemCategory || '').toLowerCase();
+    const sel = selected.toLowerCase();
+    if (cat === sel) return true;
+    if (sel === 'food' || sel === 'food & fmcg') return cat.includes('food');
+    if (sel === 'agri' || sel === 'agri trade' || sel === 'agriculture') return cat.includes('agri');
+    if (sel === 'beauty' || sel === 'beauty/care') return cat.includes('beauty');
+    if (sel === 'machinery') return cat.includes('machin') || cat.includes('technol') || cat.includes('industrial');
+    if (sel === 'hardware') return cat.includes('hardware') || cat.includes('construct');
+    return cat.includes(sel) || sel.includes(cat);
+  };
+
   // Filtered Products
   const filteredProducts = useMemo(() => {
     return products
@@ -56,7 +146,7 @@ function DiscoverContent() {
           p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.businessName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+        const matchesCat = matchCategory(p.category, selectedCategory);
         const matchesCity = selectedCity === 'All Cities' || p.businessCity === selectedCity;
         const matchesVerified = !verifiedOnly || p.businessVerified;
         const matchesRating = p.rating >= minRating;
@@ -79,7 +169,7 @@ function DiscoverContent() {
           s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.businessName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCat = selectedCategory === 'All' || s.category.toLowerCase() === selectedCategory.toLowerCase();
+        const matchesCat = matchCategory(s.category, selectedCategory);
         const matchesCity = selectedCity === 'All Cities' || s.businessCity === selectedCity;
         const matchesVerified = !verifiedOnly || s.businessVerified;
         const matchesRating = s.rating >= minRating;
@@ -102,7 +192,7 @@ function DiscoverContent() {
           b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           b.about.toLowerCase().includes(searchQuery.toLowerCase()) ||
           b.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
-        const matchesCat = selectedCategory === 'All' || b.category.toLowerCase() === selectedCategory.toLowerCase();
+        const matchesCat = matchCategory(b.category, selectedCategory);
         const matchesCity = selectedCity === 'All Cities' || b.city === selectedCity;
         const matchesVerified = !verifiedOnly || b.verified;
         const matchesRating = b.rating >= minRating;
@@ -132,10 +222,7 @@ function DiscoverContent() {
       <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 sm:p-7 shadow-2xs space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#00AEEF]">
-              Marketplace & Network Directory
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-[#111111] mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-[#111111]">
               Discover Verified Products, Services & Suppliers
             </h1>
             <p className="text-xs sm:text-sm text-[#667085] mt-1">
@@ -182,6 +269,100 @@ function DiscoverContent() {
         </div>
       </div>
 
+      {/* City Filter Scroller (matching mobile Discover screen) */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+        {CITIES.map((city) => {
+          const isSelected = selectedCity === city;
+          return (
+            <button
+              key={city}
+              type="button"
+              onClick={() => setSelectedCity(city)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                isSelected
+                  ? 'bg-[#2E3192] text-white shadow-xs'
+                  : 'bg-white hover:bg-gray-100 text-[#667085] border border-[#E5E7EB]'
+              }`}
+            >
+              {city}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Trade Categories Card (matching mobile Discover screen) */}
+      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-1.5 h-5 bg-[#2E3192] rounded-full" />
+            <h2 className="text-base sm:text-lg font-black text-[#111111]">
+              Trade Categories
+            </h2>
+            {selectedCategory !== 'All' && (
+              <span className="text-xs font-bold text-[#2E3192] bg-[#2E3192]/10 px-2.5 py-0.5 rounded-full">
+                Active: {selectedCategory}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory('All');
+              setSearchQuery('');
+            }}
+            className="text-xs font-bold text-[#00AEEF] hover:text-[#2E3192] transition-colors"
+          >
+            {selectedCategory !== 'All' ? 'Reset to All' : 'Explore 140+ >'}
+          </button>
+        </div>
+
+        {/* 8 Trade Categories Grid */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-4">
+          {tradeCategories.map((cat) => {
+            const isCatActive =
+              selectedCategory.toLowerCase() === cat.name.toLowerCase() ||
+              selectedCategory.toLowerCase() === cat.categoryKey.toLowerCase();
+            const Icon = cat.icon;
+
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  if (isCatActive) {
+                    setSelectedCategory('All');
+                  } else {
+                    setSelectedCategory(cat.categoryKey);
+                  }
+                }}
+                className="flex flex-col items-center gap-2 group transition-transform active:scale-95 text-center"
+              >
+                <div
+                  style={{ backgroundColor: cat.bgColor }}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 shadow-2xs ${
+                    isCatActive ? 'ring-2 ring-[#2E3192] ring-offset-2 shadow-sm' : ''
+                  }`}
+                >
+                  <Icon
+                    className="w-6 h-6 sm:w-7 sm:h-7 transition-colors"
+                    style={{ color: cat.iconColor }}
+                  />
+                </div>
+                <span
+                  className={`text-[11px] sm:text-xs leading-tight transition-colors line-clamp-1 ${
+                    isCatActive
+                      ? 'font-bold text-[#2E3192]'
+                      : 'font-medium text-[#111111] group-hover:text-[#2E3192]'
+                  }`}
+                >
+                  {cat.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Main Tabs (Products, Services, Businesses) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-2">
         <div className="flex items-center gap-2">
@@ -222,188 +403,161 @@ function DiscoverContent() {
           </button>
         </div>
 
-        {/* Sort and Filter controls */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#667085]">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#111111] focus:outline-none focus:border-[#2E3192]"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="rating">Highest Rated</option>
-              {activeTab !== 'businesses' && (
-                <>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          <button
-            onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="md:hidden flex items-center gap-1.5 px-3 py-1.5 border border-[#E5E7EB] rounded-lg text-xs font-semibold bg-white text-[#111111]"
+        {/* Right Sort Dropdown */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-[#667085] font-semibold">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="bg-white border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111111] focus:outline-none focus:border-[#2E3192]"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Filters</span>
-          </button>
+            <option value="recommended">Recommended</option>
+            <option value="rating">Highest Rated</option>
+            {activeTab !== 'businesses' && (
+              <>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+              </>
+            )}
+          </select>
         </div>
       </div>
 
-      {/* 2-Column Layout: Filter Sidebar + Result Grid */}
-      <div className="flex gap-6 items-start">
-        {/* Desktop Filter Sidebar */}
-        <aside
-          className={`w-64 bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-5 shrink-0 ${
-            showMobileFilters ? 'block' : 'hidden md:block'
-          }`}
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
-            <h3 className="text-sm font-bold text-[#111111] flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-[#2E3192]" />
-              <span>Filters</span>
-            </h3>
+      {/* Unified Horizontal Filter Toolbar (eliminates narrow squeezed sidebar) */}
+      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          {/* Verified Suppliers Toggle Chip */}
+          <button
+            type="button"
+            onClick={() => setVerifiedOnly(!verifiedOnly)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold transition-all ${
+              verifiedOnly
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs'
+                : 'bg-[#F7F8FC] text-[#667085] hover:text-[#111111] hover:bg-gray-100 border border-[#E5E7EB]'
+            }`}
+          >
+            <ShieldCheck className={`w-4 h-4 ${verifiedOnly ? 'text-emerald-600' : 'text-[#667085]'}`} />
+            <span>Verified Suppliers Only</span>
+          </button>
+
+          {/* Rating Filter Dropdown */}
+          <div className="inline-flex items-center gap-1.5 bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl px-3 py-1.5 text-xs">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span className="font-semibold text-[#667085]">Min Rating:</span>
+            <select
+              value={minRating}
+              onChange={(e) => setMinRating(Number(e.target.value))}
+              className="bg-transparent font-bold text-[#111111] focus:outline-none cursor-pointer"
+            >
+              <option value={0}>Any Rating</option>
+              <option value={4.5}>4.5★ and above</option>
+              <option value={4.8}>4.8★ and above</option>
+            </select>
+          </div>
+
+          {/* Active Category Chip */}
+          {selectedCategory !== 'All' && (
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#2E3192]/10 text-[#2E3192] text-xs font-bold border border-[#2E3192]/20">
+              <span>Category: {selectedCategory}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('All')}
+                className="hover:text-[#2E3192]/70 ml-0.5"
+                title="Remove category filter"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          )}
+
+          {/* Active City Chip */}
+          {selectedCity !== 'All Cities' && (
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#00AEEF]/10 text-[#00AEEF] text-xs font-bold border border-[#00AEEF]/20">
+              <MapPin className="w-3 h-3 text-[#00AEEF]" />
+              <span>{selectedCity}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedCity('All Cities')}
+                className="hover:text-[#00AEEF]/70 ml-0.5"
+                title="Remove city filter"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          )}
+
+          {/* Reset Filters */}
+          {(selectedCategory !== 'All' || selectedCity !== 'All Cities' || verifiedOnly || minRating > 0 || searchQuery) && (
             <button
+              type="button"
               onClick={resetFilters}
-              className="text-xs font-semibold text-[#00AEEF] hover:underline"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
             >
-              Reset
+              Reset Filters
             </button>
-          </div>
-
-          {/* Category Filter */}
-          <div>
-            <label className="block text-xs font-bold text-[#111111] mb-2 uppercase tracking-wider">
-              Category
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full text-xs p-2 bg-[#F7F8FC] border border-[#E5E7EB] rounded-lg text-[#111111] focus:outline-none focus:border-[#2E3192]"
-            >
-              <option value="All">All Categories</option>
-              {CATEGORIES.filter((c) => c.id !== 'all').map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Location / City Filter */}
-          <div>
-            <label className="block text-xs font-bold text-[#111111] mb-2 uppercase tracking-wider">
-              Commercial Hub (City)
-            </label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full text-xs p-2 bg-[#F7F8FC] border border-[#E5E7EB] rounded-lg text-[#111111] focus:outline-none focus:border-[#2E3192]"
-            >
-              {CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Verified Checkbox */}
-          <div className="pt-2">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#111111]">
-              <input
-                type="checkbox"
-                checked={verifiedOnly}
-                onChange={(e) => setVerifiedOnly(e.target.checked)}
-                className="w-4 h-4 text-[#2E3192] rounded border-gray-300 focus:ring-[#2E3192]"
-              />
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#00AEEF]" />
-                <span>Verified Businesses Only</span>
-              </span>
-            </label>
-          </div>
-
-          {/* Rating Filter */}
-          <div>
-            <label className="block text-xs font-bold text-[#111111] mb-2 uppercase tracking-wider">
-              Minimum Rating
-            </label>
-            <div className="space-y-1.5 text-xs">
-              {[0, 4.5, 4.8].map((val) => (
-                <label key={val} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="minRating"
-                    checked={minRating === val}
-                    onChange={() => setMinRating(val)}
-                    className="text-[#2E3192] focus:ring-[#2E3192]"
-                  />
-                  <span>{val === 0 ? 'Any Rating' : `${val}★ and above`}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Results Grid */}
-        <div className="flex-1 min-w-0">
-          {activeTab === 'products' && (
-            filteredProducts.length === 0 ? (
-              <EmptyState
-                icon={Package}
-                title="No products found"
-                description="We couldn't find any products matching your current filters. Try relaxing your location or category selection."
-                actionLabel="Clear Filters"
-                onAction={resetFilters}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            )
-          )}
-
-          {activeTab === 'services' && (
-            filteredServices.length === 0 ? (
-              <EmptyState
-                icon={Wrench}
-                title="No services found"
-                description="No verified services match your criteria. Try expanding your search location."
-                actionLabel="Clear Filters"
-                onAction={resetFilters}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredServices.map((s) => (
-                  <ServiceCard key={s.id} service={s} />
-                ))}
-              </div>
-            )
-          )}
-
-          {activeTab === 'businesses' && (
-            filteredBusinesses.length === 0 ? (
-              <EmptyState
-                icon={Building2}
-                title="No businesses found"
-                description="No business listings matched your query. Try searching for city hubs like Ahmedabad, Surat, or Vadodara."
-                actionLabel="Clear Filters"
-                onAction={resetFilters}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredBusinesses.map((b) => (
-                  <BusinessCard key={b.id} business={b} />
-                ))}
-              </div>
-            )
           )}
         </div>
+
+        <span className="text-xs text-[#667085] ml-auto">
+          Showing {activeTab === 'products' ? filteredProducts.length : activeTab === 'services' ? filteredServices.length : filteredBusinesses.length} results
+        </span>
+      </div>
+
+      {/* Results Grid - Full Width, Beautiful & Unified across the whole web */}
+      <div>
+        {activeTab === 'products' && (
+          filteredProducts.length === 0 ? (
+            <EmptyState
+              icon={Package}
+              title="No products found"
+              description="We couldn't find any products matching your current filters. Try relaxing your location or category selection."
+              actionLabel="Clear Filters"
+              onAction={resetFilters}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )
+        )}
+
+        {activeTab === 'services' && (
+          filteredServices.length === 0 ? (
+            <EmptyState
+              icon={Wrench}
+              title="No services found"
+              description="No verified services match your criteria. Try expanding your search location."
+              actionLabel="Clear Filters"
+              onAction={resetFilters}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredServices.map((s) => (
+                <ServiceCard key={s.id} service={s} />
+              ))}
+            </div>
+          )
+        )}
+
+        {activeTab === 'businesses' && (
+          filteredBusinesses.length === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title="No businesses found"
+              description="No business listings matched your query. Try searching for city hubs like Ahmedabad, Surat, or Vadodara."
+              actionLabel="Clear Filters"
+              onAction={resetFilters}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filteredBusinesses.map((b) => (
+                <BusinessCard key={b.id} business={b} />
+              ))}
+            </div>
+          )
+        )}
       </div>
     </div>
   );

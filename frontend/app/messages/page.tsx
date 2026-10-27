@@ -10,10 +10,16 @@ import { MessageSquare } from 'lucide-react';
 export default function MessagesPage() {
   const { conversations, activeConversationId, setActiveConversationId } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
-  const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(() => Boolean(activeConversationId));
 
   const activeConversation =
     conversations.find((c) => c.id === activeConversationId) || conversations[0];
+
+  React.useEffect(() => {
+    if (activeConversationId) {
+      setMobileShowChat(true);
+    }
+  }, [activeConversationId]);
 
   const handleSelectConversation = (id: string) => {
     setActiveConversationId(id);

@@ -8,7 +8,6 @@ import { CreatePostWidget } from '@/components/feed/CreatePostWidget';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { EmptyState } from '@/components/common/EmptyState';
 import {
-  Search,
   Sparkles,
   FilePlus,
   Plus,
@@ -22,7 +21,6 @@ import {
 export default function HomePage() {
   const { posts, addPost, showToast } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [feedSearch, setFeedSearch] = useState('');
 
   // Requirement Modal State - just message description
   const [reqModalOpen, setReqModalOpen] = useState(false);
@@ -63,17 +61,8 @@ export default function HomePage() {
     showToast('Your requirement is published! Verified sellers will send you quotes.', 'success');
   };
 
-  // Filter posts based on search and category
+  // Filter posts based on category
   const filteredPosts = posts.filter((post) => {
-    const matchesSearch =
-      post.content.toLowerCase().includes(feedSearch.toLowerCase()) ||
-      post.businessName.toLowerCase().includes(feedSearch.toLowerCase()) ||
-      post.location.toLowerCase().includes(feedSearch.toLowerCase()) ||
-      (post.attachedProduct?.title.toLowerCase().includes(feedSearch.toLowerCase()) ?? false) ||
-      (post.attachedService?.title.toLowerCase().includes(feedSearch.toLowerCase()) ?? false);
-
-    if (!matchesSearch) return false;
-
     if (selectedCategory === 'all') return true;
 
     // Map category
@@ -91,26 +80,6 @@ export default function HomePage() {
     <div className="flex gap-6 items-start justify-center pb-12">
       {/* Center: Social-Business Feed */}
       <div className="flex-1 max-w-2xl min-w-0 space-y-4">
-        {/* In-feed quick search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={feedSearch}
-            onChange={(e) => setFeedSearch(e.target.value)}
-            placeholder="Search posts, offers or verified updates in your feed..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl text-xs sm:text-sm text-[#111111] placeholder-[#667085] focus:outline-none focus:border-[#2E3192] shadow-2xs transition-all"
-          />
-          {feedSearch && (
-            <button
-              onClick={() => setFeedSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#667085] hover:text-[#111111]"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
         {/* Post a Requirement Banner Button */}
         <div className="bg-[#0F172A] border border-gray-800 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
           <div className="flex items-center gap-3">
@@ -148,11 +117,10 @@ export default function HomePage() {
             <EmptyState
               icon={Sparkles}
               title="No posts found in this category"
-              description="Try selecting 'All' or adjusting your search term to see more business updates."
-              actionLabel="Reset Filters"
+              description="Try selecting 'All' to see all business and wholesale updates."
+              actionLabel="Reset to All"
               onAction={() => {
                 setSelectedCategory('all');
-                setFeedSearch('');
               }}
             />
           ) : (

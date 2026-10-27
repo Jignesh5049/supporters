@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Linking
+  Linking,
+  Modal,
+  TextInput,
+  Platform
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -34,6 +37,8 @@ export function BusinessDetailScreen() {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'products' | 'services' | 'posts' | 'about'>('products');
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followersSearch, setFollowersSearch] = useState('');
 
   const businessId = routeParams?.businessId || 'b-1';
   const business = businesses.find((b) => b.id === businessId) || businesses[0];
@@ -48,10 +53,6 @@ export function BusinessDetailScreen() {
   );
 
   const isFollowing = followedBusinessIds.includes(business.id);
-
-  const handleCall = () => {
-    Linking.openURL(`tel:${business.phone}`);
-  };
 
   const handleOpenInstagram = () => {
     if (!business.instagram) return;
@@ -79,7 +80,8 @@ export function BusinessDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
       {/* Top Navigation Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigate('home')} style={styles.backBtn}>
@@ -160,22 +162,6 @@ export function BusinessDetailScreen() {
                 {savedBusinessIds.includes(business.id) ? 'Saved' : 'Save'}
               </Text>
             </TouchableOpacity>
-
-            {/* Follow Business Button */}
-            <TouchableOpacity
-              onPress={() => toggleFollowBusiness(business.id)}
-              style={[styles.followBtn, isFollowing && styles.followBtnActive]}
-              activeOpacity={0.75}
-            >
-              {isFollowing ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="checkmark-circle" size={13} color="#065F46" />
-                  <Text style={styles.followBtnTextActive}>Following</Text>
-                </View>
-              ) : (
-                <Text style={styles.followBtnText}>+ Follow</Text>
-              )}
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -197,10 +183,41 @@ export function BusinessDetailScreen() {
             ⭐ {business.rating} ({business.reviewCount} verified reviews)
           </Text>
           <Text style={styles.dot}>·</Text>
-          <Text style={styles.followersText}>
-            {business.followersCount.toLocaleString()} supporters
-          </Text>
+          <TouchableOpacity onPress={() => setFollowersModalOpen(true)} activeOpacity={0.7}>
+            <Text style={[styles.followersText, { color: colors.primary, textDecorationLine: 'underline', fontWeight: '700' }]}>
+              {business.followersCount.toLocaleString()} supporters
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Verified Business Contact Number Banner (Shown when enabled in settings) */}
+        {business.showPhone && business.phone && (
+          <TouchableOpacity
+            style={styles.verifiedContactCard}
+            onPress={() => Linking.openURL(`tel:${business.phone}`)}
+            activeOpacity={0.85}
+            accessibilityLabel={`Call ${business.name} at ${business.phone}`}
+          >
+            <View style={styles.verifiedContactLeft}>
+              <View style={styles.contactPhoneIconCircle}>
+                <Ionicons name="call" size={13} color="#0D9488" />
+              </View>
+              <View style={styles.contactNumberCol}>
+                <View style={styles.contactBadgeRow}>
+                  <Text style={styles.contactLabel}>Official Contact Number</Text>
+                  <View style={styles.tradeActiveDot} />
+                  <Text style={styles.tradeActiveText}>Available</Text>
+                </View>
+                <Text style={styles.contactPhoneText}>{business.phone}</Text>
+              </View>
+            </View>
+
+            <View style={styles.callNowPill}>
+              <Feather name="phone-call" size={12} color="#0D9488" />
+              <Text style={styles.callNowPillText}>Call</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* CTA Bar */}
         <View style={styles.ctaRow}>
@@ -213,9 +230,22 @@ export function BusinessDetailScreen() {
             <Text style={styles.primaryCtaText}>Contact Supplier</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryCta} onPress={handleCall}>
-            <Feather name="phone" size={13} color={colors.primary} />
-            <Text style={styles.secondaryCtaText}>Call Business</Text>
+          <TouchableOpacity
+            style={[styles.secondaryCta, isFollowing && styles.followingCta]}
+            onPress={() => toggleFollowBusiness(business.id)}
+            activeOpacity={0.8}
+          >
+            {isFollowing ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="checkmark-circle" size={14} color="#065F46" />
+                <Text style={styles.followingCtaText}>Following</Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Feather name="user-plus" size={13} color={colors.primary} />
+                <Text style={styles.secondaryCtaText}>Follow</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -290,24 +320,39 @@ export function BusinessDetailScreen() {
                         </Text>
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.productTitle} numberOfLines={2}>
-                      {p.title}
-                    </Text>
+                    <TouchableOpacity
+                      onPress={() => navigate('product_detail', { productId: p.id })}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.productTitle} numberOfLines={2}>
+                        {p.title}
+                      </Text>
+                    </TouchableOpacity>
                     <Text style={styles.productMoq}>
                       MOQ: {p.minOrderQuantity} {p.unit}
                     </Text>
-                    <TouchableOpacity
-                      style={styles.quoteSmallBtn}
-                      onPress={() =>
-                        openEnquiryModal({
-                          title: p.title,
-                          businessName: business.name,
-                          businessId: business.id,
-                        })
-                      }
-                    >
-                      <Text style={styles.quoteSmallText}>Get Quote</Text>
-                    </TouchableOpacity>
+                    <View style={styles.productActionsRow}>
+                      <TouchableOpacity
+                        style={styles.viewProdBtn}
+                        onPress={() => navigate('product_detail', { productId: p.id })}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.viewProdText}>View Product</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.quoteSmallBtn}
+                        onPress={() =>
+                          openConversationWithBusiness(business.id, {
+                            initialMessage: `Namaste! I am interested in "${p.title}" (₹${p.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                            attachedProduct: p,
+                          })
+                        }
+                        activeOpacity={0.85}
+                      >
+                        <Feather name="message-square" size={11} color="#FFFFFF" />
+                        <Text style={styles.quoteSmallText}>Contact Supplier</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               );
@@ -433,6 +478,21 @@ export function BusinessDetailScreen() {
                   </Text>
                 </View>
               )}
+              {business.showPhone && business.phone && (
+                <View style={styles.tableRow}>
+                  <Text style={styles.colLabel}>Direct Contact:</Text>
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(`tel:${business.phone}`)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="call" size={12} color={colors.primary} />
+                    <Text style={[styles.colValue, { color: colors.primary, fontWeight: '700' }]}>
+                      {business.phone}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               {business.priceRange && (
                 <View style={styles.tableRow}>
                   <Text style={styles.colLabel}>Price Range:</Text>
@@ -472,6 +532,98 @@ export function BusinessDetailScreen() {
         )}
       </View>
     </ScrollView>
+
+    {/* Instagram-style Followers Modal */}
+    <Modal
+      visible={followersModalOpen}
+      animationType="slide"
+      onRequestClose={() => setFollowersModalOpen(false)}
+    >
+      <View style={styles.followersModalContainer}>
+        <View style={styles.followersModalHeader}>
+          <TouchableOpacity onPress={() => setFollowersModalOpen(false)} style={styles.backModalBtn}>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={styles.followersModalTitle}>Supporters & Followers</Text>
+            <Text style={styles.followersModalSub}>{business.name} · {business.followersCount} Followers</Text>
+          </View>
+          <View style={{ width: 28 }} />
+        </View>
+
+        {/* Search bar */}
+        <View style={styles.followersSearchWrap}>
+          <Feather name="search" size={14} color="#667085" />
+          <TextInput
+            style={styles.followersSearchInput}
+            value={followersSearch}
+            onChangeText={setFollowersSearch}
+            placeholder="Search followers..."
+            placeholderTextColor="#94A3B8"
+          />
+          {followersSearch.length > 0 && (
+            <TouchableOpacity onPress={() => setFollowersSearch('')}>
+              <Feather name="x" size={14} color="#667085" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* List of Followers */}
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, paddingHorizontal: 16 }}>
+          {businesses
+            .filter((b) => b.id !== business.id)
+            .filter((b) => {
+              if (!followersSearch.trim()) return true;
+              const q = followersSearch.toLowerCase();
+              return (
+                b.name.toLowerCase().includes(q) ||
+                b.category.toLowerCase().includes(q) ||
+                b.city.toLowerCase().includes(q)
+              );
+            })
+            .map((biz) => {
+              return (
+                <View key={biz.id} style={styles.followerItemRow}>
+                  <TouchableOpacity
+                    style={styles.followerItemLeft}
+                    onPress={() => {
+                      setFollowersModalOpen(false);
+                      navigate('business_detail', { businessId: biz.id });
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={{ uri: biz.avatar }} style={styles.followerAvatar} />
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Text style={styles.followerName} numberOfLines={1}>{biz.name}</Text>
+                        {biz.verified && (
+                          <Ionicons name="checkmark-circle" size={12} color={colors.accentCyan} />
+                        )}
+                      </View>
+                      <Text style={styles.followerCategory} numberOfLines={1}>
+                        {biz.category} · {biz.city}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.messageFollowerBtn}
+                    onPress={() => {
+                      setFollowersModalOpen(false);
+                      openConversationWithBusiness(biz.id);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="message-circle" size={12} color={colors.primary} />
+                    <Text style={styles.messageFollowerBtnText}>Message</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+        </ScrollView>
+      </View>
+    </Modal>
+  </View>
   );
 }
 
@@ -641,6 +793,90 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
+  verifiedContactCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0FDFA',
+    borderWidth: 1,
+    borderColor: '#99F6E4',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  verifiedContactLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  contactPhoneIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#CCFBF1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  contactNumberCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  contactBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  contactLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#0F766E',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  tradeActiveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#10B981',
+  },
+  tradeActiveText: {
+    fontSize: 9.5,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  contactPhoneText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 1,
+  },
+  callNowPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#99F6E4',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flexShrink: 0,
+    shadowColor: '#0D9488',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  callNowPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0D9488',
+  },
   ctaRow: {
     flexDirection: 'row',
     gap: 8,
@@ -673,6 +909,16 @@ const styles = StyleSheet.create({
   },
   secondaryCtaText: {
     color: colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  followingCta: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  followingCtaText: {
+    color: '#065F46',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -989,5 +1235,114 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  productActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  viewProdBtn: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  viewProdText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  followersModalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+  },
+  followersModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  backModalBtn: {
+    padding: 6,
+  },
+  followersModalTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  followersModalSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  followersSearchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    gap: 8,
+  },
+  followersSearchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textPrimary,
+    padding: 0,
+  },
+  followerItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+    gap: 12,
+  },
+  followerItemLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  followerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E2E8F0',
+  },
+  followerName: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  followerCategory: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  messageFollowerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: colors.primaryLight,
+  },
+  messageFollowerBtnText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: colors.primary,
   },
 });

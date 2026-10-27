@@ -31,7 +31,7 @@ import { Suspense } from 'react';
 function ProductDetailContent() {
   const params = useParams();
   const productId = params?.id as string;
-  const { products, businesses, savedProductIds, toggleSaveProduct, openEnquiryModal } = useApp();
+  const { products, businesses, savedProductIds, toggleSaveProduct, openConversationWithBusiness, openEnquiryModal } = useApp();
 
   const product = products.find((p) => p.id === productId) || products[0];
   const business = businesses.find((b) => b.id === product?.businessId) || businesses[0];
@@ -50,19 +50,6 @@ function ProductDetailContent() {
 
   return (
     <div className="space-y-8">
-      {/* Top Navigation & Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <nav className="flex items-center gap-2 text-xs text-[#667085] truncate">
-          <Link href="/" className="hover:text-[#2E3192]">Home</Link>
-          <span>/</span>
-          <Link href="/discover?tab=products" className="hover:text-[#2E3192]">Products</Link>
-          <span>/</span>
-          <span className="text-[#2E3192] font-semibold">{product.category}</span>
-          <span>/</span>
-          <span className="text-[#111111] font-medium truncate max-w-xs">{product.title}</span>
-        </nav>
-      </div>
-
       {/* Main Product Showcase Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-white border border-[#E5E7EB] rounded-2xl p-6 sm:p-8 shadow-2xs">
         {/* Left: Gallery (5 cols) */}
@@ -255,16 +242,20 @@ function ProductDetailContent() {
           <div className="space-y-2.5">
             <button
               onClick={() =>
-                openEnquiryModal({
-                  title: product.title,
-                  businessName: business.name,
-                  businessId: business.id
+                openConversationWithBusiness(business.id, {
+                  initialMessage: `Namaste! I am interested in "${product.title}" (₹${product.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                  attachedProduct: {
+                    id: product.id,
+                    title: product.title,
+                    price: product.price,
+                    image: product.images[0]
+                  }
                 })
               }
               className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors"
             >
-              <Send className="w-4 h-4" />
-              <span>Send Quotation Enquiry</span>
+              <MessageSquare className="w-4 h-4" />
+              <span>Contact Supplier</span>
             </button>
 
             <Link

@@ -26,6 +26,7 @@ export function ProfileScreen() {
     businesses,
     followedBusinessIds,
     toggleFollowBusiness,
+    openConversationWithBusiness,
     navigate
   } = useApp();
   const [activeTab, setActiveTab] = useState<'posts' | 'catalog' | 'about'>('posts');
@@ -289,6 +290,28 @@ export function ProfileScreen() {
                   <Text style={styles.catalogMoq}>
                     MOQ: {p.minOrderQuantity} {p.unit}
                   </Text>
+                  <View style={styles.catalogActionsRow}>
+                    <TouchableOpacity
+                      style={styles.viewProdBtn}
+                      onPress={() => navigate('product_detail', { productId: p.id })}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.viewProdText}>View Product</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.contactProdBtn}
+                      onPress={() =>
+                        openConversationWithBusiness(p.businessId, {
+                          initialMessage: `Namaste! I am interested in "${p.title}" (₹${p.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                          attachedProduct: p,
+                        })
+                      }
+                      activeOpacity={0.85}
+                    >
+                      <Feather name="message-square" size={10} color="#FFFFFF" />
+                      <Text style={styles.contactProdText}>Contact Supplier</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             ))}
@@ -862,6 +885,38 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.textSecondary,
     marginTop: 2,
+    marginBottom: 4,
+  },
+  catalogActionsRow: {
+    gap: 4,
+    marginTop: 4,
+  },
+  viewProdBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  viewProdText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  contactProdBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  contactProdText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   aboutCard: {
     backgroundColor: '#FFFFFF',

@@ -8,7 +8,7 @@ import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
 import { ShareModal } from '@/components/common/ShareModal';
 import {
-  ThumbsUp,
+  Heart,
   MessageSquare,
   Share2,
   Bookmark,
@@ -31,6 +31,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
     toggleLikePost,
     savedPostIds,
     toggleSavePost,
+    openConversationWithBusiness,
     openEnquiryModal,
     showToast
   } = useApp();
@@ -39,34 +40,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
   const isSaved = savedPostIds.includes(post.id);
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [commentsList, setCommentsList] = useState<Array<{ id: string; user: string; text: string; time: string }>>([
-    {
-      id: 'c-1',
-      user: 'Mehul Patel (Vadodara)',
-      text: 'What is the lead time for 20 units shipped to GIDC Makarpura?',
-      time: '1h ago'
-    }
-  ]);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-
-    setCommentsList((prev) => [
-      ...prev,
-      {
-        id: `c-${Date.now()}`,
-        user: 'Aarav Mehta (You)',
-        text: commentText.trim(),
-        time: 'Just now'
-      }
-    ]);
-    setCommentText('');
-    showToast('Comment published', 'info');
-  };
 
   const hasAttachedItem = post.attachedProduct || post.attachedService;
 
@@ -295,15 +269,20 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
               <button
                 type="button"
                 onClick={() =>
-                  openEnquiryModal({
-                    title: post.attachedProduct?.title || post.attachedService?.title || 'Business Quotation',
-                    businessName: post.businessName,
-                    businessId: post.businessId
+                  openConversationWithBusiness(post.businessId, {
+                    initialMessage: post.attachedProduct
+                      ? `Namaste! I am interested in "${post.attachedProduct.title}" (₹${post.attachedProduct.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`
+                      : post.attachedService
+                      ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
+                      : `Namaste! I saw your post regarding "${post.businessName}" and would like to inquire about business collaboration.`,
+                    attachedProduct: post.attachedProduct,
+                    attachedService: post.attachedService,
                   })
                 }
-                className="flex-1 sm:flex-initial text-center px-3 py-1.5 text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-lg transition-colors shadow-2xs"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-lg transition-colors shadow-2xs"
               >
-                Contact Supplier
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Contact Supplier</span>
               </button>
             </div>
           </div>
@@ -312,15 +291,19 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
         {/* Social Counters */}
         <div className="px-4 sm:px-5 py-2 flex items-center justify-between text-xs text-[#667085] border-t border-[#E5E7EB]">
           <div className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-full bg-[#2E3192] text-white flex items-center justify-center text-[10px]">
-              👍
+            <span
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] transition-colors ${
+                isLiked ? 'bg-[#E11D48] text-white shadow-2xs' : 'bg-rose-100 text-rose-500'
+              }`}
+            >
+              <Heart className="w-2.5 h-2.5 fill-current" />
             </span>
-            <span>{post.likesCount}</span>
+            <span>
+              {post.likesCount} {post.likesCount === 1 ? 'like' : 'likes'}
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span>{commentsList.length + post.commentsCount} comments</span>
-            <span>·</span>
             <span>{post.sharesCount} shares</span>
           </div>
         </div>
@@ -330,19 +313,15 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           <button
             onClick={() => toggleLikePost(post.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-colors ${
-              isLiked ? 'text-[#2E3192] bg-blue-50/60' : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
+              isLiked ? 'text-[#E11D48] bg-rose-50/80 font-bold' : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
             }`}
           >
-            <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current text-[#2E3192]' : ''}`} />
-            <span>Like</span>
-          </button>
-
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111] transition-colors"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Comment</span>
+            <Heart
+              className={`w-4 h-4 transition-transform active:scale-125 ${
+                isLiked ? 'fill-[#E11D48] text-[#E11D48]' : 'text-[#667085]'
+              }`}
+            />
+            <span>{isLiked ? 'Liked' : 'Like'}</span>
           </button>
 
           <button
@@ -363,38 +342,6 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
             <span>Save</span>
           </button>
         </div>
-
-        {/* Expanded Comments Thread */}
-        {showComments && (
-          <div className="bg-[#F7F8FC] p-4 border-t border-[#E5E7EB] space-y-3 animate-in fade-in duration-150">
-            {commentsList.map((c) => (
-              <div key={c.id} className="bg-white p-3 rounded-xl border border-[#E5E7EB] text-xs">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-[#111111]">{c.user}</span>
-                  <span className="text-[11px] text-[#667085]">{c.time}</span>
-                </div>
-                <p className="text-[#111111] leading-relaxed">{c.text}</p>
-              </div>
-            ))}
-
-            <form onSubmit={handleAddComment} className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Write a public enquiry or comment..."
-                className="flex-1 px-3 py-2 text-xs bg-white border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-              />
-              <button
-                type="submit"
-                disabled={!commentText.trim()}
-                className="p-2 bg-[#2E3192] text-white rounded-xl disabled:opacity-50 hover:bg-[#242775] transition-colors"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
-            </form>
-          </div>
-        )}
       </article>
 
       {/* Share Modal */}

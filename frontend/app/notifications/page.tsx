@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -14,10 +15,12 @@ import {
   FileQuestion,
   Gift,
   Crown,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const {
     notifications,
     markNotificationAsRead,
@@ -61,6 +64,13 @@ export default function NotificationsPage() {
       <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-2xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-2 -ml-2 text-gray-500 hover:text-[#111111] hover:bg-gray-100 rounded-xl transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div className="w-10 h-10 rounded-xl bg-[#2E3192]/10 text-[#2E3192] flex items-center justify-center">
               <Bell className="w-5 h-5" />
             </div>

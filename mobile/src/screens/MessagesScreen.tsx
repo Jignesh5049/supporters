@@ -144,7 +144,15 @@ export function MessagesScreen() {
               >
                 {/* Attached Product Box */}
                 {item.attachedProduct && (
-                  <View style={styles.attachedProductBubble}>
+                  <TouchableOpacity
+                    style={styles.attachedProductBubble}
+                    onPress={() => {
+                      if (item.attachedProduct?.id) {
+                        navigate('product_detail', { productId: item.attachedProduct.id });
+                      }
+                    }}
+                    activeOpacity={0.85}
+                  >
                     <Image
                       source={{ uri: item.attachedProduct.image }}
                       style={styles.attachedProductImg}
@@ -156,8 +164,11 @@ export function MessagesScreen() {
                       <Text style={styles.attachedProductPrice}>
                         ₹{item.attachedProduct.price.toLocaleString('en-IN')}
                       </Text>
+                      <Text style={{ fontSize: 9.5, color: colors.primary, fontWeight: '700', marginTop: 2 }}>
+                        View Product ↗
+                      </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
 
                 <View

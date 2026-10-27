@@ -17,7 +17,8 @@ export function NotificationsScreen() {
     notifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    navigate
+    navigate,
+    goBack
   } = useApp();
 
   const [selectedCategory, setSelectedCategory] = useState<NotificationCategory>('All');
@@ -42,7 +43,21 @@ export function NotificationsScreen() {
       {/* Header Area */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.heading}>Notifications</Text>
+          <View style={styles.titleWithBack}>
+            <TouchableOpacity
+              onPress={() => {
+                if (!goBack()) {
+                  navigate('home');
+                }
+              }}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Go back"
+            >
+              <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.heading}>Notifications</Text>
+          </View>
           <TouchableOpacity
             onPress={markAllNotificationsAsRead}
             style={styles.markAllBtn}
@@ -166,6 +181,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 12,
+  },
+  titleWithBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backBtn: {
+    padding: 2,
   },
   heading: {
     fontSize: 17,

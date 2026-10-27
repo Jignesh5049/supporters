@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { CURRENT_USER } from '@/lib/mock-data';
 import { Avatar } from '@/components/common/Avatar';
@@ -27,6 +27,7 @@ import {
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     unreadNotificationsCount,
     unreadMessagesCount,
@@ -114,18 +115,20 @@ export function Header() {
           </Link>
 
           {/* Notifications */}
-          <Link
-            href="/notifications"
-            className="relative p-2 text-[#667085] hover:text-[#2E3192] hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadNotificationsCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-[#A3238E] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                {unreadNotificationsCount}
-              </span>
-            )}
-          </Link>
+          {pathname !== '/notifications' && (
+            <Link
+              href="/notifications"
+              className="relative p-2 text-[#667085] hover:text-[#2E3192] hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-[#A3238E] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </Link>
+          )}
 
 
 

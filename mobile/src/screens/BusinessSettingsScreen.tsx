@@ -13,11 +13,12 @@ import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function BusinessSettingsScreen() {
-  const { userBusiness, navigate, showToast } = useApp();
+  const { userBusiness, updateBusinessProfile, navigate, showToast } = useApp();
 
   const [inquiryAlerts, setInquiryAlerts] = useState(true);
   const [postAlerts, setPostAlerts] = useState(true);
   const [catalogPublic, setCatalogPublic] = useState(true);
+  const [showPhone, setShowPhone] = useState(userBusiness?.showPhone ?? true);
 
   const handleDeactivate = () => {
     Alert.alert(
@@ -162,6 +163,49 @@ export function BusinessSettingsScreen() {
             <Switch
               value={catalogPublic}
               onValueChange={setCatalogPublic}
+              trackColor={{ false: '#CBD5E1', true: colors.primary }}
+            />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleTextCol}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.toggleTitle}>Show Number on Catalog</Text>
+                <View
+                  style={{
+                    backgroundColor: showPhone ? '#ECFDF5' : '#F3F4F6',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontWeight: '800',
+                      color: showPhone ? '#065F46' : '#6B7280',
+                    }}
+                  >
+                    {showPhone ? 'VISIBLE' : 'HIDDEN'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.toggleSub}>
+                Allow buyers to view your contact number ({userBusiness?.phone}) directly on your catalog storefront
+              </Text>
+            </View>
+            <Switch
+              value={showPhone}
+              onValueChange={(val) => {
+                setShowPhone(val);
+                updateBusinessProfile({ showPhone: val });
+                showToast(
+                  val
+                    ? 'Phone number will now be shown on your catalog'
+                    : 'Phone number is now hidden from your catalog',
+                  'info'
+                );
+              }}
               trackColor={{ false: '#CBD5E1', true: colors.primary }}
             />
           </View>

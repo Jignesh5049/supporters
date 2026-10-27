@@ -13,6 +13,7 @@ export interface Business {
   state: string;
   fullAddress: string;
   phone: string;
+  showPhone?: boolean;
   email: string;
   website?: string;
   gstin?: string;
@@ -183,6 +184,7 @@ export interface UserProfile {
   city: string;
   state: string;
   phone: string;
+  showPhone?: boolean;
   email: string;
   followersCount: number;
   followingCount: number;

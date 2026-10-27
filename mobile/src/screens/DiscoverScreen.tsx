@@ -27,6 +27,7 @@ export function DiscoverScreen() {
     followedBusinessIds,
     toggleFollowBusiness,
     openEnquiryModal,
+    openConversationWithBusiness,
     navigate
   } = useApp();
 
@@ -315,26 +316,26 @@ export function DiscoverScreen() {
 
                   <View style={styles.actionRow}>
                     <TouchableOpacity
+                      style={styles.detailsButton}
+                      onPress={() =>
+                        navigate('product_detail', { productId: p.id })
+                      }
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.detailsButtonText}>View Product</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
                       style={styles.enquireButton}
                       onPress={() =>
-                        openEnquiryModal({
-                          title: p.title,
-                          businessName: p.businessName,
-                          businessId: p.businessId,
+                        openConversationWithBusiness(p.businessId, {
+                          initialMessage: `Namaste! I am interested in "${p.title}" (₹${p.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                          attachedProduct: p,
                         })
                       }
                       activeOpacity={0.85}
                     >
-                      <Feather name="send" size={12} color="#FFFFFF" />
-                      <Text style={styles.enquireButtonText}>Get Quote</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.detailsButton}
-                      onPress={() =>
-                        navigate('business_detail', { businessId: p.businessId })
-                      }
-                    >
-                      <Text style={styles.detailsButtonText}>Supplier</Text>
+                      <Feather name="message-square" size={12} color="#FFFFFF" />
+                      <Text style={styles.enquireButtonText}>Contact Supplier</Text>
                     </TouchableOpacity>
                   </View>
                 </View>

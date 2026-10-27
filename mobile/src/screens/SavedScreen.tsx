@@ -26,6 +26,7 @@ export function SavedScreen() {
     toggleSaveService,
     toggleSaveBusiness,
     openEnquiryModal,
+    openConversationWithBusiness,
     navigate
   } = useApp();
 
@@ -107,20 +108,28 @@ export function SavedScreen() {
 
                     <View style={styles.itemActions}>
                       <TouchableOpacity
+                        style={styles.viewProductBtn}
+                        onPress={() => navigate('product_detail', { productId: p.id })}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.viewProductBtnText}>View Product</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.quoteBtn}
                         onPress={() =>
-                          openEnquiryModal({
-                            title: p.title,
-                            businessName: p.businessName,
-                            businessId: p.businessId,
+                          openConversationWithBusiness(p.businessId, {
+                            initialMessage: `Namaste! I am interested in "${p.title}" (₹${p.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                            attachedProduct: p,
                           })
                         }
+                        activeOpacity={0.8}
                       >
-                        <Text style={styles.quoteBtnText}>Get Quote</Text>
+                        <Text style={styles.quoteBtnText}>Contact Supplier</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.removeBtn}
                         onPress={() => toggleSaveProduct(p.id)}
+                        activeOpacity={0.8}
                       >
                         <Text style={styles.removeBtnText}>Remove</Text>
                       </TouchableOpacity>
@@ -330,10 +339,23 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
   },
+  viewProductBtn: {
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  viewProductBtnText: {
+    color: '#334155',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   quoteBtn: {
     backgroundColor: colors.primary,
     paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRadius: 6,
   },
   quoteBtnText: {

@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { ServiceCard } from '@/components/service/ServiceCard';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { EmptyState } from '@/components/common/EmptyState';
+import { FollowListModal } from '@/components/common/FollowListModal';
 import { MOCK_REVIEWS } from '@/lib/mock-data';
 import {
   MapPin,
@@ -42,6 +43,7 @@ function BusinessProfileContent() {
     posts,
     followedBusinessIds,
     toggleFollowBusiness,
+    openConversationWithBusiness,
     openEnquiryModal,
     userBusiness
   } = useApp();
@@ -51,6 +53,7 @@ function BusinessProfileContent() {
   const isOwner = userBusiness?.id === business.id;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'services' | 'posts' | 'reviews'>('overview');
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   const businessProducts = products.filter((p) => p.businessId === business.id);
   const businessServices = services.filter((s) => s.businessId === business.id);
@@ -124,16 +127,18 @@ function BusinessProfileContent() {
 
         {/* Profile Content */}
         <div className="px-6 sm:px-8 pb-6 pt-0 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
-            <div className="flex items-end gap-4">
-              <Avatar
-                src={business.avatar}
-                name={business.name}
-                size="xl"
-                verified={business.verified}
-                className="ring-4 ring-white shadow-md bg-white"
-              />
-              <div className="space-y-0.5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="-mt-14 sm:-mt-16 shrink-0">
+                <Avatar
+                  src={business.avatar}
+                  name={business.name}
+                  size="xl"
+                  verified={business.verified}
+                  className="ring-4 ring-white shadow-md bg-white"
+                />
+              </div>
+              <div className="space-y-0.5 pt-1 sm:pt-0 sm:pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-black text-[#111111]">
                     {business.name}
@@ -158,25 +163,33 @@ function BusinessProfileContent() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 sm:pb-1">
               <button
                 onClick={() => toggleFollowBusiness(business.id)}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
                   isFollowing
-                    ? 'bg-gray-100 text-[#667085] hover:bg-gray-200'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
                     : 'bg-[#2E3192] text-white hover:bg-[#242775] shadow-xs'
                 }`}
               >
-                {isFollowing ? 'Following' : '+ Follow Business'}
+                {isFollowing ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Following</span>
+                  </>
+                ) : (
+                  <span>+ Follow</span>
+                )}
               </button>
 
-              <Link
-                href="/messages"
+              <button
+                type="button"
+                onClick={() => openConversationWithBusiness(business.id)}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#00AEEF] bg-cyan-50 hover:bg-cyan-100 rounded-xl transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Message</span>
-              </Link>
+                <span>Contact Supplier</span>
+              </button>
 
               <button
                 onClick={() =>
@@ -196,11 +209,18 @@ function BusinessProfileContent() {
 
           {/* Followers, Rating and Response Metrics */}
           <div className="flex items-center gap-6 pt-3 border-t border-[#E5E7EB] text-xs text-[#667085]">
-            <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowFollowersModal(true)}
+              className="flex items-center gap-1.5 hover:text-[#2E3192] transition-colors cursor-pointer group text-left"
+              title="Click to view followers"
+            >
               <Users className="w-4 h-4 text-[#2E3192]" />
-              <span className="font-extrabold text-[#111111]">{business.followersCount.toLocaleString('en-IN')}</span>
-              <span>followers</span>
-            </div>
+              <span className="font-extrabold text-[#111111] group-hover:text-[#2E3192] underline decoration-dotted decoration-gray-300">
+                {business.followersCount.toLocaleString('en-IN')}
+              </span>
+              <span className="group-hover:text-[#2E3192]">followers</span>
+            </button>
             <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               <span className="font-extrabold text-[#111111]">{business.rating}</span>
@@ -211,6 +231,34 @@ function BusinessProfileContent() {
               <span>Responds in {business.responseRate}</span>
             </div>
           </div>
+
+          {/* Verified Business Contact Number Banner (Shown when enabled in settings) */}
+          {business.showPhone && business.phone && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 shrink-0">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">
+                      Official Contact Number
+                    </span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] font-medium text-emerald-700">Available for Trade</span>
+                  </div>
+                  <p className="text-sm font-extrabold text-gray-900 mt-0.5">{business.phone}</p>
+                </div>
+              </div>
+              <a
+                href={`tel:${business.phone}`}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-teal-50 text-teal-700 border border-teal-200 rounded-lg text-xs font-bold transition-all shadow-2xs self-start sm:self-auto"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call Now</span>
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Tab Navigation */}
@@ -376,13 +424,15 @@ function BusinessProfileContent() {
                   </div>
                 )}
 
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 text-[#00AEEF] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-[#111111] block">Phone / WhatsApp</span>
-                    <a href={`tel:${business.phone}`} className="hover:text-[#2E3192]">{business.phone}</a>
+                {business.showPhone && business.phone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-4 h-4 text-[#00AEEF] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-[#111111] block">Phone / WhatsApp</span>
+                      <a href={`tel:${business.phone}`} className="hover:text-[#2E3192] font-semibold text-[#2E3192]">{business.phone}</a>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-[#00AEEF] shrink-0 mt-0.5" />
@@ -514,6 +564,26 @@ function BusinessProfileContent() {
           </div>
         </div>
       )}
+
+      {/* Instagram-style Business Followers Modal */}
+      <FollowListModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        title="Followers"
+        subtitle={`${business.name} · ${business.followersCount.toLocaleString('en-IN')} Followers`}
+        items={businesses
+          .filter((b) => b.id !== business.id)
+          .map((b) => ({
+            id: b.id,
+            name: b.name,
+            username: b.slug,
+            avatar: b.avatar,
+            verified: b.verified,
+            category: b.category,
+            city: b.city,
+            businessType: b.businessType,
+          }))}
+      />
     </div>
   );
 }

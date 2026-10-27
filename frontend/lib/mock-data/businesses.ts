@@ -25,6 +25,7 @@ export const MOCK_BUSINESSES: Business[] = [
     responseRate: 'Under 1 hour',
     tags: ['Smart TV', 'OEM Manufacturer', 'LED Panels', 'Wholesale Electronics'],
     isFollowed: false,
+    showPhone: true,
   },
   {
     id: 'b-2',

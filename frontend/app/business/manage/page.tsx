@@ -1,9 +1,10 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { FollowListModal } from '@/components/common/FollowListModal';
 import {
   Building2,
   Package,
@@ -111,7 +112,7 @@ export function BusinessNavHeader() {
 }
 
 export default function BusinessManagePage() {
-  const { userBusiness, posts, products, services } = useApp();
+  const { userBusiness, posts, products, services, businesses } = useApp();
 
   // If user does not have a business profile
   if (!userBusiness) {
@@ -145,6 +146,7 @@ export default function BusinessManagePage() {
   const businessServices = services.filter((s) => s.businessId === userBusiness.id);
 
   const completion = userBusiness.profileCompletion || 85;
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -181,9 +183,9 @@ export default function BusinessManagePage() {
 
         {/* Profile Details Header */}
         <div className="p-6 sm:p-8 pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-4">
-            <div className="flex items-end gap-4">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white shadow-md bg-white overflow-hidden relative shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white shadow-md bg-white overflow-hidden relative shrink-0 -mt-12 sm:-mt-16">
                 <img
                   src={userBusiness.avatar}
                   alt={userBusiness.name}
@@ -191,7 +193,7 @@ export default function BusinessManagePage() {
                 />
               </div>
 
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 pt-1 sm:pt-0 sm:pb-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-[#111111]">
                     {userBusiness.name}
@@ -209,7 +211,7 @@ export default function BusinessManagePage() {
             </div>
 
             {/* Quick Action Buttons */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 sm:pb-1">
               <Link
                 href="/business/posts"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2E3192] text-white text-xs font-bold hover:bg-[#242775] transition-colors shadow-2xs"
@@ -249,16 +251,24 @@ export default function BusinessManagePage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-xs space-y-1">
+        <button
+          type="button"
+          onClick={() => setShowFollowersModal(true)}
+          className="bg-white border border-[#E5E7EB] hover:border-[#2E3192]/40 hover:shadow-md transition-all rounded-2xl p-5 shadow-xs space-y-1 text-left cursor-pointer group"
+          title="Click to view followers list"
+        >
           <div className="flex items-center justify-between text-[#667085]">
-            <span className="text-xs font-bold uppercase tracking-wider">Followers</span>
+            <span className="text-xs font-bold uppercase tracking-wider group-hover:text-[#2E3192]">Followers</span>
             <Users className="w-4 h-4 text-[#2E3192]" />
           </div>
-          <p className="text-2xl font-black text-[#111111]">
+          <p className="text-2xl font-black text-[#111111] group-hover:text-[#2E3192]">
             {userBusiness.followersCount.toLocaleString('en-IN')}
           </p>
-          <span className="text-[11px] text-emerald-600 font-semibold">+140 this week</span>
-        </div>
+          <span className="text-[11px] text-emerald-600 font-semibold flex items-center justify-between">
+            <span>+140 this week</span>
+            <span className="text-[#2E3192] text-[10px] font-bold">View list ↗</span>
+          </span>
+        </button>
 
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-xs space-y-1">
           <div className="flex items-center justify-between text-[#667085]">
@@ -434,6 +444,26 @@ export default function BusinessManagePage() {
           </div>
         </div>
       </div>
+
+      {/* Instagram-style Business Followers Modal */}
+      <FollowListModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        title="Followers"
+        subtitle={`${userBusiness.name} · ${userBusiness.followersCount.toLocaleString('en-IN')} Followers`}
+        items={businesses
+          .filter((b) => b.id !== userBusiness.id)
+          .map((b) => ({
+            id: b.id,
+            name: b.name,
+            username: b.slug,
+            avatar: b.avatar,
+            verified: b.verified,
+            category: b.category,
+            city: b.city,
+            businessType: b.businessType,
+          }))}
+      />
     </div>
   );
 }

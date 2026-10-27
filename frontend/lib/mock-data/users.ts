@@ -15,7 +15,8 @@ export const CURRENT_USER: UserProfile = {
   businessesCount: 1,
   memberSince: 'March 2023',
   hasBusiness: true,
-  businessId: 'b-1'
+  businessId: 'b-1',
+  showPhone: true,
 };
 
 export const MOCK_REFERRAL_DATA: ReferralStat = {

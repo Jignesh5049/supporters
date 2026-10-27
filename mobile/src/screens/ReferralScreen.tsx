@@ -234,9 +234,11 @@ export function ReferralScreen() {
             <View style={styles.walletIconCircle}>
               <Ionicons name="wallet" size={18} color="#FFFFFF" />
             </View>
-            <View>
+            <View style={styles.walletTextCol}>
               <Text style={styles.walletBannerTitle}>App Wallet Balance</Text>
-              <Text style={styles.walletBannerSub}>Referral credits appear in your wallet for withdrawal</Text>
+              <Text style={styles.walletBannerSub} numberOfLines={2}>
+                Referral credits appear in your wallet for withdrawal
+              </Text>
             </View>
           </View>
           <TouchableOpacity
@@ -639,15 +641,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colors.primary,
     borderRadius: 14,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     marginBottom: 14,
+    gap: 10,
   },
   walletBannerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     flex: 1,
-    marginRight: 10,
+    minWidth: 0,
   },
   walletIconCircle: {
     width: 36,
@@ -656,30 +660,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+  },
+  walletTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
   walletBannerTitle: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '800',
   },
   walletBannerSub: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 10,
-    marginTop: 1,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 10.5,
+    lineHeight: 14,
+    marginTop: 2,
   },
   walletBannerAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
+    flexShrink: 0,
   },
   walletBannerActionText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   historySection: {
     backgroundColor: '#FFFFFF',

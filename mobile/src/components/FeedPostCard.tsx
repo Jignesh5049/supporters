@@ -206,6 +206,22 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           {/* Direct CTA Buttons */}
           <View style={styles.attachedActionsRow}>
             <TouchableOpacity
+              onPress={() => {
+                if (post.attachedProduct) {
+                  navigate('product_detail', { productId: post.attachedProduct.id });
+                } else {
+                  navigate('business_detail', { businessId: post.businessId });
+                }
+              }}
+              style={styles.viewCatalogBtn}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.viewCatalogText}>
+                {post.attachedProduct ? 'View Product' : 'View Scope'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() =>
                 openConversationWithBusiness(post.businessId, {
                   initialMessage: post.attachedProduct
@@ -222,16 +238,6 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
             >
               <Feather name="message-square" size={12} color="#FFFFFF" />
               <Text style={styles.enquiryBtnText}>Contact Supplier</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() =>
-                navigate('business_detail', { businessId: post.businessId })
-              }
-              style={styles.viewCatalogBtn}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.viewCatalogText}>View Catalog</Text>
             </TouchableOpacity>
           </View>
         </View>

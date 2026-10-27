@@ -6,14 +6,14 @@ import Image from 'next/image';
 import { Product } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
-import { Bookmark, MapPin, Building2, Star } from 'lucide-react';
+import { Bookmark, MapPin, Building2, Star, MessageSquare } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { savedProductIds, toggleSaveProduct, openEnquiryModal } = useApp();
+  const { savedProductIds, toggleSaveProduct, openConversationWithBusiness } = useApp();
   const isSaved = savedProductIds.includes(product.id);
 
   return (
@@ -106,25 +106,30 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-4 pt-3 flex items-center gap-2">
+        <div className="mt-auto pt-3 border-t border-[#E5E7EB]/70 flex items-center gap-2">
           <Link
             href={`/product/${product.id}`}
-            className="flex-1 py-2 text-center text-xs font-semibold text-[#2E3192] bg-blue-50/70 hover:bg-blue-100/70 rounded-xl transition-colors"
+            className="flex-1 py-2 px-2 text-center text-xs font-semibold text-[#2E3192] bg-blue-50/70 hover:bg-blue-100/70 rounded-xl transition-colors truncate whitespace-nowrap"
           >
-            Details
+            View Product
           </Link>
           <button
             type="button"
             onClick={() =>
-              openEnquiryModal({
-                title: product.title,
-                businessName: product.businessName,
-                businessId: product.businessId
+              openConversationWithBusiness(product.businessId, {
+                initialMessage: `Namaste! I am interested in "${product.title}" (₹${product.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
+                attachedProduct: {
+                  id: product.id,
+                  title: product.title,
+                  price: product.price,
+                  image: product.images[0]
+                }
               })
             }
-            className="flex-1 py-2 text-center text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs"
+            className="flex-1 py-2 px-2 text-center text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs flex items-center justify-center gap-1.5 min-w-0"
           >
-            Send Enquiry
+            <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Contact Supplier</span>
           </button>
         </div>
       </div>

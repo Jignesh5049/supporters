@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   Archive,
   AlertCircle,
-  ThumbsUp,
+  Heart,
   MessageSquare,
   Image as ImageIcon,
   Send,
@@ -339,8 +339,8 @@ export default function BusinessPostsPage() {
 
                   {/* Basic engagement placeholder */}
                   <div className="flex items-center gap-4 text-xs text-[#667085] pt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <ThumbsUp className="w-3.5 h-3.5" /> {post.likesCount || 0} Likes
+                    <span className="inline-flex items-center gap-1 text-rose-600 font-medium">
+                      <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> {post.likesCount || 0} Likes
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount || 0} Enquiries
