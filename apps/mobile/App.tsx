@@ -1,5 +1,7 @@
+import './global.css';
 import React from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { PortalHost } from '@rn-primitives/portal';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -152,6 +154,8 @@ export default function App() {
       <AppProvider>
         <MainApp />
       </AppProvider>
+      {/* Dialogs and other overlays from @supporters/ui-native render here. */}
+      <PortalHost />
     </SafeAreaProvider>
   );
 }
