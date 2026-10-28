@@ -1,0 +1,16 @@
+{
+  "name": "supporters",
+  "private": true,
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24.11 <25"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @supporters/web dev",
+    "dev:mobile": "pnpm --filter @supporters/mobile start",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build"
+  }
+}
