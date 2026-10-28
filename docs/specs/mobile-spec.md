@@ -83,13 +83,13 @@ All mobile UI is built from one shared library, `packages/ui-native`, based on *
 packages/
   design-tokens/   # shared with web: tokens.ts is the single source of colours, radius, spacing, type
   ui-native/
-    tailwind.config.js   # NativeWind preset generated from design-tokens
+    tailwind-preset.js   # NativeWind preset + design tokens, used by the app's tailwind.config.js
     src/components/      # button.tsx, input.tsx, card.tsx, dialog.tsx, sheet.tsx, tabs.tsx, ...
     src/patterns/        # BusinessCard, ProductCard, FeedPostCard, EmptyState, ...
     src/lib/utils.ts     # cn(): clsx + tailwind-merge
 ```
 
-- **Adding a component:** run `pnpm dlx @react-native-reusables/cli@latest add <name>` inside `packages/ui-native`, then align it to the tokens.
+- **Adding a component:** inside `packages/ui-native`, run `pnpm dlx shadcn@latest add https://reactnativereusables.com/r/nativewind/<name>.json` (the RNR CLI expects an app, not a library), then pin new dependencies and align colours to tokens. Keep `"cssVariables": true` in `components.json`; see the package README.
 - **Version note:** NativeWind 4.2.7 is the latest stable release and runs on Tailwind CSS **3.4.19**, while web uses Tailwind 4.3. Both read the same values from `design-tokens/tokens.ts`, so they stay in sync. We move mobile to NativeWind 5 (Tailwind 4) once it leaves release candidate.
 - **Variants** use `class-variance-authority` 0.7 with the same names as web: `variant` (default, secondary, outline, ghost, destructive, link) and `size` (default, sm, lg, icon).
 - **Icons** come from `lucide-react-native` 1.63, the same icon set as web's `lucide-react`. The prototype's `@expo/vector-icons` are replaced.
