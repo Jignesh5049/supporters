@@ -10,13 +10,17 @@ The repo is a pnpm workspace:
 apps/web        Next.js web app      (@supporters/web)
 apps/mobile     Expo mobile app      (@supporters/mobile)
 packages/shared limits, schemas, types shared by every app (@supporters/shared)
+packages/design-tokens colours, radius, spacing, type for web and mobile (@supporters/design-tokens)
 ```
 
 1. Install Node.js 24 LTS (the version is in `.nvmrc`).
 2. Run `corepack enable` once, so the pnpm version pinned in `package.json` is used.
 3. Run `pnpm install` at the repo root. Never run `npm install` inside an app.
 4. Start an app with `pnpm dev:web` or `pnpm dev:mobile`.
-5. Before pushing, run `pnpm lint`, `pnpm typecheck` and `pnpm test`, the same checks CI runs.
+5. Before pushing, run `pnpm format`, `pnpm lint`, `pnpm typecheck` and `pnpm test`, the same checks CI runs. Set your editor to format with Prettier on save.
+6. Run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once, so `git blame` skips bulk formatting commits.
+
+Design tokens (colours, radius, spacing, type) live in `packages/design-tokens`. Change them only there, and see its README.
 
 To add a dependency to one app, run `pnpm --filter @supporters/web add <pkg>`. To use a workspace package, add `"@supporters/shared": "workspace:*"`. pnpm blocks dependency install scripts: if a new package needs one, run `pnpm approve-builds <pkg>` and say why in the PR.
 
