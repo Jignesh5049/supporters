@@ -1,0 +1,26 @@
+/*
+ * Shared web stylesheet. Apps import this once (apps/web/app/globals.css).
+ * Colours, radius, type and shadows come from @supporters/design-tokens.
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@supporters/design-tokens/tokens.css';
+@import '@supporters/design-tokens/tailwind-theme.css';
+
+/* Let Tailwind see the classes used inside this package. */
+@source '../**/*.{ts,tsx}';
+
+/*
+ * v1 is light theme only. `dark:` styles apply only under an explicit .dark
+ * class (never set yet), not when the OS is in dark mode.
+ */
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
