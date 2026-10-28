@@ -106,7 +106,6 @@ jobs:
           # SDK 58 upgrade fixes. Report-only until that upgrade lands.
           - app: mobile
             blocking: false
-    continue-on-error: ${{ !matrix.blocking }}
     defaults:
       run:
         working-directory: ${{ matrix.app }}
@@ -115,4 +114,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-      - run: npm audit --omit=dev --audit-level=high
+      # A report-only app posts a warning annotation instead of failing,
+      # so the check stays green while the advisories remain visible.
+      - name: npm audit
+        env:
+          BLOCKING: ${{ matrix.blocking }}
+          APP: ${{ matrix.app }}
+        run: |
+          if npm audit --omit=dev --audit-level=high; then exit 0; fi
+          if [ "$BLOCKING" = "true" ]; then exit 1; fi
+          echo "::warning title=npm audit ($APP)::High-severity advisories found. Report-only until the Expo SDK 58 upgrade."
