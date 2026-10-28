@@ -1,0 +1,13 @@
+# Generated or vendored
+pnpm-lock.yaml
+**/.next/
+**/.expo/
+**/dist/
+**/build/
+**/coverage/
+**/android/
+**/ios/
+packages/design-tokens/css/
+
+# Markdown is hand-formatted: Prettier pads wide tables, which makes specs hard to diff.
+*.md
