@@ -113,6 +113,7 @@ export function BusinessNavHeader() {
 
 export default function BusinessManagePage() {
   const { userBusiness, posts, products, services, businesses } = useApp();
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   // If user does not have a business profile
   if (!userBusiness) {
@@ -146,7 +147,6 @@ export default function BusinessManagePage() {
   const businessServices = services.filter((s) => s.businessId === userBusiness.id);
 
   const completion = userBusiness.profileCompletion || 85;
-  const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">

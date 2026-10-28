@@ -231,7 +231,7 @@ export default function BusinessPostsPage() {
                     <label className="text-xs font-bold text-[#111111] block mb-1">Aspect Ratio</label>
                     <select
                       value={aspectRatio}
-                      onChange={(e) => setAspectRatio(e.target.value as any)}
+                      onChange={(e) => setAspectRatio(e.target.value as typeof aspectRatio)}
                       className="w-full px-3 py-2 text-xs bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl focus:bg-white focus:border-[#2E3192] outline-none"
                     >
                       <option value="16:9">16:9 Landscape</option>
@@ -242,7 +242,7 @@ export default function BusinessPostsPage() {
                     <label className="text-xs font-bold text-[#111111] block mb-1">Post Category</label>
                     <select
                       value={postType}
-                      onChange={(e) => setPostType(e.target.value as any)}
+                      onChange={(e) => setPostType(e.target.value as typeof postType)}
                       className="w-full px-3 py-2 text-xs bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl focus:bg-white focus:border-[#2E3192] outline-none"
                     >
                       <option value="update">Trade Update</option>

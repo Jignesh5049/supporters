@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
 import { EmptyState } from '@/components/common/EmptyState';
-import { NotificationCategory } from '@/types';
+import { NotificationCategory, NotificationItem } from '@/types';
 import {
   Bell,
   CheckCheck,
@@ -189,7 +189,7 @@ function NotificationRow({
   icon,
   onRead
 }: {
-  item: any;
+  item: NotificationItem;
   icon: React.ReactNode;
   onRead: () => void;
 }) {

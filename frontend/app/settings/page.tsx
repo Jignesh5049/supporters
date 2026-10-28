@@ -117,7 +117,7 @@ export default function SettingsPage() {
             return (
               <button
                 key={s.id}
-                onClick={() => setActiveSection(s.id as any)}
+                onClick={() => setActiveSection(s.id as typeof activeSection)}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-[#2E3192] text-white shadow-xs'

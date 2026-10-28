@@ -97,7 +97,7 @@ export default function EditBusinessPage() {
       updateBusinessProfile({
         name: name.trim(),
         category: category.trim(),
-        businessType: businessType as any,
+        businessType: businessType,
         about: about.trim(),
         avatar: avatar.trim() || userBusiness?.avatar,
         coverImage: coverImage.trim() || userBusiness?.coverImage,
@@ -188,7 +188,7 @@ export default function EditBusinessPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-[#2E3192] text-white shadow-2xs'
@@ -227,7 +227,7 @@ export default function EditBusinessPage() {
                 <label className="text-xs font-bold text-[#111111] block mb-1">Business Type</label>
                 <select
                   value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value as any)}
+                  onChange={(e) => setBusinessType(e.target.value as typeof businessType)}
                   className="w-full px-4 py-2.5 text-xs bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl focus:bg-white focus:border-[#2E3192] outline-none"
                 >
                   <option value="Manufacturer">Manufacturer</option>
@@ -460,7 +460,7 @@ export default function EditBusinessPage() {
                 className="w-full px-4 py-2.5 text-xs bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl focus:bg-white focus:border-[#2E3192] outline-none"
               />
               <p className="text-[11px] text-[#667085] mt-1">
-                Used for the "Get Directions" button on your public storefront.
+                Used for the &ldquo;Get Directions&rdquo; button on your public storefront.
               </p>
             </div>
           </div>

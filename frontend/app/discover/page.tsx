@@ -408,7 +408,7 @@ function DiscoverContent() {
           <span className="text-[#667085] font-semibold">Sort:</span>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             className="bg-white border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111111] focus:outline-none focus:border-[#2E3192]"
           >
             <option value="recommended">Recommended</option>

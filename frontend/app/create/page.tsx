@@ -49,6 +49,7 @@ function CreateFlowContent() {
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam && ['product', 'service', 'post', 'offer'].includes(tabParam)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs the form from the URL and the context draft, which loads after mount; replaced by API-backed drafts in Phase 1
       setActiveTab(tabParam as 'product' | 'service' | 'post' | 'offer');
     }
 

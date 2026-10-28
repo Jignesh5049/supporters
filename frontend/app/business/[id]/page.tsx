@@ -272,7 +272,7 @@ function BusinessProfileContent() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`py-3 px-4 text-xs font-bold whitespace-nowrap border-b-2 transition-all ${
                 activeTab === tab.id
                   ? 'border-[#2E3192] text-[#2E3192] bg-white'
