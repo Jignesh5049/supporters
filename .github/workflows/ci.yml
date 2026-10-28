@@ -67,6 +67,9 @@ jobs:
           - name: Shared (types, tests)
             package: '@supporters/shared'
             scripts: typecheck test
+          - name: UI web (types, component tests)
+            package: '@supporters/ui-web'
+            scripts: typecheck test
           - name: Design tokens (generated CSS, types, tests)
             package: '@supporters/design-tokens'
             scripts: check typecheck test
