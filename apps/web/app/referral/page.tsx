@@ -19,7 +19,7 @@ import {
   HelpCircle,
   Sparkles,
   Wallet,
-  XCircle
+  XCircle,
 } from 'lucide-react';
 
 export default function ReferralPage() {
@@ -78,7 +78,8 @@ export default function ReferralPage() {
             </h1>
 
             <p className="text-xs sm:text-sm text-[#667085] leading-relaxed">
-              Introduce verified manufacturers, wholesalers, and traders to Supporters. Earn rewards directly into your app wallet for your first two successful business referrals.
+              Introduce verified manufacturers, wholesalers, and traders to Supporters. Earn rewards
+              directly into your app wallet for your first two successful business referrals.
             </p>
 
             <div className="flex items-center gap-3 pt-1">
@@ -112,7 +113,11 @@ export default function ReferralPage() {
                 onClick={handleCopyCode}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#A3238E] hover:underline"
               >
-                {copiedCode ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                {copiedCode ? (
+                  <Check className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
                 <span>{copiedCode ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
@@ -151,7 +156,9 @@ export default function ReferralPage() {
 
           <div className="inline-flex items-center gap-1.5 bg-[#A3238E]/10 border border-[#A3238E]/20 px-3 py-1 rounded-full text-xs font-bold text-[#A3238E] self-start sm:self-auto">
             <Coins className="w-3.5 h-3.5" />
-            <span>Earned: ₹{referralData.rewardsEarned} / ₹{referralData.maxRewardLimit}</span>
+            <span>
+              Earned: ₹{referralData.rewardsEarned} / ₹{referralData.maxRewardLimit}
+            </span>
           </div>
         </div>
 
@@ -214,8 +221,8 @@ export default function ReferralPage() {
               referralData.successful >= 2
                 ? 'bg-emerald-50/70 border-emerald-300'
                 : referralData.successful === 1
-                ? 'bg-amber-50/60 border-amber-300'
-                : 'bg-[#F8FAFC] border-gray-200'
+                  ? 'bg-amber-50/60 border-amber-300'
+                  : 'bg-[#F8FAFC] border-gray-200'
             }`}
           >
             <div className="flex items-center justify-between mb-2">
@@ -252,8 +259,9 @@ export default function ReferralPage() {
           <div className="text-xs text-sky-800 space-y-1">
             <p className="font-bold">Important Policy & Reward Limit</p>
             <p className="text-sky-700 leading-relaxed">
-              Every member can earn a maximum of <strong>₹500 in total rewards</strong> (₹300 for the 1st referral + ₹200 for the 2nd referral).
-              Referrals from the 3rd invitation onward do not receive cash rewards, but help grow your business network.
+              Every member can earn a maximum of <strong>₹500 in total rewards</strong> (₹300 for
+              the 1st referral + ₹200 for the 2nd referral). Referrals from the 3rd invitation
+              onward do not receive cash rewards, but help grow your business network.
             </p>
           </div>
         </div>
@@ -288,9 +296,7 @@ export default function ReferralPage() {
             <span className="text-xs font-bold uppercase tracking-wider">Total Invites</span>
             <Users className="w-4 h-4 text-[#2E3192]" />
           </div>
-          <p className="text-2xl font-black text-[#111111]">
-            {referralData.totalReferrals}
-          </p>
+          <p className="text-2xl font-black text-[#111111]">{referralData.totalReferrals}</p>
           <span className="text-[11px] text-[#667085]">Businesses invited</span>
         </div>
 
@@ -299,9 +305,7 @@ export default function ReferralPage() {
             <span className="text-xs font-bold uppercase tracking-wider">Successful</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-black text-emerald-600">
-            {referralData.successful}
-          </p>
+          <p className="text-2xl font-black text-emerald-600">{referralData.successful}</p>
           <span className="text-[11px] text-[#667085]">Verified & eligible</span>
         </div>
 
@@ -310,9 +314,7 @@ export default function ReferralPage() {
             <span className="text-xs font-bold uppercase tracking-wider">Pending</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-amber-600">
-            {referralData.pending}
-          </p>
+          <p className="text-2xl font-black text-amber-600">{referralData.pending}</p>
           <span className="text-[11px] text-[#667085]">Under verification</span>
         </div>
 
@@ -333,7 +335,9 @@ export default function ReferralPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
           <div>
             <h2 className="text-base font-bold text-[#111111]">Referral History</h2>
-            <p className="text-xs text-[#667085]">Track friends and businesses registered using your code</p>
+            <p className="text-xs text-[#667085]">
+              Track friends and businesses registered using your code
+            </p>
           </div>
           <Link
             href="/wallet"

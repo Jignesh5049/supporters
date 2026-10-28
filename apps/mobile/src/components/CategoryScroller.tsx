@@ -22,10 +22,7 @@ const ICON_MAP: Record<string, keyof typeof Feather.glyphMap> = {
   cpu: 'cpu',
 };
 
-export function CategoryScroller({
-  selectedCategory,
-  onSelectCategory,
-}: CategoryScrollerProps) {
+export function CategoryScroller({ selectedCategory, onSelectCategory }: CategoryScrollerProps) {
   return (
     <View style={styles.container}>
       <ScrollView
@@ -47,11 +44,7 @@ export function CategoryScroller({
               ]}
               activeOpacity={0.75}
             >
-              <Feather
-                name={iconName}
-                size={13}
-                color={isSelected ? '#FFFFFF' : '#667085'}
-              />
+              <Feather name={iconName} size={13} color={isSelected ? '#FFFFFF' : '#667085'} />
               <Text
                 style={[
                   styles.categoryText,

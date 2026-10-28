@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -36,7 +29,8 @@ export function WithdrawalHistoryScreen() {
             </View>
             <Text style={styles.emptyTitle}>No withdrawal requests yet</Text>
             <Text style={styles.emptySubtitle}>
-              When you submit a payout request for your referral earnings, its progress (Pending, Processing, Completed) will be tracked here.
+              When you submit a payout request for your referral earnings, its progress (Pending,
+              Processing, Completed) will be tracked here.
             </Text>
             <TouchableOpacity
               style={styles.actionBtn}
@@ -91,16 +85,26 @@ export function WithdrawalHistoryScreen() {
 
                   <View style={styles.detailsRow}>
                     <Text style={styles.detailText}>
-                      Method: <Text style={{ fontWeight: '700', color: colors.textPrimary }}>{req.method}</Text>
+                      Method:{' '}
+                      <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                        {req.method}
+                      </Text>
                     </Text>
                     {req.method === 'UPI' && req.upiId && (
                       <Text style={styles.detailText}>
-                        VPA: <Text style={{ fontWeight: '700', color: colors.textPrimary }}>{req.upiId}</Text>
+                        VPA:{' '}
+                        <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                          {req.upiId}
+                        </Text>
                       </Text>
                     )}
                     {req.method === 'Bank Account' && req.accountNumber && (
                       <Text style={styles.detailText}>
-                        A/C: <Text style={{ fontWeight: '700', color: colors.textPrimary }}>••••{req.accountNumber.slice(-4)}</Text> ({req.ifscCode})
+                        A/C:{' '}
+                        <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                          ••••{req.accountNumber.slice(-4)}
+                        </Text>{' '}
+                        ({req.ifscCode})
                       </Text>
                     )}
                   </View>

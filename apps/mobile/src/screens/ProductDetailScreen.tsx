@@ -36,7 +36,7 @@ export function ProductDetailScreen() {
   const isSaved = savedProductIds.includes(product.id);
 
   const moreFromBusiness = products.filter(
-    (p) => p.id !== product.id && p.businessId === product.businessId
+    (p) => p.id !== product.id && p.businessId === product.businessId,
   );
 
   const handleContactSupplier = (targetProduct = product) => {
@@ -88,10 +88,7 @@ export function ProductDetailScreen() {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Main Product Image Carousel */}
         <View style={styles.imageGalleryContainer}>
           <Image
@@ -115,10 +112,7 @@ export function ProductDetailScreen() {
               <TouchableOpacity
                 key={idx}
                 onPress={() => setSelectedImgIdx(idx)}
-                style={[
-                  styles.thumbWrapper,
-                  selectedImgIdx === idx && styles.thumbWrapperActive,
-                ]}
+                style={[styles.thumbWrapper, selectedImgIdx === idx && styles.thumbWrapperActive]}
                 activeOpacity={0.8}
               >
                 <Image source={{ uri: img }} style={styles.thumbImg} resizeMode="cover" />
@@ -146,9 +140,7 @@ export function ProductDetailScreen() {
           {/* Pricing & MOQ Container */}
           <View style={styles.pricingCard}>
             <View style={styles.priceRow}>
-              <Text style={styles.currentPrice}>
-                ₹{product.price.toLocaleString('en-IN')}
-              </Text>
+              <Text style={styles.currentPrice}>₹{product.price.toLocaleString('en-IN')}</Text>
               {product.originalPrice && (
                 <Text style={styles.originalPrice}>
                   ₹{product.originalPrice.toLocaleString('en-IN')}
@@ -179,12 +171,14 @@ export function ProductDetailScreen() {
 
           {/* Shipping & Delivery Area */}
           <View style={styles.shippingNotice}>
-            <MaterialCommunityIcons name="truck-delivery-outline" size={18} color={colors.primary} />
+            <MaterialCommunityIcons
+              name="truck-delivery-outline"
+              size={18}
+              color={colors.primary}
+            />
             <View style={{ flex: 1 }}>
               <Text style={styles.shippingTitle}>Shipping & Supply Coverage</Text>
-              <Text style={styles.shippingDesc}>
-                {product.shippingAreas.join(', ')}
-              </Text>
+              <Text style={styles.shippingDesc}>{product.shippingAreas.join(', ')}</Text>
             </View>
           </View>
         </View>
@@ -201,10 +195,7 @@ export function ProductDetailScreen() {
               {Object.entries(product.specifications).map(([key, val], idx, arr) => (
                 <View
                   key={key}
-                  style={[
-                    styles.specRow,
-                    idx === arr.length - 1 && { borderBottomWidth: 0 },
-                  ]}
+                  style={[styles.specRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}
                 >
                   <Text style={styles.specItemLabel}>{key}</Text>
                   <Text style={styles.specItemValue}>{val}</Text>
@@ -231,9 +222,7 @@ export function ProductDetailScreen() {
               <Text style={styles.supplierSubtitle}>
                 {business.category} · {business.city}, {business.state}
               </Text>
-              <Text style={styles.supplierResponse}>
-                ⚡ Responds in {business.responseRate}
-              </Text>
+              <Text style={styles.supplierResponse}>⚡ Responds in {business.responseRate}</Text>
             </View>
           </View>
 

@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -109,7 +102,8 @@ export function WalletScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
           <Text style={styles.infoBoxText}>
-            Referral earnings are credited as app wallet money. Withdrawals are processed directly to your verified bank account or UPI ID. Minimum withdrawal is ₹100.
+            Referral earnings are credited as app wallet money. Withdrawals are processed directly
+            to your verified bank account or UPI ID. Minimum withdrawal is ₹100.
           </Text>
         </View>
 
@@ -128,17 +122,11 @@ export function WalletScreen() {
               <TouchableOpacity
                 key={tab}
                 onPress={() => setFilterType(tab)}
-                style={[
-                  styles.filterPill,
-                  filterType === tab && styles.filterPillActive,
-                ]}
+                style={[styles.filterPill, filterType === tab && styles.filterPillActive]}
                 activeOpacity={0.7}
               >
                 <Text
-                  style={[
-                    styles.filterPillText,
-                    filterType === tab && styles.filterPillTextActive,
-                  ]}
+                  style={[styles.filterPillText, filterType === tab && styles.filterPillTextActive]}
                 >
                   {tab}
                 </Text>
@@ -182,13 +170,32 @@ export function WalletScreen() {
                     </View>
 
                     <View style={styles.txDetailsCol}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                          flexWrap: 'wrap',
+                        }}
+                      >
                         <Text style={styles.txTitle}>
-                          {tx.title.replace(/^(1st|2nd|3rd|\d+(?:st|nd|rd|th))\s+Referral\s+Reward\s+—\s*/i, '')}
+                          {tx.title.replace(
+                            /^(1st|2nd|3rd|\d+(?:st|nd|rd|th))\s+Referral\s+Reward\s+—\s*/i,
+                            '',
+                          )}
                         </Text>
                         {tx.type === 'referral_reward' && (
-                          <View style={{ backgroundColor: '#F3E8FF', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
-                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#A3238E' }}>Referral</Text>
+                          <View
+                            style={{
+                              backgroundColor: '#F3E8FF',
+                              paddingHorizontal: 6,
+                              paddingVertical: 1,
+                              borderRadius: 4,
+                            }}
+                          >
+                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#A3238E' }}>
+                              Referral
+                            </Text>
                           </View>
                         )}
                       </View>
@@ -207,7 +214,9 @@ export function WalletScreen() {
                           isCredit ? { color: '#16A34A' } : { color: colors.textPrimary },
                         ]}
                       >
-                        {isCredit ? `+₹${tx.amount.toLocaleString('en-IN')}` : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`}
+                        {isCredit
+                          ? `+₹${tx.amount.toLocaleString('en-IN')}`
+                          : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`}
                       </Text>
                       <View
                         style={[

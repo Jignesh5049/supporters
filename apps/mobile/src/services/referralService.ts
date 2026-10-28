@@ -31,6 +31,9 @@ export function getReferralMilestoneStatus(successfulCount: number) {
     milestone2Amount: REFERRAL_REWARD_CONFIG.secondReferralReward,
     totalEarned: calculateReferralEarnings(successfulCount),
     maxLimitReached: successfulCount >= 2,
-    remainingToMax: Math.max(0, REFERRAL_REWARD_CONFIG.maxTotalReward - calculateReferralEarnings(successfulCount)),
+    remainingToMax: Math.max(
+      0,
+      REFERRAL_REWARD_CONFIG.maxTotalReward - calculateReferralEarnings(successfulCount),
+    ),
   };
 }

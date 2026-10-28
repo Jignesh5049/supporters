@@ -7,7 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -21,7 +21,7 @@ export function SettingsScreen() {
     updateUserProfile,
     showToast,
     navigate,
-    signOut
+    signOut,
   } = useApp();
 
   const [rfqNotifications, setRfqNotifications] = useState(true);
@@ -29,7 +29,7 @@ export function SettingsScreen() {
   const [marketingNotifications, setMarketingNotifications] = useState(false);
   const [profilePublic, setProfilePublic] = useState(true);
   const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
-    userBusiness?.showPhone ?? currentUser.showPhone ?? true
+    userBusiness?.showPhone ?? currentUser.showPhone ?? true,
   );
 
   const handleToggleShowPhone = (val: boolean) => {
@@ -40,31 +40,30 @@ export function SettingsScreen() {
       val
         ? 'Phone number will now be shown on your catalog'
         : 'Phone number is now hidden from your catalog',
-      'info'
+      'info',
     );
   };
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
-      const confirmed = typeof window !== 'undefined' ? window.confirm('Are you sure you want to log out of Supporters?') : true;
+      const confirmed =
+        typeof window !== 'undefined'
+          ? window.confirm('Are you sure you want to log out of Supporters?')
+          : true;
       if (confirmed) {
         signOut();
       }
     } else {
-      Alert.alert(
-        'Sign Out of Supporters',
-        'Are you sure you want to log out of your session?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: async () => {
-              await signOut();
-            },
+      Alert.alert('Sign Out of Supporters', 'Are you sure you want to log out of your session?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
           },
-        ]
-      );
+        },
+      ]);
     }
   };
 
@@ -196,7 +195,8 @@ export function SettingsScreen() {
                 </View>
               </View>
               <Text style={styles.rowSub}>
-                Allow buyers to view your contact number ({currentUser.phone || userBusiness?.phone}) directly on your catalog storefront
+                Allow buyers to view your contact number ({currentUser.phone || userBusiness?.phone}
+                ) directly on your catalog storefront
               </Text>
             </View>
             <Switch

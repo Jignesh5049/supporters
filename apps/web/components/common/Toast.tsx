@@ -19,9 +19,7 @@ export function ToastContainer() {
           {toast.type === 'success' && (
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           )}
-          {toast.type === 'info' && (
-            <Info className="w-5 h-5 text-[#00AEEF] shrink-0 mt-0.5" />
-          )}
+          {toast.type === 'info' && <Info className="w-5 h-5 text-[#00AEEF] shrink-0 mt-0.5" />}
           {toast.type === 'error' && (
             <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           )}

@@ -7,7 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
-  Alert
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -43,11 +43,15 @@ export function WithdrawalScreen() {
       return;
     }
     if (numAmount < REFERRAL_REWARD_CONFIG.minWithdrawalAmount) {
-      setErrorMessage(`Minimum withdrawal amount is ₹${REFERRAL_REWARD_CONFIG.minWithdrawalAmount}.`);
+      setErrorMessage(
+        `Minimum withdrawal amount is ₹${REFERRAL_REWARD_CONFIG.minWithdrawalAmount}.`,
+      );
       return;
     }
     if (numAmount > walletData.availableBalance) {
-      setErrorMessage(`Amount exceeds your available balance of ₹${walletData.availableBalance.toLocaleString('en-IN')}.`);
+      setErrorMessage(
+        `Amount exceeds your available balance of ₹${walletData.availableBalance.toLocaleString('en-IN')}.`,
+      );
       return;
     }
 
@@ -97,7 +101,11 @@ export function WithdrawalScreen() {
           <Feather name="arrow-left" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>
-          {step === 'success' ? 'Request Submitted' : step === 'review' ? 'Review Withdrawal' : 'Withdraw Money'}
+          {step === 'success'
+            ? 'Request Submitted'
+            : step === 'review'
+              ? 'Review Withdrawal'
+              : 'Withdraw Money'}
         </Text>
         <View style={{ width: 32 }} />
       </View>
@@ -114,7 +122,9 @@ export function WithdrawalScreen() {
                 </Text>
               </View>
               <View style={styles.minTag}>
-                <Text style={styles.minTagText}>Min: ₹{REFERRAL_REWARD_CONFIG.minWithdrawalAmount}</Text>
+                <Text style={styles.minTagText}>
+                  Min: ₹{REFERRAL_REWARD_CONFIG.minWithdrawalAmount}
+                </Text>
               </View>
             </View>
 
@@ -141,15 +151,17 @@ export function WithdrawalScreen() {
                 />
               </View>
               <View style={styles.quickAmountRow}>
-                {[100, 200, 300, walletData.availableBalance].filter((val, i, arr) => val > 0 && arr.indexOf(val) === i).map((val) => (
-                  <TouchableOpacity
-                    key={val}
-                    onPress={() => setAmount(val.toString())}
-                    style={styles.quickPill}
-                  >
-                    <Text style={styles.quickPillText}>₹{val}</Text>
-                  </TouchableOpacity>
-                ))}
+                {[100, 200, 300, walletData.availableBalance]
+                  .filter((val, i, arr) => val > 0 && arr.indexOf(val) === i)
+                  .map((val) => (
+                    <TouchableOpacity
+                      key={val}
+                      onPress={() => setAmount(val.toString())}
+                      style={styles.quickPill}
+                    >
+                      <Text style={styles.quickPillText}>₹{val}</Text>
+                    </TouchableOpacity>
+                  ))}
               </View>
             </View>
 
@@ -167,7 +179,9 @@ export function WithdrawalScreen() {
                     size={16}
                     color={method === 'UPI' ? colors.primary : '#64748B'}
                   />
-                  <Text style={[styles.methodBtnText, method === 'UPI' && styles.methodBtnTextActive]}>
+                  <Text
+                    style={[styles.methodBtnText, method === 'UPI' && styles.methodBtnTextActive]}
+                  >
                     Instant UPI
                   </Text>
                 </TouchableOpacity>
@@ -182,7 +196,12 @@ export function WithdrawalScreen() {
                     size={16}
                     color={method === 'Bank Account' ? colors.primary : '#64748B'}
                   />
-                  <Text style={[styles.methodBtnText, method === 'Bank Account' && styles.methodBtnTextActive]}>
+                  <Text
+                    style={[
+                      styles.methodBtnText,
+                      method === 'Bank Account' && styles.methodBtnTextActive,
+                    ]}
+                  >
                     Bank Transfer
                   </Text>
                 </TouchableOpacity>
@@ -320,7 +339,9 @@ export function WithdrawalScreen() {
 
               <View style={styles.reviewRow}>
                 <Text style={styles.reviewLabel}>Processing Fee</Text>
-                <Text style={[styles.reviewValue, { color: '#16A34A' }]}>₹0 (Free via Supporters)</Text>
+                <Text style={[styles.reviewValue, { color: '#16A34A' }]}>
+                  ₹0 (Free via Supporters)
+                </Text>
               </View>
 
               <View style={styles.reviewRow}>
@@ -332,7 +353,8 @@ export function WithdrawalScreen() {
             <View style={styles.securityBanner}>
               <Ionicons name="shield-checkmark" size={16} color="#15803D" />
               <Text style={styles.securityBannerText}>
-                Encrypted bank-grade transmission. Your pending withdrawal will be reserved safely from your wallet balance.
+                Encrypted bank-grade transmission. Your pending withdrawal will be reserved safely
+                from your wallet balance.
               </Text>
             </View>
 
@@ -366,7 +388,9 @@ export function WithdrawalScreen() {
             <Text style={styles.successAmount}>₹{numAmount.toLocaleString('en-IN')}</Text>
 
             <Text style={styles.successSubtitle}>
-              Your withdrawal request has been scheduled for automated batch processing. It has been labeled as <Text style={{ fontWeight: '800', color: '#D97706' }}>Pending</Text> in your wallet history and reserved from available balance.
+              Your withdrawal request has been scheduled for automated batch processing. It has been
+              labeled as <Text style={{ fontWeight: '800', color: '#D97706' }}>Pending</Text> in
+              your wallet history and reserved from available balance.
             </Text>
 
             <View style={styles.refBox}>

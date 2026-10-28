@@ -6,7 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Share,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -74,7 +74,8 @@ export function ReferralScreen() {
 
           <Text style={styles.heroTitle}>Invite Businesses & Earn Up To ₹500</Text>
           <Text style={styles.heroSubtitle}>
-            Grow your commercial network. You receive ₹300 for your 1st referred business and ₹200 for your 2nd referred business credited to your in-app wallet.
+            Grow your commercial network. You receive ₹300 for your 1st referred business and ₹200
+            for your 2nd referred business credited to your in-app wallet.
           </Text>
 
           {/* Referral Code Box */}
@@ -94,11 +95,7 @@ export function ReferralScreen() {
           </View>
 
           {/* Share Actions */}
-          <TouchableOpacity
-            style={styles.shareBtn}
-            onPress={handleShareLink}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={styles.shareBtn} onPress={handleShareLink} activeOpacity={0.85}>
             <Feather name="share-2" size={16} color="#FFFFFF" />
             <Text style={styles.shareBtnText}>Share Referral Link</Text>
           </TouchableOpacity>
@@ -113,8 +110,8 @@ export function ReferralScreen() {
                 {successfulCount >= 2
                   ? 'All ₹500 rewards unlocked!'
                   : successfulCount === 1
-                  ? '1 of 2 rewards claimed (₹300 earned)'
-                  : 'Claim up to ₹500 in 2 simple referrals'}
+                    ? '1 of 2 rewards claimed (₹300 earned)'
+                    : 'Claim up to ₹500 in 2 simple referrals'}
               </Text>
             </View>
             <View style={styles.totalEarnedTag}>
@@ -137,10 +134,7 @@ export function ReferralScreen() {
           <View style={styles.milestonesRow}>
             {/* Milestone 1 */}
             <View
-              style={[
-                styles.stepCard,
-                milestone.milestone1Completed && styles.stepCardCompleted,
-              ]}
+              style={[styles.stepCard, milestone.milestone1Completed && styles.stepCardCompleted]}
             >
               <View style={styles.stepHeader}>
                 <View
@@ -170,10 +164,7 @@ export function ReferralScreen() {
 
             {/* Milestone 2 */}
             <View
-              style={[
-                styles.stepCard,
-                milestone.milestone2Completed && styles.stepCardCompleted,
-              ]}
+              style={[styles.stepCard, milestone.milestone2Completed && styles.stepCardCompleted]}
             >
               <View style={styles.stepHeader}>
                 <View
@@ -197,17 +188,26 @@ export function ReferralScreen() {
               </View>
               <Text style={styles.stepAmount}>₹200</Text>
               <Text style={styles.stepDesc}>
-                {milestone.milestone2Completed ? 'Credited to Wallet' : 'On second verified partner'}
+                {milestone.milestone2Completed
+                  ? 'Credited to Wallet'
+                  : 'On second verified partner'}
               </Text>
             </View>
           </View>
 
           {/* Rules Banner (3rd onward is ₹0, Max ₹500) */}
           <View style={styles.policyNotice}>
-            <Ionicons name="information-circle" size={16} color="#475569" style={{ marginTop: 1 }} />
+            <Ionicons
+              name="information-circle"
+              size={16}
+              color="#475569"
+              style={{ marginTop: 1 }}
+            />
             <Text style={styles.policyNoticeText}>
               <Text style={{ fontWeight: '700' }}>Reward Rules: </Text>
-              First referral = ₹300. Second referral = ₹200. Third and subsequent referrals = ₹0 reward. Maximum referral reward is capped at ₹500 per user. Pending & ineligible referrals do not count.
+              First referral = ₹300. Second referral = ₹200. Third and subsequent referrals = ₹0
+              reward. Maximum referral reward is capped at ₹500 per user. Pending & ineligible
+              referrals do not count.
             </Text>
           </View>
         </View>
@@ -223,7 +223,9 @@ export function ReferralScreen() {
             <Text style={styles.statLabel}>Successful</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>₹{milestone.totalEarned}</Text>
+            <Text style={[styles.statNumber, { color: colors.primary }]}>
+              ₹{milestone.totalEarned}
+            </Text>
             <Text style={styles.statLabel}>Wallet Earned</Text>
           </View>
         </View>
@@ -285,9 +287,7 @@ export function ReferralScreen() {
                     <Text style={styles.historySub}>
                       {item.city} · {item.date}
                     </Text>
-                    {item.notes && (
-                      <Text style={styles.historyNote}>{item.notes}</Text>
-                    )}
+                    {item.notes && <Text style={styles.historyNote}>{item.notes}</Text>}
                   </View>
 
                   {/* Reward & Status Badge */}

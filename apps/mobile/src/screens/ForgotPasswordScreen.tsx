@@ -105,7 +105,8 @@ export function ForgotPasswordScreen() {
                 <Text style={styles.successTitle}>Check Your Inbox</Text>
                 <Text style={styles.successMessage}>
                   We have dispatched a secure password reset link to{' '}
-                  <Text style={styles.boldEmail}>{email}</Text>. Please check your inbox and follow the instructions.
+                  <Text style={styles.boldEmail}>{email}</Text>. Please check your inbox and follow
+                  the instructions.
                 </Text>
 
                 <TouchableOpacity
@@ -119,12 +120,7 @@ export function ForgotPasswordScreen() {
               <>
                 <View style={styles.fieldGroup}>
                   <Text style={styles.fieldLabel}>Registered Email</Text>
-                  <View
-                    style={[
-                      styles.inputWrapper,
-                      emailError ? styles.inputWrapperError : null,
-                    ]}
-                  >
+                  <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
                     <Feather
                       name="mail"
                       size={16}
@@ -170,10 +166,7 @@ export function ForgotPasswordScreen() {
 
           {/* Footer Back Button */}
           <View style={styles.footerRow}>
-            <TouchableOpacity
-              onPress={() => navigate('sign_in')}
-              style={styles.backToSignInBtn}
-            >
+            <TouchableOpacity onPress={() => navigate('sign_in')} style={styles.backToSignInBtn}>
               <Feather name="arrow-left" size={16} color={colors.textSecondary} />
               <Text style={styles.footerText}>Back to Sign In</Text>
             </TouchableOpacity>

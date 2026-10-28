@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Modal,
   TouchableWithoutFeedback,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,10 +102,7 @@ export function CreateModal() {
                 Broadcast your verified offerings to buyers & businesses
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => setCreateModalOpen(false)}
-              style={styles.closeBtn}
-            >
+            <TouchableOpacity onPress={() => setCreateModalOpen(false)} style={styles.closeBtn}>
               <Feather name="x" size={20} color="#667085" />
             </TouchableOpacity>
           </View>
@@ -126,9 +123,7 @@ export function CreateModal() {
                   <View style={styles.titleRow}>
                     <Text style={styles.optionTitle}>{opt.title}</Text>
                     <View style={[styles.badgeContainer, { backgroundColor: opt.badgeBg }]}>
-                      <Text style={[styles.badgeText, { color: opt.badgeColor }]}>
-                        {opt.badge}
-                      </Text>
+                      <Text style={[styles.badgeText, { color: opt.badgeColor }]}>{opt.badge}</Text>
                     </View>
                   </View>
                   <Text style={styles.optionDesc} numberOfLines={2}>

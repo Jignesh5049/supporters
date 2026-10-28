@@ -9,7 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -143,18 +143,11 @@ export function EnquiryModal() {
 
           {/* Action buttons */}
           <View style={styles.dialogActions}>
-            <TouchableOpacity
-              onPress={closeEnquiryModal}
-              style={styles.cancelBtn}
-            >
+            <TouchableOpacity onPress={closeEnquiryModal} style={styles.cancelBtn}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleSubmit}
-              style={styles.submitBtn}
-              activeOpacity={0.85}
-            >
+            <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} activeOpacity={0.85}>
               <Feather name="send" size={14} color="#FFFFFF" />
               <Text style={styles.submitText}>Send Quotation Enquiry</Text>
             </TouchableOpacity>

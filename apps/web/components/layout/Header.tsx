@@ -22,7 +22,7 @@ import {
   HelpCircle,
   LogOut,
   ChevronRight,
-  Wallet
+  Wallet,
 } from 'lucide-react';
 
 export function Header() {
@@ -32,7 +32,7 @@ export function Header() {
     unreadNotificationsCount,
     unreadMessagesCount,
     openConfirmationModal,
-    openMobileCreateModal
+    openMobileCreateModal,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +57,7 @@ export function Header() {
       isDestructive: true,
       onConfirm: () => {
         router.push('/login');
-      }
+      },
     });
   };
 
@@ -78,9 +78,12 @@ export function Header() {
             <div className="w-9 h-9 rounded-xl bg-[#2E3192] flex items-center justify-center text-white shadow-xs group-hover:bg-[#242775] transition-colors">
               {/* Custom Supporters Monogram Icon */}
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm-1 16l-4-4 1.41-1.41L11 15.17l6.59-6.59L19 10l-8 8z" fill="#00AEEF"/>
-                <circle cx="12" cy="12" r="3" fill="#FFFFFF"/>
-                <circle cx="15" cy="8" r="1.5" fill="#A3238E"/>
+                <path
+                  d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm-1 16l-4-4 1.41-1.41L11 15.17l6.59-6.59L19 10l-8 8z"
+                  fill="#00AEEF"
+                />
+                <circle cx="12" cy="12" r="3" fill="#FFFFFF" />
+                <circle cx="15" cy="8" r="1.5" fill="#A3238E" />
               </svg>
             </div>
             <span className="text-xl font-black tracking-tight text-[#2E3192] group-hover:text-[#242775] transition-colors">
@@ -130,8 +133,6 @@ export function Header() {
             </Link>
           )}
 
-
-
           {/* Create Button */}
           <Link
             href="/create"
@@ -149,23 +150,17 @@ export function Header() {
               aria-expanded={userDropdownOpen}
               aria-label="User profile menu"
             >
-              <Avatar
-                src={CURRENT_USER.avatar}
-                name={CURRENT_USER.name}
-                size="sm"
-                verified
-              />
+              <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="sm" verified />
             </button>
 
             {userDropdownOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setUserDropdownOpen(false)}
-                />
+                <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-[#E5E7EB] shadow-xl z-50 py-2 animate-in fade-in duration-100">
                   <div className="px-4 py-3 border-b border-[#E5E7EB]">
-                    <p className="text-sm font-bold text-[#111111] line-clamp-1">{CURRENT_USER.name}</p>
+                    <p className="text-sm font-bold text-[#111111] line-clamp-1">
+                      {CURRENT_USER.name}
+                    </p>
                     <p className="text-xs text-[#667085]">@{CURRENT_USER.username}</p>
                     <span className="mt-1.5 inline-block text-[11px] font-medium text-[#2E3192] bg-[#2E3192]/10 px-2 py-0.5 rounded-md">
                       Verified Member
@@ -259,7 +254,12 @@ export function Header() {
             </div>
 
             <div className="p-3 border-b border-[#E5E7EB]">
-              <form onSubmit={(e) => { setMobileMenuOpen(false); handleSearchSubmit(e); }}>
+              <form
+                onSubmit={(e) => {
+                  setMobileMenuOpen(false);
+                  handleSearchSubmit(e);
+                }}
+              >
                 <div className="relative">
                   <Search className="w-4 h-4 text-[#667085] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input

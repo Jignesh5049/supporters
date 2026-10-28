@@ -146,12 +146,7 @@ export function SignInScreen() {
             {/* Email Input Field */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Email Address</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  emailError ? styles.inputWrapperError : null,
-                ]}
-              >
+              <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
                 <Feather
                   name="mail"
                   size={16}
@@ -185,12 +180,7 @@ export function SignInScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View
-                style={[
-                  styles.inputWrapper,
-                  passwordError ? styles.inputWrapperError : null,
-                ]}
-              >
+              <View style={[styles.inputWrapper, passwordError ? styles.inputWrapperError : null]}>
                 <Feather
                   name="lock"
                   size={16}
@@ -213,11 +203,7 @@ export function SignInScreen() {
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <Feather
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={18}
-                    color="#667085"
-                  />
+                  <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color="#667085" />
                 </TouchableOpacity>
               </View>
               {passwordError && <Text style={styles.fieldErrorText}>{passwordError}</Text>}

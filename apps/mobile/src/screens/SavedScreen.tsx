@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  StyleSheet
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { FeedPostCard } from '../components/FeedPostCard';
@@ -27,10 +20,12 @@ export function SavedScreen() {
     toggleSaveBusiness,
     openEnquiryModal,
     openConversationWithBusiness,
-    navigate
+    navigate,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'products' | 'services' | 'businesses'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'products' | 'services' | 'businesses'>(
+    'posts',
+  );
 
   const savedPosts = posts.filter((p) => savedPostIds.includes(p.id));
   const savedProducts = products.filter((p) => savedProductIds.includes(p.id));
@@ -42,9 +37,7 @@ export function SavedScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Saved Collection</Text>
-        <Text style={styles.headerSub}>
-          Bookmarked posts, supplier catalogs and quotations
-        </Text>
+        <Text style={styles.headerSub}>Bookmarked posts, supplier catalogs and quotations</Text>
 
         {/* Tabs */}
         <View style={styles.tabRow}>
@@ -61,9 +54,7 @@ export function SavedScreen() {
                 onPress={() => setActiveTab(tab.key as any)}
                 style={[styles.tabBtn, isActive && styles.tabBtnActive]}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                  {tab.label}
-                </Text>
+                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab.label}</Text>
               </TouchableOpacity>
             );
           })}

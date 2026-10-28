@@ -15,14 +15,16 @@ import {
   CheckCircle2,
   AlertCircle,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export default function EditBusinessPage() {
   const router = useRouter();
   const { userBusiness, updateBusinessProfile, showToast } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'basic' | 'social' | 'address' | 'operations'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'social' | 'address' | 'operations'>(
+    'basic',
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -33,7 +35,9 @@ export default function EditBusinessPage() {
   const [about, setAbout] = useState(userBusiness?.about || '');
   const [avatar, setAvatar] = useState(userBusiness?.avatar || '');
   const [coverImage, setCoverImage] = useState(userBusiness?.coverImage || '');
-  const [contactPerson, setContactPerson] = useState(userBusiness?.contactPerson || 'Jignesh Patel');
+  const [contactPerson, setContactPerson] = useState(
+    userBusiness?.contactPerson || 'Jignesh Patel',
+  );
   const [phone, setPhone] = useState(userBusiness?.phone || '');
   const [email, setEmail] = useState(userBusiness?.email || '');
 
@@ -50,11 +54,17 @@ export default function EditBusinessPage() {
   const [state, setState] = useState(userBusiness?.state || 'Gujarat');
   const [pinCode, setPinCode] = useState(userBusiness?.pinCode || '382330');
   const [country, setCountry] = useState(userBusiness?.country || 'India');
-  const [mapUrl, setMapUrl] = useState(userBusiness?.mapUrl || 'https://maps.google.com/?q=Naroda+GIDC+Ahmedabad');
+  const [mapUrl, setMapUrl] = useState(
+    userBusiness?.mapUrl || 'https://maps.google.com/?q=Naroda+GIDC+Ahmedabad',
+  );
 
   // Operations
-  const [openingHours, setOpeningHours] = useState(userBusiness?.openingHours || 'Mon - Sat: 9:00 AM - 8:00 PM');
-  const [availabilityStatus, setAvailabilityStatus] = useState(userBusiness?.availabilityStatus || 'Ready for Bulk Orders');
+  const [openingHours, setOpeningHours] = useState(
+    userBusiness?.openingHours || 'Mon - Sat: 9:00 AM - 8:00 PM',
+  );
+  const [availabilityStatus, setAvailabilityStatus] = useState(
+    userBusiness?.availabilityStatus || 'Ready for Bulk Orders',
+  );
   const [priceRange, setPriceRange] = useState(userBusiness?.priceRange || '₹₹ (Commercial Bulk)');
 
   const validateUrl = (url: string) => {
@@ -202,7 +212,10 @@ export default function EditBusinessPage() {
         })}
       </div>
 
-      <form onSubmit={handleSave} className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xs space-y-6">
+      <form
+        onSubmit={handleSave}
+        className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xs space-y-6"
+      >
         {/* SECTION 1: BASIC INFO */}
         {activeTab === 'basic' && (
           <div className="space-y-4">
@@ -212,7 +225,9 @@ export default function EditBusinessPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Business Name *</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Business Name *
+                </label>
                 <input
                   type="text"
                   value={name}
@@ -251,7 +266,9 @@ export default function EditBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Contact Person</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Contact Person
+                </label>
                 <input
                   type="text"
                   value={contactPerson}
@@ -263,7 +280,9 @@ export default function EditBusinessPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#111111] block mb-1">Business Description / About</label>
+              <label className="text-xs font-bold text-[#111111] block mb-1">
+                Business Description / About
+              </label>
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
@@ -285,7 +304,9 @@ export default function EditBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Business Email</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Business Email
+                </label>
                 <input
                   type="email"
                   value={email}
@@ -308,7 +329,9 @@ export default function EditBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Cover Image URL</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Cover Image URL
+                </label>
                 <input
                   type="text"
                   value={coverImage}
@@ -356,7 +379,9 @@ export default function EditBusinessPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#111111] block mb-1">Facebook Page (Optional)</label>
+              <label className="text-xs font-bold text-[#111111] block mb-1">
+                Facebook Page (Optional)
+              </label>
               <input
                 type="text"
                 value={facebook}
@@ -367,7 +392,9 @@ export default function EditBusinessPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#111111] block mb-1">YouTube Channel (Optional)</label>
+              <label className="text-xs font-bold text-[#111111] block mb-1">
+                YouTube Channel (Optional)
+              </label>
               <input
                 type="text"
                 value={youtube}
@@ -398,7 +425,9 @@ export default function EditBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Area / Locality</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Area / Locality
+                </label>
                 <input
                   type="text"
                   value={area}
@@ -486,7 +515,9 @@ export default function EditBusinessPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-[#111111] block mb-1">Availability Status</label>
+                <label className="text-xs font-bold text-[#111111] block mb-1">
+                  Availability Status
+                </label>
                 <input
                   type="text"
                   value={availabilityStatus}

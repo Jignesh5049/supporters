@@ -16,7 +16,7 @@ import {
   Gift,
   Crown,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
 
 export default function NotificationsPage() {
@@ -25,7 +25,7 @@ export default function NotificationsPage() {
     notifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-    unreadNotificationsCount
+    unreadNotificationsCount,
   } = useApp();
 
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('All');
@@ -36,11 +36,11 @@ export default function NotificationsPage() {
     'Messages',
     'Enquiries',
     'Referrals',
-    'Subscription'
+    'Subscription',
   ];
 
   const filtered = notifications.filter(
-    (n) => activeCategory === 'All' || n.category === activeCategory
+    (n) => activeCategory === 'All' || n.category === activeCategory,
   );
 
   const todayList = filtered.filter((n) => n.timeGroup === 'Today');
@@ -49,12 +49,18 @@ export default function NotificationsPage() {
 
   const getCategoryIcon = (cat: NotificationCategory) => {
     switch (cat) {
-      case 'Business': return <Building2 className="w-4 h-4 text-[#2E3192]" />;
-      case 'Messages': return <MessageSquare className="w-4 h-4 text-[#00AEEF]" />;
-      case 'Enquiries': return <FileQuestion className="w-4 h-4 text-emerald-600" />;
-      case 'Referrals': return <Gift className="w-4 h-4 text-[#A3238E]" />;
-      case 'Subscription': return <Crown className="w-4 h-4 text-amber-500" />;
-      default: return <Bell className="w-4 h-4 text-[#2E3192]" />;
+      case 'Business':
+        return <Building2 className="w-4 h-4 text-[#2E3192]" />;
+      case 'Messages':
+        return <MessageSquare className="w-4 h-4 text-[#00AEEF]" />;
+      case 'Enquiries':
+        return <FileQuestion className="w-4 h-4 text-emerald-600" />;
+      case 'Referrals':
+        return <Gift className="w-4 h-4 text-[#A3238E]" />;
+      case 'Subscription':
+        return <Crown className="w-4 h-4 text-amber-500" />;
+      default:
+        return <Bell className="w-4 h-4 text-[#2E3192]" />;
     }
   };
 
@@ -187,7 +193,7 @@ export default function NotificationsPage() {
 function NotificationRow({
   item,
   icon,
-  onRead
+  onRead,
 }: {
   item: NotificationItem;
   icon: React.ReactNode;
@@ -216,16 +222,12 @@ function NotificationRow({
           <div className="flex items-center justify-between gap-2 mb-0.5">
             <span className="text-xs font-bold text-[#111111] flex items-center gap-1.5">
               <span>{item.title}</span>
-              {!item.read && (
-                <span className="w-2 h-2 rounded-full bg-[#2E3192]" />
-              )}
+              {!item.read && <span className="w-2 h-2 rounded-full bg-[#2E3192]" />}
             </span>
             <span className="text-[11px] text-[#667085] shrink-0">{item.time}</span>
           </div>
 
-          <p className="text-xs text-[#667085] leading-relaxed">
-            {item.description}
-          </p>
+          <p className="text-xs text-[#667085] leading-relaxed">{item.description}</p>
         </div>
 
         <ChevronRight className="w-4 h-4 text-[#667085] shrink-0 self-center" />

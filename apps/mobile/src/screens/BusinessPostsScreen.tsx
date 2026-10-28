@@ -9,7 +9,7 @@ import {
   Alert,
   Modal,
   TextInput,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -17,9 +17,19 @@ import { FeedPost } from '../../mock';
 import { colors } from '../styles/theme';
 
 export function BusinessPostsScreen() {
-  const { posts, userBusiness, updateBusinessPost, setBusinessPostStatus, deletePost, navigate, showToast } = useApp();
+  const {
+    posts,
+    userBusiness,
+    updateBusinessPost,
+    setBusinessPostStatus,
+    deletePost,
+    navigate,
+    showToast,
+  } = useApp();
 
-  const [activeFilter, setActiveFilter] = useState<'All' | 'Published' | 'Draft' | 'Archived'>('All');
+  const [activeFilter, setActiveFilter] = useState<'All' | 'Published' | 'Draft' | 'Archived'>(
+    'All',
+  );
   const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
   const [editContent, setEditContent] = useState('');
 
@@ -45,7 +55,7 @@ export function BusinessPostsScreen() {
           style: 'destructive',
           onPress: () => deletePost(post.id),
         },
-      ]
+      ],
     );
   };
 
@@ -126,10 +136,7 @@ export function BusinessPostsScreen() {
                 ? 'Drafts saved from the composer will be safely stored here before going live.'
                 : 'Create and broadcast new catalog items, factory dispatch updates, or seasonal offers.'}
             </Text>
-            <TouchableOpacity
-              style={styles.emptyActionBtn}
-              onPress={() => navigate('create')}
-            >
+            <TouchableOpacity style={styles.emptyActionBtn} onPress={() => navigate('create')}>
               <Text style={styles.emptyActionBtnText}>Create New Post</Text>
             </TouchableOpacity>
           </View>
@@ -178,7 +185,11 @@ export function BusinessPostsScreen() {
                   {/* Image Preview if present */}
                   {post.images && post.images.length > 0 && (
                     <View style={styles.imagePreviewWrap}>
-                      <Image source={{ uri: post.images[0] }} style={styles.postThumb} resizeMode="cover" />
+                      <Image
+                        source={{ uri: post.images[0] }}
+                        style={styles.postThumb}
+                        resizeMode="cover"
+                      />
                       {post.aspectRatio && (
                         <View style={styles.ratioPill}>
                           <Text style={styles.ratioPillText}>{post.aspectRatio}</Text>
@@ -192,7 +203,8 @@ export function BusinessPostsScreen() {
                     <View style={styles.attachedPreview}>
                       <Feather name="package" size={13} color={colors.primary} />
                       <Text style={styles.attachedText} numberOfLines={1}>
-                        Attached: {post.attachedProduct.title} (₹{post.attachedProduct.price.toLocaleString('en-IN')})
+                        Attached: {post.attachedProduct.title} (₹
+                        {post.attachedProduct.price.toLocaleString('en-IN')})
                       </Text>
                     </View>
                   )}
@@ -228,7 +240,12 @@ export function BusinessPostsScreen() {
                         size={13}
                         color={isPublished ? '#D97706' : '#16A34A'}
                       />
-                      <Text style={[styles.actionPillText, { color: isPublished ? '#D97706' : '#16A34A' }]}>
+                      <Text
+                        style={[
+                          styles.actionPillText,
+                          { color: isPublished ? '#D97706' : '#16A34A' },
+                        ]}
+                      >
                         {isPublished ? 'Unpublish (Draft)' : 'Publish Live'}
                       </Text>
                     </TouchableOpacity>
@@ -297,16 +314,10 @@ export function BusinessPostsScreen() {
             />
 
             <View style={styles.modalActionsRow}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setEditingPost(null)}
-              >
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setEditingPost(null)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalSaveBtn}
-                onPress={handleSaveEdit}
-              >
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveEdit}>
                 <Text style={styles.modalSaveText}>Save Changes</Text>
               </TouchableOpacity>
             </View>

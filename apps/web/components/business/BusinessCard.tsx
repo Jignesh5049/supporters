@@ -13,12 +13,8 @@ interface BusinessCardProps {
 }
 
 export function BusinessCard({ business }: BusinessCardProps) {
-  const {
-    savedBusinessIds,
-    toggleSaveBusiness,
-    followedBusinessIds,
-    toggleFollowBusiness
-  } = useApp();
+  const { savedBusinessIds, toggleSaveBusiness, followedBusinessIds, toggleFollowBusiness } =
+    useApp();
 
   const isSaved = savedBusinessIds.includes(business.id);
   const isFollowing = followedBusinessIds.includes(business.id);
@@ -43,9 +39,7 @@ export function BusinessCard({ business }: BusinessCardProps) {
             toggleSaveBusiness(business.id);
           }}
           className={`absolute top-2.5 right-2.5 p-2 rounded-full backdrop-blur-xs transition-colors shadow-xs ${
-            isSaved
-              ? 'bg-[#2E3192] text-white'
-              : 'bg-white/85 text-[#111111] hover:bg-white'
+            isSaved ? 'bg-[#2E3192] text-white' : 'bg-white/85 text-[#111111] hover:bg-white'
           }`}
           aria-label={isSaved ? 'Remove from saved' : 'Save business'}
         >
@@ -90,15 +84,15 @@ export function BusinessCard({ business }: BusinessCardProps) {
         <div className="flex items-center gap-2 text-xs text-[#667085] mt-1">
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
-            <span>{business.city}, {business.state}</span>
+            <span>
+              {business.city}, {business.state}
+            </span>
           </span>
           <span>·</span>
           <span>Est. {business.establishedYear}</span>
         </div>
 
-        <p className="text-xs text-[#667085] line-clamp-2 mt-2 leading-relaxed">
-          {business.about}
-        </p>
+        <p className="text-xs text-[#667085] line-clamp-2 mt-2 leading-relaxed">{business.about}</p>
 
         {/* Stats */}
         <div className="mt-auto pt-3 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#667085]">

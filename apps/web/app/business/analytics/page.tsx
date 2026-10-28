@@ -2,7 +2,15 @@
 
 import React from 'react';
 import { BusinessNavHeader } from '@/app/business/manage/page';
-import { BarChart3, TrendingUp, Users, MapPin, Eye, MousePointerClick, MessageSquare } from 'lucide-react';
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
+  MapPin,
+  Eye,
+  MousePointerClick,
+  MessageSquare,
+} from 'lucide-react';
 
 export default function BusinessAnalyticsPage() {
   const cityMetrics = [
@@ -10,7 +18,7 @@ export default function BusinessAnalyticsPage() {
     { city: 'Surat', leads: 28, percentage: '25%' },
     { city: 'Vadodara', leads: 18, percentage: '16%' },
     { city: 'Rajkot', leads: 14, percentage: '12%' },
-    { city: 'Mumbai', leads: 10, percentage: '9%' }
+    { city: 'Mumbai', leads: 10, percentage: '9%' },
   ];
 
   const weeklyTrends = [
@@ -30,25 +38,33 @@ export default function BusinessAnalyticsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">30-Day Impressions</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">
+            30-Day Impressions
+          </span>
           <p className="text-2xl font-black text-[#2E3192]">48,920</p>
           <span className="text-[11px] text-emerald-600 font-semibold">↑ 22.4% vs last period</span>
         </div>
 
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">Catalogue Clicks</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">
+            Catalogue Clicks
+          </span>
           <p className="text-2xl font-black text-[#00AEEF]">6,410</p>
           <span className="text-[11px] text-[#667085]">13.1% CTR engagement</span>
         </div>
 
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">Enquiries Generated</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">
+            Enquiries Generated
+          </span>
           <p className="text-2xl font-black text-[#A3238E]">112</p>
           <span className="text-[11px] text-emerald-600 font-semibold">↑ 14 new this week</span>
         </div>
 
         <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">Buyer Conversion</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#667085]">
+            Buyer Conversion
+          </span>
           <p className="text-2xl font-black text-emerald-600">4.8%</p>
           <span className="text-[11px] text-[#667085]">Industry benchmark: 2.5%</span>
         </div>
@@ -97,7 +113,9 @@ export default function BusinessAnalyticsPage() {
                     <MapPin className="w-3.5 h-3.5 text-[#2E3192]" />
                     {c.city}
                   </span>
-                  <span className="font-semibold text-[#667085]">{c.leads} enquiries ({c.percentage})</span>
+                  <span className="font-semibold text-[#667085]">
+                    {c.leads} enquiries ({c.percentage})
+                  </span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-[#F7F8FC] overflow-hidden">
                   <div

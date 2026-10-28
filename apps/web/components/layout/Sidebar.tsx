@@ -21,7 +21,7 @@ import {
   Settings,
   FileQuestion,
   Wallet,
-  FileText
+  FileText,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -39,14 +39,14 @@ function SidebarInner() {
       href: '/messages',
       icon: MessageSquare,
       badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
-      badgeColor: 'bg-[#00AEEF]'
+      badgeColor: 'bg-[#00AEEF]',
     },
     {
       label: 'Notifications',
       href: '/notifications',
       icon: Bell,
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
-      badgeColor: 'bg-[#A3238E]'
+      badgeColor: 'bg-[#A3238E]',
     },
   ];
 
@@ -77,19 +77,12 @@ function SidebarInner() {
           href="/profile"
           className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 border border-[#E5E7EB] rounded-2xl transition-all shadow-2xs group"
         >
-          <Avatar
-            src={CURRENT_USER.avatar}
-            name={CURRENT_USER.name}
-            size="md"
-            verified
-          />
+          <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="md" verified />
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-bold text-[#111111] group-hover:text-[#2E3192] transition-colors truncate">
               {CURRENT_USER.name}
             </h4>
-            <p className="text-xs text-[#667085] truncate">
-              @{CURRENT_USER.username}
-            </p>
+            <p className="text-xs text-[#667085] truncate">@{CURRENT_USER.username}</p>
           </div>
         </Link>
 
@@ -114,7 +107,9 @@ function SidebarInner() {
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className={`text-[11px] font-bold text-white px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-[#2E3192]'}`}>
+                    <span
+                      className={`text-[11px] font-bold text-white px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-[#2E3192]'}`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -208,7 +203,13 @@ function SidebarInner() {
 
 export function Sidebar() {
   return (
-    <Suspense fallback={<aside className="w-64 shrink-0 hidden lg:block sticky top-20 self-start"><div className="h-96 bg-white border border-[#E5E7EB] rounded-2xl animate-pulse" /></aside>}>
+    <Suspense
+      fallback={
+        <aside className="w-64 shrink-0 hidden lg:block sticky top-20 self-start">
+          <div className="h-96 bg-white border border-[#E5E7EB] rounded-2xl animate-pulse" />
+        </aside>
+      }
+    >
       <SidebarInner />
     </Suspense>
   );

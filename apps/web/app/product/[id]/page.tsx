@@ -23,7 +23,7 @@ import {
   Send,
   ArrowRight,
   Clock,
-  Layers
+  Layers,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -31,7 +31,14 @@ import { Suspense } from 'react';
 function ProductDetailContent() {
   const params = useParams();
   const productId = params?.id as string;
-  const { products, businesses, savedProductIds, toggleSaveProduct, openConversationWithBusiness, openEnquiryModal } = useApp();
+  const {
+    products,
+    businesses,
+    savedProductIds,
+    toggleSaveProduct,
+    openConversationWithBusiness,
+    openEnquiryModal,
+  } = useApp();
 
   const product = products.find((p) => p.id === productId) || products[0];
   const business = businesses.find((b) => b.id === product?.businessId) || businesses[0];
@@ -42,10 +49,10 @@ function ProductDetailContent() {
   const isSaved = savedProductIds.includes(product.id);
 
   const relatedProducts = products.filter(
-    (p) => p.id !== product.id && p.category === product.category
+    (p) => p.id !== product.id && p.category === product.category,
   );
   const moreFromBusiness = products.filter(
-    (p) => p.id !== product.id && p.businessId === product.businessId
+    (p) => p.id !== product.id && p.businessId === product.businessId,
   );
 
   return (
@@ -119,9 +126,7 @@ function ProductDetailContent() {
                   ₹{product.originalPrice.toLocaleString('en-IN')}
                 </span>
               )}
-              <span className="text-xs text-[#667085]">
-                / {product.unit}
-              </span>
+              <span className="text-xs text-[#667085]">/ {product.unit}</span>
             </div>
 
             <div className="mt-2 pt-2 border-t border-[#E5E7EB] grid grid-cols-2 gap-2 text-xs">
@@ -133,9 +138,7 @@ function ProductDetailContent() {
               </div>
               <div>
                 <span className="text-[#667085] block">Est. Delivery:</span>
-                <span className="font-bold text-[#111111]">
-                  {product.deliveryTime}
-                </span>
+                <span className="font-bold text-[#111111]">{product.deliveryTime}</span>
               </div>
             </div>
           </div>
@@ -155,9 +158,7 @@ function ProductDetailContent() {
             <Truck className="w-4 h-4 text-[#2E3192] shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-[#2E3192]">Shipping Coverage:</span>
-              <p className="text-[#667085] mt-0.5">
-                {product.shippingAreas.join(', ')}
-              </p>
+              <p className="text-[#667085] mt-0.5">{product.shippingAreas.join(', ')}</p>
             </div>
           </div>
 
@@ -206,16 +207,16 @@ function ProductDetailContent() {
                 >
                   {business.name}
                 </Link>
-                <p className="text-xs text-[#667085]">
-                  {business.businessType}
-                </p>
+                <p className="text-xs text-[#667085]">{business.businessType}</p>
               </div>
             </div>
 
             <div className="space-y-1.5 text-xs text-[#667085] pt-1">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-[#2E3192]" />
-                <span>{business.city}, {business.state}</span>
+                <span>
+                  {business.city}, {business.state}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-[#00AEEF]" />
@@ -248,8 +249,8 @@ function ProductDetailContent() {
                     id: product.id,
                     title: product.title,
                     price: product.price,
-                    image: product.images[0]
-                  }
+                    image: product.images[0],
+                  },
                 })
               }
               className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors"
@@ -300,10 +301,11 @@ function ProductDetailContent() {
       {moreFromBusiness.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#111111]">
-              More from {business.name}
-            </h2>
-            <Link href={`/business/${business.id}`} className="text-xs font-semibold text-[#00AEEF] hover:underline">
+            <h2 className="text-base font-bold text-[#111111]">More from {business.name}</h2>
+            <Link
+              href={`/business/${business.id}`}
+              className="text-xs font-semibold text-[#00AEEF] hover:underline"
+            >
               View Catalog
             </Link>
           </div>
@@ -322,7 +324,10 @@ function ProductDetailContent() {
             <h2 className="text-base font-bold text-[#111111]">
               Related Products in {product.category}
             </h2>
-            <Link href={`/discover?tab=products`} className="text-xs font-semibold text-[#00AEEF] hover:underline">
+            <Link
+              href={`/discover?tab=products`}
+              className="text-xs font-semibold text-[#00AEEF] hover:underline"
+            >
               Browse More
             </Link>
           </div>
@@ -347,7 +352,13 @@ function ProductDetailContent() {
 
 export default function ProductDetailPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-[#667085]">Loading product specifications...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs text-[#667085]">
+          Loading product specifications...
+        </div>
+      }
+    >
       <ProductDetailContent />
     </Suspense>
   );

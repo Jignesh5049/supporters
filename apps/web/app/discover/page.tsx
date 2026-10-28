@@ -26,7 +26,7 @@ import {
   Hammer,
   Briefcase,
   Star,
-  MapPin
+  MapPin,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -34,7 +34,8 @@ import { Suspense } from 'react';
 function DiscoverContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
-  const initialTab = (searchParams.get('tab') as 'products' | 'services' | 'businesses') || 'products';
+  const initialTab =
+    (searchParams.get('tab') as 'products' | 'services' | 'businesses') || 'products';
 
   const { products, services, businesses } = useApp();
 
@@ -44,7 +45,9 @@ function DiscoverContent() {
   const [selectedCity, setSelectedCity] = useState('All Cities');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState<number>(0);
-  const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating'>('recommended');
+  const [sortBy, setSortBy] = useState<'recommended' | 'price-asc' | 'price-desc' | 'rating'>(
+    'recommended',
+  );
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const trendingKeywords = [
@@ -54,7 +57,7 @@ function DiscoverContent() {
     'Banarasi Sarees',
     'Industrial Gears',
     'Corrugated Boxes',
-    'Custom ERP'
+    'Custom ERP',
   ];
 
   // Trade Categories matching mobile DiscoverScreen
@@ -131,9 +134,11 @@ function DiscoverContent() {
     const sel = selected.toLowerCase();
     if (cat === sel) return true;
     if (sel === 'food' || sel === 'food & fmcg') return cat.includes('food');
-    if (sel === 'agri' || sel === 'agri trade' || sel === 'agriculture') return cat.includes('agri');
+    if (sel === 'agri' || sel === 'agri trade' || sel === 'agriculture')
+      return cat.includes('agri');
     if (sel === 'beauty' || sel === 'beauty/care') return cat.includes('beauty');
-    if (sel === 'machinery') return cat.includes('machin') || cat.includes('technol') || cat.includes('industrial');
+    if (sel === 'machinery')
+      return cat.includes('machin') || cat.includes('technol') || cat.includes('industrial');
     if (sel === 'hardware') return cat.includes('hardware') || cat.includes('construct');
     return cat.includes(sel) || sel.includes(cat);
   };
@@ -217,7 +222,6 @@ function DiscoverContent() {
 
   return (
     <div className="space-y-6">
-
       {/* Top Banner & Search Header */}
       <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 sm:p-7 shadow-2xs space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -226,7 +230,8 @@ function DiscoverContent() {
               Discover Verified Products, Services & Suppliers
             </h1>
             <p className="text-xs sm:text-sm text-[#667085] mt-1">
-              Search verified manufacturers, local wholesalers, and specialized service firms across India.
+              Search verified manufacturers, local wholesalers, and specialized service firms across
+              India.
             </p>
           </div>
         </div>
@@ -295,9 +300,7 @@ function DiscoverContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-1.5 h-5 bg-[#2E3192] rounded-full" />
-            <h2 className="text-base sm:text-lg font-black text-[#111111]">
-              Trade Categories
-            </h2>
+            <h2 className="text-base sm:text-lg font-black text-[#111111]">Trade Categories</h2>
             {selectedCategory !== 'All' && (
               <span className="text-xs font-bold text-[#2E3192] bg-[#2E3192]/10 px-2.5 py-0.5 rounded-full">
                 Active: {selectedCategory}
@@ -436,7 +439,9 @@ function DiscoverContent() {
                 : 'bg-[#F7F8FC] text-[#667085] hover:text-[#111111] hover:bg-gray-100 border border-[#E5E7EB]'
             }`}
           >
-            <ShieldCheck className={`w-4 h-4 ${verifiedOnly ? 'text-emerald-600' : 'text-[#667085]'}`} />
+            <ShieldCheck
+              className={`w-4 h-4 ${verifiedOnly ? 'text-emerald-600' : 'text-[#667085]'}`}
+            />
             <span>Verified Suppliers Only</span>
           </button>
 
@@ -487,7 +492,11 @@ function DiscoverContent() {
           )}
 
           {/* Reset Filters */}
-          {(selectedCategory !== 'All' || selectedCity !== 'All Cities' || verifiedOnly || minRating > 0 || searchQuery) && (
+          {(selectedCategory !== 'All' ||
+            selectedCity !== 'All Cities' ||
+            verifiedOnly ||
+            minRating > 0 ||
+            searchQuery) && (
             <button
               type="button"
               onClick={resetFilters}
@@ -499,14 +508,20 @@ function DiscoverContent() {
         </div>
 
         <span className="text-xs text-[#667085] ml-auto">
-          Showing {activeTab === 'products' ? filteredProducts.length : activeTab === 'services' ? filteredServices.length : filteredBusinesses.length} results
+          Showing{' '}
+          {activeTab === 'products'
+            ? filteredProducts.length
+            : activeTab === 'services'
+              ? filteredServices.length
+              : filteredBusinesses.length}{' '}
+          results
         </span>
       </div>
 
       {/* Results Grid - Full Width, Beautiful & Unified across the whole web */}
       <div>
-        {activeTab === 'products' && (
-          filteredProducts.length === 0 ? (
+        {activeTab === 'products' &&
+          (filteredProducts.length === 0 ? (
             <EmptyState
               icon={Package}
               title="No products found"
@@ -520,11 +535,10 @@ function DiscoverContent() {
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === 'services' && (
-          filteredServices.length === 0 ? (
+        {activeTab === 'services' &&
+          (filteredServices.length === 0 ? (
             <EmptyState
               icon={Wrench}
               title="No services found"
@@ -538,11 +552,10 @@ function DiscoverContent() {
                 <ServiceCard key={s.id} service={s} />
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === 'businesses' && (
-          filteredBusinesses.length === 0 ? (
+        {activeTab === 'businesses' &&
+          (filteredBusinesses.length === 0 ? (
             <EmptyState
               icon={Building2}
               title="No businesses found"
@@ -556,8 +569,7 @@ function DiscoverContent() {
                 <BusinessCard key={b.id} business={b} />
               ))}
             </div>
-          )
-        )}
+          ))}
       </div>
     </div>
   );
@@ -565,7 +577,13 @@ function DiscoverContent() {
 
 export default function DiscoverPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-[#667085]">Loading discovery directory...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs text-[#667085]">
+          Loading discovery directory...
+        </div>
+      }
+    >
       <DiscoverContent />
     </Suspense>
   );

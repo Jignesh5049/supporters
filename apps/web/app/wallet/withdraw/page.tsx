@@ -13,7 +13,7 @@ import {
   Building,
   Smartphone,
   Info,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 
 export default function WithdrawMoneyPage() {
@@ -59,7 +59,7 @@ export default function WithdrawMoneyPage() {
 
     if (numAmount > walletData.availableBalance) {
       setErrorMessage(
-        `Withdrawal amount (₹${numAmount}) exceeds your available balance (₹${walletData.availableBalance}).`
+        `Withdrawal amount (₹${numAmount}) exceeds your available balance (₹${walletData.availableBalance}).`,
       );
       return;
     }
@@ -164,7 +164,10 @@ export default function WithdrawMoneyPage() {
 
       {/* STEP 1: FORM */}
       {step === 'form' && (
-        <form onSubmit={handleValidateAndReview} className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xs space-y-5">
+        <form
+          onSubmit={handleValidateAndReview}
+          className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-xs space-y-5"
+        >
           {/* Amount input */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-[#111111] uppercase tracking-wider block">

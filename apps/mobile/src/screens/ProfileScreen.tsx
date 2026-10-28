@@ -9,7 +9,7 @@ import {
   Modal,
   TextInput,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,7 +27,7 @@ export function ProfileScreen() {
     followedBusinessIds,
     toggleFollowBusiness,
     openConversationWithBusiness,
-    navigate
+    navigate,
   } = useApp();
   const [activeTab, setActiveTab] = useState<'posts' | 'catalog' | 'about'>('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -74,7 +74,11 @@ export function ProfileScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Cover Image - Expanded banner */}
       <View style={styles.coverContainer}>
-        <Image source={{ uri: currentUser.coverImage }} style={styles.coverImage} resizeMode="cover" />
+        <Image
+          source={{ uri: currentUser.coverImage }}
+          style={styles.coverImage}
+          resizeMode="cover"
+        />
         <TouchableOpacity
           style={styles.coverEditBtn}
           onPress={async () => {
@@ -194,7 +198,9 @@ export function ProfileScreen() {
             activeOpacity={0.75}
           >
             <Text style={[styles.statNumber, { color: colors.primary }]}>
-              {followedBusinessIds.length > 0 ? followedBusinessIds.length : currentUser.followingCount}
+              {followedBusinessIds.length > 0
+                ? followedBusinessIds.length
+                : currentUser.followingCount}
             </Text>
             <Text style={[styles.statLabel, { color: colors.primary, fontWeight: '700' }]}>
               Following ↗
@@ -203,24 +209,17 @@ export function ProfileScreen() {
           <View style={styles.statDivider} />
           <TouchableOpacity
             style={styles.statItem}
-            onPress={() =>
-              navigate('business_detail', { businessId: currentUser.businessId })
-            }
+            onPress={() => navigate('business_detail', { businessId: currentUser.businessId })}
             activeOpacity={0.75}
           >
             <Text style={styles.statNumber}>{currentUser.businessesCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Storefront ↗
-            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Storefront ↗</Text>
           </TouchableOpacity>
         </View>
 
         {/* Growth Shortcuts */}
         <View style={styles.shortcutsRow}>
-          <TouchableOpacity
-            style={styles.shortcutCard}
-            onPress={() => navigate('business_hub')}
-          >
+          <TouchableOpacity style={styles.shortcutCard} onPress={() => navigate('business_hub')}>
             <Feather name="briefcase" size={16} color={colors.primary} />
             <Text style={styles.shortcutTitle}>My Business Hub</Text>
           </TouchableOpacity>
@@ -256,8 +255,8 @@ export function ProfileScreen() {
                   {tab === 'posts'
                     ? `Posts (${myPosts.length})`
                     : tab === 'catalog'
-                    ? `Catalog (${myProducts.length})`
-                    : 'About'}
+                      ? `Catalog (${myProducts.length})`
+                      : 'About'}
                 </Text>
               </TouchableOpacity>
             );
@@ -284,9 +283,7 @@ export function ProfileScreen() {
                   <Text style={styles.catalogTitle} numberOfLines={1}>
                     {p.title}
                   </Text>
-                  <Text style={styles.catalogPrice}>
-                    ₹{p.price.toLocaleString('en-IN')}
-                  </Text>
+                  <Text style={styles.catalogPrice}>₹{p.price.toLocaleString('en-IN')}</Text>
                   <Text style={styles.catalogMoq}>
                     MOQ: {p.minOrderQuantity} {p.unit}
                   </Text>
@@ -331,9 +328,7 @@ export function ProfileScreen() {
                 <Text style={styles.aboutEditText}>Edit</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.aboutBody}>
-              {currentUser.bio}
-            </Text>
+            <Text style={styles.aboutBody}>{currentUser.bio}</Text>
 
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Mobile:</Text>
@@ -509,7 +504,10 @@ export function ProfileScreen() {
       >
         <View style={styles.followingModalContainer}>
           <View style={styles.followingModalHeader}>
-            <TouchableOpacity onPress={() => setIsFollowingModalOpen(false)} style={styles.backFollowingBtn}>
+            <TouchableOpacity
+              onPress={() => setIsFollowingModalOpen(false)}
+              style={styles.backFollowingBtn}
+            >
               <Feather name="arrow-left" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
@@ -537,14 +535,22 @@ export function ProfileScreen() {
           </View>
 
           {/* List of followed businesses */}
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, paddingHorizontal: 16 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1, paddingHorizontal: 16 }}
+          >
             {businesses
               .filter((b) => {
-                const isFollowed = followedBusinessIds.includes(b.id) || b.id === 'b-1' || b.id === 'b-2';
+                const isFollowed =
+                  followedBusinessIds.includes(b.id) || b.id === 'b-1' || b.id === 'b-2';
                 if (!isFollowed) return false;
                 if (!followingSearch.trim()) return true;
                 const q = followingSearch.toLowerCase();
-                return b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q) || b.city.toLowerCase().includes(q);
+                return (
+                  b.name.toLowerCase().includes(q) ||
+                  b.category.toLowerCase().includes(q) ||
+                  b.city.toLowerCase().includes(q)
+                );
               })
               .map((biz) => {
                 const isFollowed = followedBusinessIds.includes(biz.id);
@@ -561,7 +567,9 @@ export function ProfileScreen() {
                       <Image source={{ uri: biz.avatar }} style={styles.followingAvatar} />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={styles.followingItemName} numberOfLines={1}>{biz.name}</Text>
+                          <Text style={styles.followingItemName} numberOfLines={1}>
+                            {biz.name}
+                          </Text>
                           {biz.verified && (
                             <Ionicons name="checkmark-circle" size={12} color={colors.accentCyan} />
                           )}
@@ -573,11 +581,21 @@ export function ProfileScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.followingPill, isFollowed ? styles.followingPillActive : styles.followingPillInactive]}
+                      style={[
+                        styles.followingPill,
+                        isFollowed ? styles.followingPillActive : styles.followingPillInactive,
+                      ]}
                       onPress={() => toggleFollowBusiness(biz.id)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.followingPillText, isFollowed ? styles.followingPillTextActive : styles.followingPillTextInactive]}>
+                      <Text
+                        style={[
+                          styles.followingPillText,
+                          isFollowed
+                            ? styles.followingPillTextActive
+                            : styles.followingPillTextInactive,
+                        ]}
+                      >
                         {isFollowed ? 'Following' : 'Follow'}
                       </Text>
                     </TouchableOpacity>

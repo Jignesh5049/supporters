@@ -37,9 +37,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             toggleSaveService(service.id);
           }}
           className={`absolute top-2.5 right-2.5 p-2 rounded-full backdrop-blur-xs transition-colors shadow-xs ${
-            isSaved
-              ? 'bg-[#00AEEF] text-white'
-              : 'bg-white/85 text-[#111111] hover:bg-white'
+            isSaved ? 'bg-[#00AEEF] text-white' : 'bg-white/85 text-[#111111] hover:bg-white'
           }`}
           aria-label={isSaved ? 'Remove from saved' : 'Save service'}
         >
@@ -94,9 +92,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             <span className="text-base font-black text-[#2E3192]">
               ₹{service.startingPrice.toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] text-[#667085] ml-1">
-              /{service.priceUnit}
-            </span>
+            <span className="text-[10px] text-[#667085] ml-1">/{service.priceUnit}</span>
           </div>
 
           <div className="flex items-center gap-1 text-xs font-bold text-[#111111]">
@@ -119,7 +115,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
               openEnquiryModal({
                 title: service.title,
                 businessName: service.businessName,
-                businessId: service.businessId
+                businessId: service.businessId,
               })
             }
             className="flex-1 py-2 text-center text-xs font-semibold text-white bg-[#00AEEF] hover:bg-[#0098d4] rounded-xl transition-colors shadow-2xs"

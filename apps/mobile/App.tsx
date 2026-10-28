@@ -52,9 +52,7 @@ function MainApp() {
 
   // Authentication Flow
   const isAuthRoute =
-    currentRoute === 'sign_in' ||
-    currentRoute === 'sign_up' ||
-    currentRoute === 'forgot_password';
+    currentRoute === 'sign_in' || currentRoute === 'sign_up' || currentRoute === 'forgot_password';
 
   if (!isAuthenticated || isAuthRoute) {
     const renderAuthScreen = () => {

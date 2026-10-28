@@ -19,7 +19,7 @@ import {
   Clock,
   ArrowRight,
   FileEdit,
-  Sparkle
+  Sparkle,
 } from 'lucide-react';
 
 function CreateFlowContent() {
@@ -61,9 +61,13 @@ function CreateFlowContent() {
       setMoq('500');
       setUnit('Pieces');
       setLocation('Jamnagar GIDC, Gujarat');
-      setDescription('Precision CNC turned brass hex bushes for hydraulic assemblies and electrical grounding. High corrosion resistance, IS-319 Grade 1 certified.');
+      setDescription(
+        'Precision CNC turned brass hex bushes for hydraulic assemblies and electrical grounding. High corrosion resistance, IS-319 Grade 1 certified.',
+      );
       setAvailability('In Stock (10,000 pcs)');
-      setImageUrl('https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80');
+      setImageUrl(
+        'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
+      );
       setActiveTab('product');
       setIsDraftLoaded(true);
     } else if (draftListing && draftParam === draftListing.id) {
@@ -88,15 +92,21 @@ function CreateFlowContent() {
       addPost({
         postType: 'product',
         content: `New Product Launch: ${title || 'Commercial Hardware'} now available from ${location}. MOQ: ${moq} ${unit}. ${description}`,
-        images: imageUrl ? [imageUrl] : ['https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80'],
+        images: imageUrl
+          ? [imageUrl]
+          : [
+              'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+            ],
         attachedProduct: {
           id: `new-p-${Date.now()}`,
           title: title || 'Verified Manufactured Product',
           price: parseFloat(price) || 9999,
-          image: imageUrl || 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+          image:
+            imageUrl ||
+            'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
           moq: parseInt(moq) || 1,
-          unit: unit || 'Units'
-        }
+          unit: unit || 'Units',
+        },
       });
       clearDraftListing();
       showToast('Product successfully published to Supporters feed and catalog!', 'success');
@@ -105,13 +115,19 @@ function CreateFlowContent() {
       addPost({
         postType: 'service',
         content: `Service Announcement: ${title || 'B2B Trade Service'} serving ${serviceArea}. Starting from ₹${price || '5000'}. ${description}`,
-        images: imageUrl ? [imageUrl] : ['https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80'],
+        images: imageUrl
+          ? [imageUrl]
+          : [
+              'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
+            ],
         attachedService: {
           id: `new-s-${Date.now()}`,
           title: title || 'Professional B2B Service',
           startingPrice: parseFloat(price) || 5000,
-          image: imageUrl || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80'
-        }
+          image:
+            imageUrl ||
+            'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
+        },
       });
       clearDraftListing();
       showToast('B2B Service successfully listed on Supporters!', 'success');
@@ -119,8 +135,10 @@ function CreateFlowContent() {
     } else if (activeTab === 'post') {
       addPost({
         postType: 'update',
-        content: description || `Factory and dispatch update from ${CURRENT_USER.name}. Connecting with regional supply partners.`,
-        images: imageUrl ? [imageUrl] : undefined
+        content:
+          description ||
+          `Factory and dispatch update from ${CURRENT_USER.name}. Connecting with regional supply partners.`,
+        images: imageUrl ? [imageUrl] : undefined,
       });
       clearDraftListing();
       showToast('Social update published to your business stream!', 'success');
@@ -129,8 +147,12 @@ function CreateFlowContent() {
       addPost({
         postType: 'offer',
         content: `SPECIAL TRADE DEAL [${offerTag}]: ${title || 'Bulk Volume Offer'}. ${description} Valid while stocks last. Contact directly for wholesale slabs.`,
-        images: imageUrl ? [imageUrl] : ['https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&auto=format&fit=crop&q=80'],
-        offerTag: offerTag || 'WHOLESALE DEAL'
+        images: imageUrl
+          ? [imageUrl]
+          : [
+              'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&auto=format&fit=crop&q=80',
+            ],
+        offerTag: offerTag || 'WHOLESALE DEAL',
       });
       clearDraftListing();
       showToast('Promotional trade deal broadcasted to buyers!', 'success');
@@ -143,7 +165,13 @@ function CreateFlowContent() {
     saveDraftListing({
       id: draftId,
       type: activeTab,
-      title: title || (activeTab === 'product' ? 'Unsaved Product Draft' : activeTab === 'service' ? 'Unsaved Service Draft' : 'Unsaved Draft'),
+      title:
+        title ||
+        (activeTab === 'product'
+          ? 'Unsaved Product Draft'
+          : activeTab === 'service'
+            ? 'Unsaved Service Draft'
+            : 'Unsaved Draft'),
       category,
       price,
       moq,
@@ -153,7 +181,7 @@ function CreateFlowContent() {
       imageUrl,
       offerTag,
       resumeUrl: `/create?tab=${activeTab}&draft=${draftId}`,
-      updatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      updatedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
     setIsDraftLoaded(true);
     showToast('Listing draft saved! You can resume anytime from the mobile create popup.', 'info');
@@ -199,15 +227,14 @@ function CreateFlowContent() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-[#111111]">
-                Publish New Listing or Update
-              </h1>
+              <h1 className="text-xl font-black text-[#111111]">Publish New Listing or Update</h1>
               <span className="md:hidden text-[10px] font-bold bg-blue-50 text-[#2E3192] px-2 py-0.5 rounded-full border border-blue-100">
                 App Studio
               </span>
             </div>
             <p className="text-xs text-[#667085] mt-1">
-              Choose whether to list a physical product for bulk trade, advertise a specialized B2B service, post a company milestone, or run a promotion.
+              Choose whether to list a physical product for bulk trade, advertise a specialized B2B
+              service, post a company milestone, or run a promotion.
             </p>
           </div>
         </div>
@@ -277,7 +304,11 @@ function CreateFlowContent() {
             {activeTab !== 'post' && (
               <div>
                 <label className="block text-xs font-bold text-[#111111] mb-1">
-                  {activeTab === 'product' ? 'Product Name & Model' : activeTab === 'service' ? 'Service Title' : 'Offer Headline'}
+                  {activeTab === 'product'
+                    ? 'Product Name & Model'
+                    : activeTab === 'service'
+                      ? 'Service Title'
+                      : 'Offer Headline'}
                 </label>
                 <input
                   type="text"
@@ -288,8 +319,8 @@ function CreateFlowContent() {
                     activeTab === 'product'
                       ? 'e.g. 55-inch Ultra HD 4K Commercial Display'
                       : activeTab === 'service'
-                      ? 'e.g. Turnkey CNC Precision Machining & Milling'
-                      : 'e.g. 25% Off Monsoon Bulk Order Clearance'
+                        ? 'e.g. Turnkey CNC Precision Machining & Milling'
+                        : 'e.g. 25% Off Monsoon Bulk Order Clearance'
                   }
                   className="w-full px-3.5 py-2.5 bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl text-xs sm:text-sm text-[#111111] focus:outline-none focus:border-[#2E3192] focus:bg-white transition-all"
                 />
@@ -379,9 +410,7 @@ function CreateFlowContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">
-                    Unit Type
-                  </label>
+                  <label className="block text-xs font-bold text-[#111111] mb-1">Unit Type</label>
                   <select
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
@@ -448,7 +477,9 @@ function CreateFlowContent() {
             {/* Description / Content */}
             <div>
               <label className="block text-xs font-bold text-[#111111] mb-1">
-                {activeTab === 'post' ? 'Post Content & Announcement' : 'Technical Specifications & Description'}
+                {activeTab === 'post'
+                  ? 'Post Content & Announcement'
+                  : 'Technical Specifications & Description'}
               </label>
               <textarea
                 required
@@ -459,8 +490,8 @@ function CreateFlowContent() {
                   activeTab === 'product'
                     ? 'State dimensions, certifications (ISO, CE, BIS), technical tolerances, and freight packaging details...'
                     : activeTab === 'service'
-                    ? 'Outline your machinery capability, turnaround SLAs, quality control standards, and past client works...'
-                    : 'Share dispatch announcements, factory upgrades, warehouse expansion, or partnership updates with your B2B network...'
+                      ? 'Outline your machinery capability, turnaround SLAs, quality control standards, and past client works...'
+                      : 'Share dispatch announcements, factory upgrades, warehouse expansion, or partnership updates with your B2B network...'
                 }
                 className="w-full p-3 bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl text-xs sm:text-sm text-[#111111] focus:outline-none focus:border-[#2E3192] focus:bg-white resize-y"
               />
@@ -482,7 +513,8 @@ function CreateFlowContent() {
                 />
               </div>
               <p className="text-[11px] text-[#667085] mt-1">
-                Tip: High-resolution factory floor or product sample photos receive 3x more buyer enquiries.
+                Tip: High-resolution factory floor or product sample photos receive 3x more buyer
+                enquiries.
               </p>
             </div>
 
@@ -541,9 +573,7 @@ function CreateFlowContent() {
                 <h4 className="text-xs font-bold text-[#111111]">
                   {title ? 'Shree Electronics & Systems' : CURRENT_USER.name}
                 </h4>
-                <p className="text-[10px] text-[#667085]">
-                  Ahmedabad · Just now
-                </p>
+                <p className="text-[10px] text-[#667085]">Ahmedabad · Just now</p>
               </div>
             </div>
 
@@ -556,13 +586,17 @@ function CreateFlowContent() {
 
             {/* Post Content */}
             <p className="text-xs text-[#111111] leading-relaxed">
-              {description || 'Your product, service, or update description will appear here inside the live social feed.'}
+              {description ||
+                'Your product, service, or update description will appear here inside the live social feed.'}
             </p>
 
             {/* Image Preview */}
             <div className="w-full aspect-16/9 bg-gray-100 rounded-xl overflow-hidden relative border border-[#E5E7EB]">
               <Image
-                src={imageUrl || 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80'}
+                src={
+                  imageUrl ||
+                  'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80'
+                }
                 alt="Preview"
                 fill
                 className="object-cover"
@@ -605,7 +639,14 @@ function CreateFlowContent() {
         <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-[#111111] truncate">
-              {title || (activeTab === 'product' ? 'New Product' : activeTab === 'service' ? 'New Service' : activeTab === 'offer' ? 'Special Deal' : 'Social Update')}
+              {title ||
+                (activeTab === 'product'
+                  ? 'New Product'
+                  : activeTab === 'service'
+                    ? 'New Service'
+                    : activeTab === 'offer'
+                      ? 'Special Deal'
+                      : 'Social Update')}
             </p>
             <span className="text-[10px] text-[#667085] flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -638,12 +679,14 @@ function CreateFlowContent() {
 
 export default function CreateFlowPage() {
   return (
-    <Suspense fallback={
-      <div className="p-8 text-center space-y-3">
-        <div className="w-8 h-8 border-2 border-[#2E3192] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-[#667085]">Loading Supporters creation studio...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="p-8 text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-[#2E3192] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-[#667085]">Loading Supporters creation studio...</p>
+        </div>
+      }
+    >
       <CreateFlowContent />
     </Suspense>
   );

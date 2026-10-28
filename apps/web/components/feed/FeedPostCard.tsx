@@ -18,7 +18,7 @@ import {
   ArrowRight,
   Send,
   Sparkles,
-  Tag
+  Tag,
 } from 'lucide-react';
 
 interface FeedPostCardProps {
@@ -33,7 +33,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
     toggleSavePost,
     openConversationWithBusiness,
     openEnquiryModal,
-    showToast
+    showToast,
   } = useApp();
 
   const isLiked = likedPostIds.includes(post.id);
@@ -113,7 +113,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                   </button>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(window.location.origin + `/business/${post.businessId}`);
+                      navigator.clipboard.writeText(
+                        window.location.origin + `/business/${post.businessId}`,
+                      );
                       showToast('Link copied to clipboard', 'success');
                       setMenuOpen(false);
                     }}
@@ -231,7 +233,12 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                 </h4>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs font-extrabold text-[#2E3192]">
-                    Starting from ₹{((post.attachedProduct?.price || post.attachedService?.startingPrice) || 0).toLocaleString('en-IN')}
+                    Starting from ₹
+                    {(
+                      post.attachedProduct?.price ||
+                      post.attachedService?.startingPrice ||
+                      0
+                    ).toLocaleString('en-IN')}
                   </span>
                   {post.attachedProduct?.moq && (
                     <span className="text-[11px] text-[#667085]">
@@ -273,8 +280,8 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     initialMessage: post.attachedProduct
                       ? `Namaste! I am interested in "${post.attachedProduct.title}" (₹${post.attachedProduct.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`
                       : post.attachedService
-                      ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
-                      : `Namaste! I saw your post regarding "${post.businessName}" and would like to inquire about business collaboration.`,
+                        ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
+                        : `Namaste! I saw your post regarding "${post.businessName}" and would like to inquire about business collaboration.`,
                     attachedProduct: post.attachedProduct,
                     attachedService: post.attachedService,
                   })
@@ -313,7 +320,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           <button
             onClick={() => toggleLikePost(post.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-colors ${
-              isLiked ? 'text-[#E11D48] bg-rose-50/80 font-bold' : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
+              isLiked
+                ? 'text-[#E11D48] bg-rose-50/80 font-bold'
+                : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
             }`}
           >
             <Heart
@@ -335,7 +344,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           <button
             onClick={() => toggleSavePost(post.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-colors ${
-              isSaved ? 'text-[#2E3192] bg-blue-50/60' : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
+              isSaved
+                ? 'text-[#2E3192] bg-blue-50/60'
+                : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
             }`}
           >
             <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current text-[#2E3192]' : ''}`} />
@@ -349,7 +360,11 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         title={`${post.businessName}: "${post.content.slice(0, 80)}..."`}
-        url={typeof window !== 'undefined' ? `${window.location.origin}/business/${post.businessId}` : ''}
+        url={
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/business/${post.businessId}`
+            : ''
+        }
       />
     </>
   );

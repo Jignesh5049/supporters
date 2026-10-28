@@ -17,7 +17,7 @@ import {
   Clock,
   Shield,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 
 export default function BusinessSettingsPage() {
@@ -87,7 +87,9 @@ export default function BusinessSettingsPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#111111]">Edit Business Information</p>
-              <p className="text-[11px] text-[#667085]">Company name, description, category, and logo</p>
+              <p className="text-[11px] text-[#667085]">
+                Company name, description, category, and logo
+              </p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-[#667085]" />
@@ -103,7 +105,9 @@ export default function BusinessSettingsPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#111111]">Social & Web Links</p>
-              <p className="text-[11px] text-[#667085]">Instagram profile link, official website URL</p>
+              <p className="text-[11px] text-[#667085]">
+                Instagram profile link, official website URL
+              </p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-[#667085]" />
@@ -119,7 +123,9 @@ export default function BusinessSettingsPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#111111]">Address & Directions</p>
-              <p className="text-[11px] text-[#667085]">Factory address, Google Maps link, and PIN code</p>
+              <p className="text-[11px] text-[#667085]">
+                Factory address, Google Maps link, and PIN code
+              </p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-[#667085]" />
@@ -135,7 +141,9 @@ export default function BusinessSettingsPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#111111]">Operating Hours & Availability</p>
-              <p className="text-[11px] text-[#667085]">Working days, business hours, and bulk order status</p>
+              <p className="text-[11px] text-[#667085]">
+                Working days, business hours, and bulk order status
+              </p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-[#667085]" />
@@ -154,16 +162,15 @@ export default function BusinessSettingsPage() {
               <p className="text-xs font-bold text-[#111111]">Show Number on Catalog</p>
               <span
                 className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
-                  showPhone
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-gray-200 text-gray-700'
+                  showPhone ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-700'
                 }`}
               >
                 {showPhone ? 'VISIBLE' : 'HIDDEN'}
               </span>
             </div>
             <p className="text-[11px] text-[#667085]">
-              Allow visiting buyers to view and call your direct contact number ({userBusiness?.phone}) on your catalog
+              Allow visiting buyers to view and call your direct contact number (
+              {userBusiness?.phone}) on your catalog
             </p>
           </div>
           <input
@@ -177,7 +184,7 @@ export default function BusinessSettingsPage() {
                 val
                   ? 'Phone number will now be shown on your catalog'
                   : 'Phone number is now hidden from your catalog',
-                'info'
+                'info',
               );
             }}
             className="w-4 h-4 accent-[#2E3192] cursor-pointer ml-3 shrink-0"

@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -28,7 +28,7 @@ export function DiscoverScreen() {
     toggleFollowBusiness,
     openEnquiryModal,
     openConversationWithBusiness,
-    navigate
+    navigate,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -239,11 +239,7 @@ export function DiscoverScreen() {
                     color={item.iconColor}
                   />
                 ) : (
-                  <Ionicons
-                    name={item.iconName as any}
-                    size={20}
-                    color={item.iconColor}
-                  />
+                  <Ionicons name={item.iconName as any} size={20} color={item.iconColor} />
                 )}
               </View>
               <Text style={styles.tradeCategoryLabel} numberOfLines={1}>
@@ -268,9 +264,7 @@ export function DiscoverScreen() {
       {(activeTab === 'all' || activeTab === 'products') && (
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Featured Products ({filteredProducts.length})
-            </Text>
+            <Text style={styles.sectionTitle}>Featured Products ({filteredProducts.length})</Text>
           </View>
 
           {filteredProducts.map((p) => {
@@ -288,7 +282,7 @@ export function DiscoverScreen() {
                       activeOpacity={0.7}
                     >
                       <Ionicons
-                        name={isSaved ? "bookmark" : "bookmark-outline"}
+                        name={isSaved ? 'bookmark' : 'bookmark-outline'}
                         size={14}
                         color={isSaved ? colors.primary : '#667085'}
                       />
@@ -306,9 +300,7 @@ export function DiscoverScreen() {
                   </Text>
 
                   <View style={styles.pricingRow}>
-                    <Text style={styles.priceHighlight}>
-                      ₹{p.price.toLocaleString('en-IN')}
-                    </Text>
+                    <Text style={styles.priceHighlight}>₹{p.price.toLocaleString('en-IN')}</Text>
                     <Text style={styles.moqBadge}>
                       MOQ: {p.minOrderQuantity} {p.unit}
                     </Text>
@@ -317,9 +309,7 @@ export function DiscoverScreen() {
                   <View style={styles.actionRow}>
                     <TouchableOpacity
                       style={styles.detailsButton}
-                      onPress={() =>
-                        navigate('product_detail', { productId: p.id })
-                      }
+                      onPress={() => navigate('product_detail', { productId: p.id })}
                       activeOpacity={0.8}
                     >
                       <Text style={styles.detailsButtonText}>View Product</Text>
@@ -349,9 +339,7 @@ export function DiscoverScreen() {
       {(activeTab === 'all' || activeTab === 'services') && (
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>
-              Verified Services ({filteredServices.length})
-            </Text>
+            <Text style={styles.sectionTitle}>Verified Services ({filteredServices.length})</Text>
           </View>
 
           {filteredServices.map((s) => {
@@ -361,7 +349,12 @@ export function DiscoverScreen() {
                 <Image source={{ uri: s.images[0] }} style={styles.listingImage} />
                 <View style={styles.listingDetails}>
                   <View style={styles.listingTopRow}>
-                    <Text style={[styles.categoryBadge, { backgroundColor: '#E0F7FE', color: '#0284C7' }]}>
+                    <Text
+                      style={[
+                        styles.categoryBadge,
+                        { backgroundColor: '#E0F7FE', color: '#0284C7' },
+                      ]}
+                    >
                       {s.category}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -372,7 +365,7 @@ export function DiscoverScreen() {
                         activeOpacity={0.7}
                       >
                         <Ionicons
-                          name={isSaved ? "bookmark" : "bookmark-outline"}
+                          name={isSaved ? 'bookmark' : 'bookmark-outline'}
                           size={14}
                           color={isSaved ? colors.primary : '#667085'}
                         />
@@ -449,17 +442,15 @@ export function DiscoverScreen() {
                       {b.businessType} · {b.city}, {b.state}
                     </Text>
                     <Text style={styles.bizRating}>
-                      ⭐ {b.rating} ({b.reviewCount} reviews) · {b.followersCount.toLocaleString()} followers
+                      ⭐ {b.rating} ({b.reviewCount} reviews) · {b.followersCount.toLocaleString()}{' '}
+                      followers
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.bizActionsRow}>
                   <TouchableOpacity
-                    style={[
-                      styles.followBtn,
-                      isFollowing && styles.followBtnActive,
-                    ]}
+                    style={[styles.followBtn, isFollowing && styles.followBtnActive]}
                     onPress={() => toggleFollowBusiness(b.id)}
                   >
                     {isFollowing ? (
@@ -473,18 +464,17 @@ export function DiscoverScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[
-                      styles.bizSaveBtn,
-                      isSavedBiz && styles.bizSaveBtnActive,
-                    ]}
+                    style={[styles.bizSaveBtn, isSavedBiz && styles.bizSaveBtnActive]}
                     onPress={() => toggleSaveBusiness(b.id)}
                   >
                     <Ionicons
-                      name={isSavedBiz ? "bookmark" : "bookmark-outline"}
+                      name={isSavedBiz ? 'bookmark' : 'bookmark-outline'}
                       size={14}
                       color={isSavedBiz ? colors.primary : '#667085'}
                     />
-                    <Text style={[styles.bizSaveBtnText, isSavedBiz && styles.bizSaveBtnTextActive]}>
+                    <Text
+                      style={[styles.bizSaveBtnText, isSavedBiz && styles.bizSaveBtnTextActive]}
+                    >
                       {isSavedBiz ? 'Saved' : 'Save'}
                     </Text>
                   </TouchableOpacity>

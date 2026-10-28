@@ -115,9 +115,7 @@ class AuthService {
     }
 
     // Match against mock registered accounts or allow demo login
-    const matched = MOCK_REGISTERED_USERS.find(
-      (u) => u.user.email.toLowerCase() === email
-    );
+    const matched = MOCK_REGISTERED_USERS.find((u) => u.user.email.toLowerCase() === email);
 
     if (matched) {
       if (matched.passwordHash !== password) {
@@ -137,7 +135,8 @@ class AuthService {
     // If account doesn't exist in registered users
     return {
       success: false,
-      error: 'No account found with this email. Please check your credentials or create an account.',
+      error:
+        'No account found with this email. Please check your credentials or create an account.',
     };
   }
 
@@ -165,9 +164,7 @@ class AuthService {
     }
 
     // Check for duplicate registered email
-    const existing = MOCK_REGISTERED_USERS.find(
-      (u) => u.user.email.toLowerCase() === email
-    );
+    const existing = MOCK_REGISTERED_USERS.find((u) => u.user.email.toLowerCase() === email);
     if (existing) {
       return {
         success: false,
@@ -176,13 +173,15 @@ class AuthService {
     }
 
     // Create user profile
-    const username = name.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 900 + 100);
+    const username =
+      name.toLowerCase().replace(/\s+/g, '_') + Math.floor(Math.random() * 900 + 100);
     const newUser: AuthUser = {
       id: `user-${Date.now()}`,
       name,
       email,
       username,
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80',
       city: 'Ahmedabad',
       state: 'Gujarat',
       phone: '+91 98000 00000',

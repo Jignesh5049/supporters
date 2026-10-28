@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     '/verify',
     '/forgot-password',
     '/reset-password',
-    '/onboarding'
+    '/onboarding',
   ].includes(pathname);
 
   if (isAuthRoute) {
@@ -27,9 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
 
       {/* Main Page Area */}
-      <main className="flex-1 min-w-0">
-        {children}
-      </main>
+      <main className="flex-1 min-w-0">{children}</main>
     </div>
   );
 }

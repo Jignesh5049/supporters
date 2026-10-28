@@ -21,7 +21,7 @@ import {
   Send,
   ArrowRight,
   ShieldCheck,
-  Wrench
+  Wrench,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -44,9 +44,13 @@ function ServiceDetailContent() {
       {/* Top Navigation & Breadcrumbs */}
       <div className="flex items-center gap-3">
         <nav className="flex items-center gap-2 text-xs text-[#667085] truncate">
-          <Link href="/" className="hover:text-[#2E3192]">Home</Link>
+          <Link href="/" className="hover:text-[#2E3192]">
+            Home
+          </Link>
           <span>/</span>
-          <Link href="/discover?tab=services" className="hover:text-[#2E3192]">Services</Link>
+          <Link href="/discover?tab=services" className="hover:text-[#2E3192]">
+            Services
+          </Link>
           <span>/</span>
           <span className="text-[#00AEEF] font-semibold">{service.category}</span>
           <span>/</span>
@@ -85,7 +89,9 @@ function ServiceDetailContent() {
               <div className="flex items-center gap-1 text-xs font-bold text-[#111111]">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <span>{service.rating}</span>
-                <span className="text-[#667085] font-normal">({service.reviewCount} client reviews)</span>
+                <span className="text-[#667085] font-normal">
+                  ({service.reviewCount} client reviews)
+                </span>
               </div>
             </div>
 
@@ -101,9 +107,7 @@ function ServiceDetailContent() {
               <span className="text-2xl font-black text-[#2E3192]">
                 ₹{service.startingPrice.toLocaleString('en-IN')}
               </span>
-              <span className="text-xs text-[#667085]">
-                / {service.priceUnit}
-              </span>
+              <span className="text-xs text-[#667085]">/ {service.priceUnit}</span>
             </div>
 
             <div className="mt-2 pt-2 border-t border-[#E5E7EB] flex items-center justify-between text-xs text-[#667085]">
@@ -220,7 +224,7 @@ function ServiceDetailContent() {
                 openEnquiryModal({
                   title: service.title,
                   businessName: business.name,
-                  businessId: business.id
+                  businessId: business.id,
                 })
               }
               className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#00AEEF] hover:bg-[#0098d4] rounded-xl shadow-xs transition-colors"
@@ -252,10 +256,11 @@ function ServiceDetailContent() {
       {relatedServices.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#111111]">
-              Other Specialized Services
-            </h2>
-            <Link href="/discover?tab=services" className="text-xs font-semibold text-[#00AEEF] hover:underline">
+            <h2 className="text-base font-bold text-[#111111]">Other Specialized Services</h2>
+            <Link
+              href="/discover?tab=services"
+              className="text-xs font-semibold text-[#00AEEF] hover:underline"
+            >
               Explore All
             </Link>
           </div>
@@ -280,7 +285,11 @@ function ServiceDetailContent() {
 
 export default function ServiceDetailPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-[#667085]">Loading service details...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs text-[#667085]">Loading service details...</div>
+      }
+    >
       <ServiceDetailContent />
     </Suspense>
   );

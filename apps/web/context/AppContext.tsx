@@ -14,7 +14,7 @@ import {
   ReferralStat,
   WalletSummary,
   WalletTransaction,
-  WithdrawalRequest
+  WithdrawalRequest,
 } from '@/types';
 import {
   MOCK_POSTS,
@@ -25,7 +25,7 @@ import {
   MOCK_NOTIFICATIONS,
   MOCK_REFERRAL_DATA,
   MOCK_WALLET_DATA,
-  CURRENT_USER
+  CURRENT_USER,
 } from '@/lib/mock-data';
 
 export interface ToastMessage {
@@ -108,7 +108,7 @@ interface AppContextType {
     conversationId: string,
     text: string,
     attachedProduct?: Message['attachedProduct'],
-    attachedService?: Message['attachedService']
+    attachedService?: Message['attachedService'],
   ) => void;
   unreadMessagesCount: number;
   openConversationWithBusiness: (
@@ -117,7 +117,7 @@ interface AppContextType {
       initialMessage?: string;
       attachedProduct?: Message['attachedProduct'];
       attachedService?: Message['attachedService'];
-    }
+    },
   ) => void;
 
   // Notifications
@@ -204,14 +204,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const [enquiryState, setEnquiryState] = useState<EnquiryTarget>({
-    isOpen: false
+    isOpen: false,
   });
 
   const [confirmationState, setConfirmationState] = useState<ConfirmationState>({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {}
+    onConfirm: () => {},
   });
 
   const [mobileCreateModalOpen, setMobileCreateModalOpen] = useState(false);
@@ -273,11 +273,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             return {
               ...p,
               likesCount: isLiked ? Math.max(0, p.likesCount - 1) : p.likesCount + 1,
-              isLiked: !isLiked
+              isLiked: !isLiked,
             };
           }
           return p;
-        })
+        }),
       );
       if (!isLiked) {
         showToast('Post liked', 'info');
@@ -299,7 +299,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedProductIds((prev) => {
       const isSaved = prev.includes(productId);
       const next = isSaved ? prev.filter((id) => id !== productId) : [...prev, productId];
-      showToast(isSaved ? 'Removed from saved products' : 'Product saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved products' : 'Product saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -308,7 +311,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedServiceIds((prev) => {
       const isSaved = prev.includes(serviceId);
       const next = isSaved ? prev.filter((id) => id !== serviceId) : [...prev, serviceId];
-      showToast(isSaved ? 'Removed from saved services' : 'Service saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved services' : 'Service saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -317,7 +323,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedBusinessIds((prev) => {
       const isSaved = prev.includes(businessId);
       const next = isSaved ? prev.filter((id) => id !== businessId) : [...prev, businessId];
-      showToast(isSaved ? 'Removed from saved businesses' : 'Business saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved businesses' : 'Business saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -332,13 +341,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             return {
               ...b,
               followersCount: isFollowing ? b.followersCount - 1 : b.followersCount + 1,
-              isFollowed: !isFollowing
+              isFollowed: !isFollowing,
             };
           }
           return b;
-        })
+        }),
       );
-      showToast(isFollowing ? 'Unfollowed business' : 'You are now following this business', 'info');
+      showToast(
+        isFollowing ? 'Unfollowed business' : 'You are now following this business',
+        'info',
+      );
       return next;
     });
   };
@@ -356,7 +368,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       id: `post-${Date.now()}`,
       businessId: 'b-1',
       businessName: 'Shree Electronics & Systems',
-      businessAvatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
+      businessAvatar:
+        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
       businessVerified: true,
       location: 'Ahmedabad',
       createdAt: 'Just now',
@@ -371,7 +384,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       commentsCount: 0,
       sharesCount: 0,
       isLiked: false,
-      isSaved: false
+      isSaved: false,
     };
 
     setPosts((prev) => [newPost, ...prev]);
@@ -384,27 +397,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Business Management
-  const userBusiness = businesses.find((b) => b.id === (CURRENT_USER.businessId || 'b-1')) || businesses[0];
+  const userBusiness =
+    businesses.find((b) => b.id === (CURRENT_USER.businessId || 'b-1')) || businesses[0];
 
   const updateBusinessProfile = (data: Partial<Business>) => {
     const bizId = CURRENT_USER.businessId || 'b-1';
-    setBusinesses((prev) =>
-      prev.map((b) => (b.id === bizId ? { ...b, ...data } : b))
-    );
+    setBusinesses((prev) => prev.map((b) => (b.id === bizId ? { ...b, ...data } : b)));
     showToast('Business profile updated successfully!', 'success');
   };
 
   const updateBusinessPost = (postId: string, data: Partial<FeedPost>) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, ...data } : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, ...data } : p)));
     showToast('Post updated successfully!', 'success');
   };
 
   const setBusinessPostStatus = (postId: string, status: 'Published' | 'Draft' | 'Archived') => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p)));
     showToast(`Post marked as ${status}`, 'info');
   };
 
@@ -442,7 +450,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       bankName: params.bankName,
       status: 'Pending',
       createdAt: 'Just now',
-      estimatedDate: 'Within 24-48 business hours'
+      estimatedDate: 'Within 24-48 business hours',
     };
 
     const newTx: WalletTransaction = {
@@ -458,7 +466,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         params.method === 'UPI'
           ? `UPI: ${params.upiId}`
           : `${params.bankName || 'Bank'} A/C: ••••${params.accountNumber?.slice(-4) || 'XXXX'}`,
-      description: 'Payout requested to linked account. Under automated verification.'
+      description: 'Payout requested to linked account. Under automated verification.',
     };
 
     setWalletData((prev) => ({
@@ -466,10 +474,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       availableBalance: prev.availableBalance - params.amount,
       pendingWithdrawals: prev.pendingWithdrawals + params.amount,
       transactions: [newTx, ...prev.transactions],
-      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests]
+      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests],
     }));
 
-    showToast(`Withdrawal request for ₹${params.amount.toLocaleString('en-IN')} submitted!`, 'success');
+    showToast(
+      `Withdrawal request for ₹${params.amount.toLocaleString('en-IN')} submitted!`,
+      'success',
+    );
     return { success: true, message: 'Withdrawal request submitted successfully' };
   };
 
@@ -477,7 +488,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     conversationId: string,
     text: string,
     attachedProduct?: Message['attachedProduct'],
-    attachedService?: Message['attachedService']
+    attachedService?: Message['attachedService'],
   ) => {
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -488,7 +499,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       timestamp: 'Just now',
       isMe: true,
       attachedProduct,
-      attachedService
+      attachedService,
     };
 
     setConversations((prev) =>
@@ -498,11 +509,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...c,
             lastMessage: text,
             lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg]
+            messages: [...c.messages, newMsg],
           };
         }
         return c;
-      })
+      }),
     );
     showToast('Message sent', 'info');
   };
@@ -513,7 +524,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       initialMessage?: string;
       attachedProduct?: Message['attachedProduct'];
       attachedService?: Message['attachedService'];
-    }
+    },
   ) => {
     // 1. Check if conversation already exists
     const existingConv = conversations.find((c) => c.businessId === businessId);
@@ -525,7 +536,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           existingConv.id,
           options.initialMessage,
           options.attachedProduct,
-          options.attachedService
+          options.attachedService,
         );
       }
       showToast(`Opening chat with ${existingConv.businessName}...`, 'info');
@@ -577,9 +588,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const markNotificationAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
   };
 
   const markAllNotificationsAsRead = () => {
@@ -595,7 +604,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isOpen: true,
       targetTitle: info.title,
       targetBusinessName: info.businessName,
-      targetBusinessId: info.businessId
+      targetBusinessId: info.businessId,
     });
   };
 
@@ -612,7 +621,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }) => {
     setConfirmationState({
       isOpen: true,
-      ...params
+      ...params,
     });
   };
 
@@ -683,7 +692,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateBusinessProfile,
         updateBusinessPost,
         setBusinessPostStatus,
-        deletePost
+        deletePost,
       }}
     >
       {children}

@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
   NativeSyntheticEvent,
-  NativeScrollEvent
+  NativeScrollEvent,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -108,7 +108,9 @@ export function HomeScreen() {
         id: `req-${Date.now()}`,
         title: previewTitle,
         price: 0,
-        image: reqImageUri || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+        image:
+          reqImageUri ||
+          'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
         moq: 1,
         unit: 'Units',
       },
@@ -136,7 +138,10 @@ export function HomeScreen() {
           placeholderTextColor="#667085"
         />
         {feedSearch.length > 0 && (
-          <TouchableOpacity onPress={() => setFeedSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity
+            onPress={() => setFeedSearch('')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Feather name="x-circle" size={15} color="#667085" />
           </TouchableOpacity>
         )}
@@ -172,10 +177,7 @@ export function HomeScreen() {
       <Text style={styles.emptySubtitle}>
         Try adjusting your search term to see more business updates.
       </Text>
-      <TouchableOpacity
-        style={styles.resetButton}
-        onPress={() => setFeedSearch('')}
-      >
+      <TouchableOpacity style={styles.resetButton} onPress={() => setFeedSearch('')}>
         <Text style={styles.resetButtonText}>Clear Search</Text>
       </TouchableOpacity>
     </View>
@@ -212,10 +214,7 @@ export function HomeScreen() {
                   Describe what you need. Sellers will see this and contact you.
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => setReqModalOpen(false)}
-                style={styles.closeModalBtn}
-              >
+              <TouchableOpacity onPress={() => setReqModalOpen(false)} style={styles.closeModalBtn}>
                 <Feather name="x" size={20} color="#667085" />
               </TouchableOpacity>
             </View>
@@ -245,7 +244,9 @@ export function HomeScreen() {
                   color={reqImageUri ? '#059669' : colors.primary}
                 />
                 <Text style={styles.uploadBoxText}>
-                  {reqImageUri ? 'Photo Attached (Tap to Change)' : 'Attach Photo or Sample (Optional)'}
+                  {reqImageUri
+                    ? 'Photo Attached (Tap to Change)'
+                    : 'Attach Photo or Sample (Optional)'}
                 </Text>
                 {reqImageUri && (
                   <TouchableOpacity
@@ -261,10 +262,7 @@ export function HomeScreen() {
 
             {/* Bottom Actions */}
             <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setReqModalOpen(false)}
-              >
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setReqModalOpen(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity

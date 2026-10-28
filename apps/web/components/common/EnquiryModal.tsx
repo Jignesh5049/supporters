@@ -18,7 +18,10 @@ export function EnquiryModal() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    showToast(`Enquiry successfully sent to ${enquiryState.targetBusinessName || 'Supplier'}!`, 'success');
+    showToast(
+      `Enquiry successfully sent to ${enquiryState.targetBusinessName || 'Supplier'}!`,
+      'success',
+    );
   };
 
   const handleClose = () => {
@@ -36,9 +39,7 @@ export function EnquiryModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#E5E7EB] bg-[#F7F8FC]">
           <div>
-            <h3 className="text-base font-bold text-[#111111]">
-              Send Business Enquiry
-            </h3>
+            <h3 className="text-base font-bold text-[#111111]">Send Business Enquiry</h3>
             <p className="text-xs text-[#667085] mt-0.5">
               Direct connection to verified manufacturer / supplier
             </p>
@@ -58,7 +59,9 @@ export function EnquiryModal() {
             </div>
             <h4 className="text-lg font-bold text-[#111111]">Enquiry Transmitted!</h4>
             <p className="text-sm text-[#667085] max-w-sm mt-1.5 leading-relaxed">
-              Your inquiry for <strong>{enquiryState.targetTitle}</strong> has been forwarded to <strong>{enquiryState.targetBusinessName}</strong>. You will receive quotation alerts in your messages tab.
+              Your inquiry for <strong>{enquiryState.targetTitle}</strong> has been forwarded to{' '}
+              <strong>{enquiryState.targetBusinessName}</strong>. You will receive quotation alerts
+              in your messages tab.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full">
               <Link

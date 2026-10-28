@@ -3,25 +3,12 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import {
-  X,
-  Package,
-  Wrench,
-  Megaphone,
-  Percent,
-  FileEdit,
-  ArrowRight,
-  Zap
-} from 'lucide-react';
+import { X, Package, Wrench, Megaphone, Percent, FileEdit, ArrowRight, Zap } from 'lucide-react';
 
 export function MobileCreateModal() {
   const router = useRouter();
-  const {
-    mobileCreateModalOpen,
-    closeMobileCreateModal,
-    draftListing,
-    clearDraftListing
-  } = useApp();
+  const { mobileCreateModalOpen, closeMobileCreateModal, draftListing, clearDraftListing } =
+    useApp();
 
   // Close modal on escape key
   useEffect(() => {
@@ -57,7 +44,7 @@ export function MobileCreateModal() {
       description: 'Showcase physical items, wholesale inventory, MOQ & catalog specs',
       icon: Package,
       iconBg: 'bg-gradient-to-br from-[#2E3192] to-[#4338CA]',
-      path: '/create?tab=product'
+      path: '/create?tab=product',
     },
     {
       title: 'Add a Service',
@@ -66,7 +53,7 @@ export function MobileCreateModal() {
       description: 'Highlight bespoke manufacturing, repairs, consulting or turnkey work',
       icon: Wrench,
       iconBg: 'bg-gradient-to-br from-[#00AEEF] to-[#0284C7]',
-      path: '/create?tab=service'
+      path: '/create?tab=service',
     },
     {
       title: 'Share an Update',
@@ -75,7 +62,7 @@ export function MobileCreateModal() {
       description: 'Post factory dispatch, milestones, photos, videos or attach catalog items',
       icon: Megaphone,
       iconBg: 'bg-gradient-to-br from-[#4F46E5] to-[#6366F1]',
-      path: '/create?tab=post'
+      path: '/create?tab=post',
     },
     {
       title: 'Launch an Offer',
@@ -84,8 +71,8 @@ export function MobileCreateModal() {
       description: 'Flash discounts, wholesale volume slabs, or seasonal clearance deals',
       icon: Percent,
       iconBg: 'bg-gradient-to-br from-[#A3238E] to-[#BE185D]',
-      path: '/create?tab=offer'
-    }
+      path: '/create?tab=offer',
+    },
   ];
 
   return (
@@ -155,7 +142,7 @@ export function MobileCreateModal() {
                 onClick={() =>
                   handleNavigate(
                     draftListing.resumeUrl ||
-                      `/create?tab=${draftListing.type || 'product'}&draft=${draftListing.id}`
+                      `/create?tab=${draftListing.type || 'product'}&draft=${draftListing.id}`,
                   )
                 }
                 className="px-3.5 py-1.5 bg-[#2E3192] hover:bg-[#242775] active:scale-95 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-xs transition-transform"
@@ -203,7 +190,9 @@ export function MobileCreateModal() {
                     <span className="text-sm font-bold text-[#111111] group-hover:text-[#2E3192] transition-colors">
                       {option.title}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${option.badgeClass}`}>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${option.badgeClass}`}
+                    >
                       {option.badge}
                     </span>
                   </div>

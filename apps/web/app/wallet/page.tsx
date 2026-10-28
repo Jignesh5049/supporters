@@ -15,7 +15,7 @@ import {
   PlusCircle,
   ShieldCheck,
   Building,
-  HelpCircle
+  HelpCircle,
 } from 'lucide-react';
 
 export default function WalletPage() {
@@ -148,10 +148,10 @@ export default function WalletPage() {
                         req.status === 'Completed'
                           ? 'bg-emerald-100 text-emerald-800'
                           : req.status === 'Processing'
-                          ? 'bg-sky-100 text-sky-800'
-                          : req.status === 'Pending'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
+                            ? 'bg-sky-100 text-sky-800'
+                            : req.status === 'Pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
                       }`}
                     >
                       {req.status}
@@ -169,7 +169,9 @@ export default function WalletPage() {
                 </div>
 
                 <div className="text-xs sm:text-right text-[#667085]">
-                  <p className="font-semibold text-emerald-600">{req.estimatedDate || 'Est. 24-48 hrs'}</p>
+                  <p className="font-semibold text-emerald-600">
+                    {req.estimatedDate || 'Est. 24-48 hrs'}
+                  </p>
                   <p className="text-[11px]">Backend verification</p>
                 </div>
               </div>
@@ -214,7 +216,8 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {filteredTransactions.map((tx) => {
-              const isCredit = tx.type === 'referral_reward' || tx.type === 'bonus' || tx.type === 'refund';
+              const isCredit =
+                tx.type === 'referral_reward' || tx.type === 'bonus' || tx.type === 'refund';
               return (
                 <div key={tx.id} className="py-3.5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
@@ -233,17 +236,20 @@ export default function WalletPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-[#111111]">
-                          {tx.title.replace(/^(1st|2nd|3rd|\d+(?:st|nd|rd|th))\s+Referral\s+Reward\s+—\s*/i, '')}
+                          {tx.title.replace(
+                            /^(1st|2nd|3rd|\d+(?:st|nd|rd|th))\s+Referral\s+Reward\s+—\s*/i,
+                            '',
+                          )}
                         </p>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
                             tx.status === 'Completed'
                               ? 'bg-emerald-50 text-emerald-700'
                               : tx.status === 'Pending'
-                              ? 'bg-amber-50 text-amber-700'
-                              : tx.status === 'Failed'
-                              ? 'bg-rose-50 text-rose-700'
-                              : 'bg-purple-50 text-purple-700'
+                                ? 'bg-amber-50 text-amber-700'
+                                : tx.status === 'Failed'
+                                  ? 'bg-rose-50 text-rose-700'
+                                  : 'bg-purple-50 text-purple-700'
                           }`}
                         >
                           {tx.status}

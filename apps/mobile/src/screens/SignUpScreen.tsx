@@ -176,12 +176,7 @@ export function SignUpScreen() {
             {/* Full Name */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Full Name / Proprietor Name</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  nameError ? styles.inputWrapperError : null,
-                ]}
-              >
+              <View style={[styles.inputWrapper, nameError ? styles.inputWrapperError : null]}>
                 <Feather
                   name="user"
                   size={16}
@@ -204,12 +199,7 @@ export function SignUpScreen() {
             {/* Email Address */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Business Email</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  emailError ? styles.inputWrapperError : null,
-                ]}
-              >
+              <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
                 <Feather
                   name="mail"
                   size={16}
@@ -234,12 +224,7 @@ export function SignUpScreen() {
             {/* Password */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Password</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  passwordError ? styles.inputWrapperError : null,
-                ]}
-              >
+              <View style={[styles.inputWrapper, passwordError ? styles.inputWrapperError : null]}>
                 <Feather
                   name="lock"
                   size={16}
@@ -261,11 +246,7 @@ export function SignUpScreen() {
                   style={styles.eyeIconBtn}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Feather
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={18}
-                    color="#667085"
-                  />
+                  <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color="#667085" />
                 </TouchableOpacity>
               </View>
               {passwordError && <Text style={styles.fieldErrorText}>{passwordError}</Text>}
@@ -317,7 +298,12 @@ export function SignUpScreen() {
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Referral Code (Optional)</Text>
               <View style={styles.inputWrapper}>
-                <Feather name="gift" size={16} color={colors.accentMagenta} style={styles.inputIcon} />
+                <Feather
+                  name="gift"
+                  size={16}
+                  color={colors.accentMagenta}
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={styles.textInput}
                   value={referralCode}
@@ -346,17 +332,12 @@ export function SignUpScreen() {
                 ]}
                 activeOpacity={0.8}
               >
-                {agreedToTerms && (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                )}
+                {agreedToTerms && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
               </TouchableOpacity>
               <View style={styles.termsTextCol}>
                 <Text style={styles.termsText}>
                   I agree to Supporters'{' '}
-                  <Text
-                    style={styles.termsLink}
-                    onPress={() => setTermsModalVisible(true)}
-                  >
+                  <Text style={styles.termsLink} onPress={() => setTermsModalVisible(true)}>
                     Terms & Conditions
                   </Text>{' '}
                   and Privacy Policy.
@@ -367,11 +348,7 @@ export function SignUpScreen() {
 
             {/* Primary Submit Button */}
             <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                loading && styles.buttonDisabled,
-                { marginTop: 16 },
-              ]}
+              style={[styles.primaryButton, loading && styles.buttonDisabled, { marginTop: 16 }]}
               onPress={handleSubmit}
               disabled={loading}
               activeOpacity={0.85}
@@ -421,19 +398,24 @@ export function SignUpScreen() {
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <Text style={styles.modalSectionHeader}>1. Acceptance of Terms</Text>
               <Text style={styles.modalParagraph}>
-                By creating an account on Supporters, you agree to comply with and be bound by these Terms of Service. Supporters facilitates B2B social commerce and verified business connections.
+                By creating an account on Supporters, you agree to comply with and be bound by these
+                Terms of Service. Supporters facilitates B2B social commerce and verified business
+                connections.
               </Text>
               <Text style={styles.modalSectionHeader}>2. Business Verification</Text>
               <Text style={styles.modalParagraph}>
-                You represent that all information provided regarding your business name, GSTIN (if applicable), and contact details is accurate and genuine.
+                You represent that all information provided regarding your business name, GSTIN (if
+                applicable), and contact details is accurate and genuine.
               </Text>
               <Text style={styles.modalSectionHeader}>3. Commercial Inquiries & Quotes</Text>
               <Text style={styles.modalParagraph}>
-                All direct RFQs, chat communications, and quotations submitted through Supporters are subject to fair trade ethics and prompt vendor response standards.
+                All direct RFQs, chat communications, and quotations submitted through Supporters
+                are subject to fair trade ethics and prompt vendor response standards.
               </Text>
               <Text style={styles.modalSectionHeader}>4. Privacy & Data Security</Text>
               <Text style={styles.modalParagraph}>
-                We protect your commercial catalog data and personal information in accordance with industry encryption and strict privacy protocols.
+                We protect your commercial catalog data and personal information in accordance with
+                industry encryption and strict privacy protocols.
               </Text>
             </ScrollView>
             <TouchableOpacity

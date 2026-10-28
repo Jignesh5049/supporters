@@ -17,7 +17,7 @@ export function BottomTabBar() {
       key: 'messages',
       label: 'Messages',
       icon: 'message-square' as const,
-      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
     },
     { key: 'profile', label: 'Profile', icon: 'user' as const },
   ];
@@ -52,11 +52,7 @@ export function BottomTabBar() {
               activeOpacity={0.7}
             >
               <View style={styles.iconWrapper}>
-                <Feather
-                  name={tab.icon}
-                  size={20}
-                  color={isActive ? colors.primary : '#667085'}
-                />
+                <Feather name={tab.icon} size={20} color={isActive ? colors.primary : '#667085'} />
                 {tab.badge && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{tab.badge}</Text>
@@ -66,7 +62,7 @@ export function BottomTabBar() {
               <Text
                 style={[
                   styles.tabLabel,
-                  isActive ? styles.tabLabelActive : styles.tabLabelInactive
+                  isActive ? styles.tabLabelActive : styles.tabLabelInactive,
                 ]}
               >
                 {tab.label}

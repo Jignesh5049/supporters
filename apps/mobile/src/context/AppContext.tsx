@@ -21,7 +21,7 @@ import {
   WalletSummary,
   WalletTransaction,
   WithdrawalRequest,
-  MOCK_WALLET_DATA
+  MOCK_WALLET_DATA,
 } from '../../mock';
 import {
   authService,
@@ -144,7 +144,7 @@ interface AppContextType {
     conversationId: string,
     text: string,
     attachedProduct?: any,
-    attachedService?: any
+    attachedService?: any,
   ) => void;
   unreadMessagesCount: number;
   openConversationWithBusiness: (
@@ -153,7 +153,7 @@ interface AppContextType {
       initialMessage?: string;
       attachedProduct?: any;
       attachedService?: any;
-    }
+    },
   ) => void;
 
   // Notifications
@@ -240,13 +240,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [shareModal, setShareModal] = useState<ShareTarget>({ isOpen: false, title: '', url: '' });
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToast({ id, message, type });
-    setTimeout(() => {
-      setToast((current) => (current?.id === id ? null : current));
-    }, 3500);
-  }, []);
+  const showToast = useCallback(
+    (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+      const id = Math.random().toString(36).substring(2, 9);
+      setToast({ id, message, type });
+      setTimeout(() => {
+        setToast((current) => (current?.id === id ? null : current));
+      }, 3500);
+    },
+    [],
+  );
 
   // Restore session on app mount
   useEffect(() => {
@@ -310,7 +313,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRouteParams(params);
       setDrawerOpen(false);
     },
-    [isAuthenticated, currentRoute, showToast]
+    [isAuthenticated, currentRoute, showToast],
   );
 
   // Hardware and In-App Back Navigation
@@ -360,7 +363,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const backSubscription = BackHandler.addEventListener(
       'hardwareBackPress',
-      handleHardwareBackPress
+      handleHardwareBackPress,
     );
 
     return () => {
@@ -443,11 +446,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             return {
               ...p,
               likesCount: isLiked ? Math.max(0, p.likesCount - 1) : p.likesCount + 1,
-              isLiked: !isLiked
+              isLiked: !isLiked,
             };
           }
           return p;
-        })
+        }),
       );
       if (!isLiked) {
         showToast('Post liked', 'info');
@@ -469,7 +472,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedProductIds((prev) => {
       const isSaved = prev.includes(productId);
       const next = isSaved ? prev.filter((id) => id !== productId) : [...prev, productId];
-      showToast(isSaved ? 'Removed from saved products' : 'Product saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved products' : 'Product saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -478,7 +484,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedServiceIds((prev) => {
       const isSaved = prev.includes(serviceId);
       const next = isSaved ? prev.filter((id) => id !== serviceId) : [...prev, serviceId];
-      showToast(isSaved ? 'Removed from saved services' : 'Service saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved services' : 'Service saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -487,7 +496,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedBusinessIds((prev) => {
       const isSaved = prev.includes(businessId);
       const next = isSaved ? prev.filter((id) => id !== businessId) : [...prev, businessId];
-      showToast(isSaved ? 'Removed from saved businesses' : 'Business saved to your collection', 'success');
+      showToast(
+        isSaved ? 'Removed from saved businesses' : 'Business saved to your collection',
+        'success',
+      );
       return next;
     });
   };
@@ -502,13 +514,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             return {
               ...b,
               followersCount: isFollowing ? b.followersCount - 1 : b.followersCount + 1,
-              isFollowed: !isFollowing
+              isFollowed: !isFollowing,
             };
           }
           return b;
-        })
+        }),
       );
-      showToast(isFollowing ? 'Unfollowed business' : 'You are now following this business', 'info');
+      showToast(
+        isFollowing ? 'Unfollowed business' : 'You are now following this business',
+        'info',
+      );
       return next;
     });
   };
@@ -545,7 +560,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       commentsCount: 0,
       sharesCount: 0,
       isLiked: false,
-      isSaved: false
+      isSaved: false,
     };
 
     setPosts((prev) => [newPost, ...prev]);
@@ -558,11 +573,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const isOwn = Boolean(
       postToDelete.isOwnPost ||
-      (postToDelete.authorId && (
-        postToDelete.authorId === currentUser.email ||
-        postToDelete.authorId === 'user-me' ||
-        postToDelete.authorId === currentUser.username
-      ))
+      (postToDelete.authorId &&
+        (postToDelete.authorId === currentUser.email ||
+          postToDelete.authorId === 'user-me' ||
+          postToDelete.authorId === currentUser.username)),
     );
 
     if (!isOwn) {
@@ -584,23 +598,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateBusinessProfile = (data: Partial<Business>) => {
     const targetId = currentUser.businessId || userBusiness?.id || 'b-1';
-    setBusinesses((prev) =>
-      prev.map((b) => (b.id === targetId ? { ...b, ...data } : b))
-    );
+    setBusinesses((prev) => prev.map((b) => (b.id === targetId ? { ...b, ...data } : b)));
     showToast('Business details updated successfully!', 'success');
   };
 
   const updateBusinessPost = (postId: string, data: Partial<FeedPost>) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, ...data } : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, ...data } : p)));
     showToast('Post updated successfully!', 'success');
   };
 
   const setBusinessPostStatus = (postId: string, status: 'Published' | 'Draft' | 'Archived') => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p)));
     showToast(`Post status updated to ${status}`, 'info');
   };
 
@@ -674,7 +682,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     conversationId: string,
     text: string,
     attachedProduct?: any,
-    attachedService?: any
+    attachedService?: any,
   ) => {
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -685,7 +693,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       timestamp: 'Just now',
       isMe: true,
       attachedProduct,
-      attachedService
+      attachedService,
     };
 
     setConversations((prev) =>
@@ -695,11 +703,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...c,
             lastMessage: text,
             lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg]
+            messages: [...c.messages, newMsg],
           };
         }
         return c;
-      })
+      }),
     );
     showToast('Message sent', 'info');
   };
@@ -711,7 +719,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         initialMessage?: string;
         attachedProduct?: any;
         attachedService?: any;
-      }
+      },
     ) => {
       // Find if a conversation already exists with this businessId
       const existingConv = conversations.find((c) => c.businessId === businessId);
@@ -723,7 +731,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             existingConv.id,
             options.initialMessage,
             options.attachedProduct,
-            options.attachedService
+            options.attachedService,
           );
         }
         navigate('messages', {
@@ -779,13 +787,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         openChat: true,
       });
     },
-    [conversations, businesses, navigate, sendMessage]
+    [conversations, businesses, navigate, sendMessage],
   );
 
   const markNotificationAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
   };
 
   const markAllNotificationsAsRead = () => {
@@ -801,7 +807,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isOpen: true,
       targetTitle: info.title,
       targetBusinessName: info.businessName,
-      targetBusinessId: info.businessId
+      targetBusinessId: info.businessId,
     });
   };
 
@@ -813,7 +819,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShareModal({
       isOpen: true,
       title: info.title,
-      url: info.url
+      url: info.url,
     });
   };
 
@@ -886,7 +892,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isHeaderVisible,
         setHeaderVisible,
         toast,
-        showToast
+        showToast,
       }}
     >
       {children}
