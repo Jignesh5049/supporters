@@ -1,4 +1,4 @@
-import { colors, fontFamily, radius, shadow, spacing, typeScale, zIndex } from './tokens.ts';
+import { colors, fontFamily, radius, shadow, spacing, typeScale, zIndex } from './tokens';
 
 const HEADER =
   '/* Generated from src/tokens.ts by `pnpm --filter @supporters/design-tokens generate`. Do not edit. */\n';
