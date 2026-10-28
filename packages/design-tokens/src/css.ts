@@ -11,7 +11,7 @@ const px = (value: number) => (value === 0 ? '0' : `${value / 16}rem`);
 export function buildTokensCss(): string {
   const lines = [
     ...Object.entries(colors).map(([name, value]) => `  --${kebab(name)}: ${value};`),
-    `  --radius: ${px(radius.lg)};`,
+    `  --radius: ${px(radius.xl)};`,
     ...Object.entries(radius).map(
       ([name, value]) => `  --radius-${name}: ${value === 9999 ? '9999px' : px(value)};`,
     ),
