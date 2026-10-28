@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Workspace packages ship TypeScript source; Next compiles them.
+  transpilePackages: ['@supporters/ui-web', '@supporters/design-tokens'],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
