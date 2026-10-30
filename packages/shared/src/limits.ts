@@ -15,6 +15,13 @@ export const TEXT_LIMITS = {
   listingDescription: { max: 5_000 },
   requirement: { min: 20, max: 1_000 },
   enquiryMessage: { min: 20, max: 1_000 },
+  personName: { min: 2, max: 80 },
+} as const;
+
+/** Account credentials (backend spec, Security: "Passwords"). */
+export const ACCOUNT_LIMITS = {
+  password: { min: 10, max: 128 },
+  emailMax: 254,
 } as const;
 
 export const MEDIA_LIMITS = {
@@ -53,6 +60,7 @@ export const RATE_LIMITS = {
   userRequests: { max: 600, windowSec: 60 },
   loginPerIp: { max: 5, windowSec: 60 },
   loginPerAccount: { max: 10, windowSec: 3_600 },
+  loginLockoutSec: 900,
   otpSendCooldownSec: 30,
   otpSendPerTarget: { max: 5, windowSec: 3_600 },
   otpSendPerIp: { max: 20, windowSec: 3_600 },
@@ -73,7 +81,6 @@ export const RATE_LIMITS = {
 export const OTP = {
   digits: 6,
   ttlSec: 300,
-  lockoutSec: 900,
 } as const;
 
 export const WALLET = {

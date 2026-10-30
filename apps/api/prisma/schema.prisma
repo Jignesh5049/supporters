@@ -1,0 +1,166 @@
+// Identity tables (backend spec, "Data model"). Every table has a UUIDv7 id
+// from PostgreSQL 18's native uuidv7(), plus created_at and updated_at.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  admin
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  active
+  suspended
+  deleted
+
+  @@map("user_status")
+}
+
+enum OtpPurpose {
+  signup
+  login_reset
+  email_verify
+  phone_change
+
+  @@map("otp_purpose")
+}
+
+enum DevicePlatform {
+  android
+  ios
+  web
+
+  @@map("device_platform")
+}
+
+model User {
+  id              String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// E.164, +91 only.
+  phone           String     @unique(map: "uq_users_phone")
+  /// Stored lower-cased so the unique index is case-insensitive.
+  email           String?    @unique(map: "uq_users_email")
+  emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(6)
+  name            String
+  passwordHash    String     @map("password_hash")
+  role            UserRole   @default(user)
+  status          UserStatus @default(active)
+  /// References cities once the places tables land (Phase 1, catalog PR).
+  cityId          String?    @map("city_id") @db.Uuid
+  /// Admins only, encrypted at the application layer.
+  totpSecret      Bytes?     @map("totp_secret")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sessions  Session[]
+  devices   Device[]
+  consents  Consent[]
+  interests UserInterest[]
+
+  @@map("users")
+}
+
+model UserInterest {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  /// References categories once the catalog tables land.
+  categoryId String   @map("category_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId], map: "uq_user_interests_user_id_category_id")
+  @@map("user_interests")
+}
+
+model Session {
+  id                String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  /// Groups every refresh token issued from one sign-in; revoked together on reuse.
+  familyId          String    @map("family_id") @db.Uuid
+  deviceId          String?   @map("device_id") @db.Uuid
+  /// SHA-256 of the current refresh token.
+  refreshTokenHash  String    @unique(map: "uq_sessions_refresh_token_hash") @map("refresh_token_hash")
+  /// SHA-256 of the token it replaced, accepted for the grace window after rotated_at.
+  previousTokenHash String?   @unique(map: "uq_sessions_previous_token_hash") @map("previous_token_hash")
+  rotatedAt         DateTime? @map("rotated_at") @db.Timestamptz(6)
+  /// Sliding expiry (30 days from the last refresh, capped at absolute_expires_at).
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz(6)
+  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz(6)
+  userAgent         String?   @map("user_agent")
+  ip                String?
+  lastUsedAt        DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt], map: "idx_sessions_user_id_revoked_at")
+  @@index([familyId], map: "idx_sessions_family_id")
+  @@index([deviceId], map: "idx_sessions_device_id")
+  @@map("sessions")
+}
+
+model OtpCode {
+  id         String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  purpose    OtpPurpose
+  /// The phone (E.164) or lower-cased email the code was sent to.
+  target     String
+  /// HMAC-SHA256 of purpose, target and code.
+  codeHash   String     @map("code_hash")
+  attempts   Int        @default(0)
+  expiresAt  DateTime   @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime?  @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([target, purpose, createdAt], map: "idx_otp_codes_target_purpose_created_at")
+  @@index([expiresAt], map: "idx_otp_codes_expires_at")
+  @@map("otp_codes")
+}
+
+model Device {
+  id                String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  platform          DevicePlatform
+  appVersion        String?        @map("app_version")
+  /// Play Integrity or App Attest result; a failure flags the account for review.
+  attestationPassed Boolean?       @map("attestation_passed")
+  lastSeenAt        DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@index([userId], map: "idx_devices_user_id")
+  @@map("devices")
+}
+
+model Consent {
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  /// Version of the terms and privacy policy the user accepted.
+  policyVersion String   @map("policy_version")
+  acceptedAt    DateTime @default(now()) @map("accepted_at") @db.Timestamptz(6)
+  ip            String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_consents_user_id")
+  @@map("consents")
+}

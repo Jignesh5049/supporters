@@ -58,6 +58,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Tests start PostgreSQL 18 and Valkey 9 with Testcontainers (Docker is on ubuntu-latest).
+          - name: API (lint, types, tests)
+            package: '@supporters/api'
+            scripts: lint typecheck test
           - name: Web (lint, types, tests, build)
             package: '@supporters/web'
             scripts: lint typecheck test build

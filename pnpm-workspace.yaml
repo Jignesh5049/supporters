@@ -11,6 +11,15 @@ allowBuilds:
   # Denied on purpose: tsx runs esbuild from its @esbuild/<platform> package without the script.
   esbuild: false
   unrs-resolver: true
+  # apps/api: none of these scripts are needed. argon2 ships N-API prebuilds
+  # (linux-x64, win32-x64, darwin-arm64), Prisma 7 runs its engines as Wasm, and
+  # the rest are optional native speed-ups or version checks in testcontainers' deps.
+  '@prisma/engines': false
+  argon2: false
+  cpu-features: false
+  prisma: false
+  protobufjs: false
+  ssh2: false
 
 auditConfig:
   ignoreGhsas:
@@ -18,3 +27,6 @@ auditConfig:
     # is only in zod 4.6.6+, and @expo/cli 58.1.x still depends on zod ^3.25.76.
     # Remove when @expo/cli moves to a patched zod.
     - GHSA-mrhx-c7xc-m3w5
+
+minimumReleaseAgeExclude:
+  - '@fastify/jwt@10.2.6'

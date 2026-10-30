@@ -9,6 +9,7 @@ pnpm-lock.yaml
 **/ios/
 **/next-env.d.ts
 packages/design-tokens/css/
+apps/api/src/generated/
 
 # Markdown is hand-formatted: Prettier pads wide tables, which makes specs hard to diff.
 *.md
