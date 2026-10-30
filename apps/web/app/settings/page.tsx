@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useLogout } from '@/features/auth/auth-api';
 import { CURRENT_USER } from '@/lib/mock-data';
 import {
   User,
@@ -26,6 +27,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const logout = useLogout();
   const { openConfirmationModal, showToast, userBusiness, updateBusinessProfile } = useApp();
 
   const [activeSection, setActiveSection] = useState<
@@ -67,10 +69,7 @@ export default function SettingsPage() {
       message: 'Are you sure you want to log out from this device?',
       confirmLabel: 'Sign Out',
       isDestructive: true,
-      onConfirm: () => {
-        showToast('Logged out successfully', 'info');
-        router.push('/login');
-      },
+      onConfirm: () => logout.mutate(),
     });
   };
 

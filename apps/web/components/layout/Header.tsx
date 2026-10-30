@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { CURRENT_USER } from '@/lib/mock-data';
+import { Button } from '@supporters/ui-web/components/button';
+import { useLogout } from '@/features/auth/auth-api';
 import { Avatar } from '@/components/common/Avatar';
 import {
   Search,
@@ -25,7 +26,12 @@ import {
   Wallet,
 } from 'lucide-react';
 
-export function Header() {
+/** The signed-in user as the header shows them; null when signed out. */
+export interface HeaderViewer {
+  name: string;
+}
+
+export function Header({ viewer }: { viewer: HeaderViewer | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -35,6 +41,8 @@ export function Header() {
     openMobileCreateModal,
   } = useApp();
 
+  const logout = useLogout();
+  const viewerName = viewer?.name ?? 'Guest';
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -55,9 +63,7 @@ export function Header() {
       message: 'Are you sure you want to log out of your session?',
       confirmLabel: 'Log Out',
       isDestructive: true,
-      onConfirm: () => {
-        router.push('/login');
-      },
+      onConfirm: () => logout.mutate(),
     });
   };
 
@@ -142,15 +148,21 @@ export function Header() {
             <span>Create</span>
           </Link>
 
+          {!viewer && (
+            <Button asChild size="sm">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          )}
+
           {/* User Profile Dropdown */}
-          <div className="relative">
+          <div className="relative" hidden={!viewer}>
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
               className="flex items-center gap-1.5 p-1 rounded-full hover:ring-2 hover:ring-[#2E3192]/20 transition-all focus:outline-none"
               aria-expanded={userDropdownOpen}
               aria-label="User profile menu"
             >
-              <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="sm" verified />
+              <Avatar name={viewerName} size="sm" />
             </button>
 
             {userDropdownOpen && (
@@ -158,13 +170,7 @@ export function Header() {
                 <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-[#E5E7EB] shadow-xl z-50 py-2 animate-in fade-in duration-100">
                   <div className="px-4 py-3 border-b border-[#E5E7EB]">
-                    <p className="text-sm font-bold text-[#111111] line-clamp-1">
-                      {CURRENT_USER.name}
-                    </p>
-                    <p className="text-xs text-[#667085]">@{CURRENT_USER.username}</p>
-                    <span className="mt-1.5 inline-block text-[11px] font-medium text-[#2E3192] bg-[#2E3192]/10 px-2 py-0.5 rounded-md">
-                      Verified Member
-                    </span>
+                    <p className="text-sm font-bold text-[#111111] line-clamp-1">{viewerName}</p>
                   </div>
 
                   <div className="py-1 text-sm text-[#111111]">
@@ -239,11 +245,8 @@ export function Header() {
           <div className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="p-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#F7F8FC]">
               <div className="flex items-center gap-2">
-                <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="sm" verified />
-                <div>
-                  <p className="text-sm font-bold text-[#111111]">{CURRENT_USER.name}</p>
-                  <p className="text-xs text-[#667085]">@{CURRENT_USER.username}</p>
-                </div>
+                <Avatar name={viewerName} size="sm" />
+                <p className="text-sm font-bold text-[#111111]">{viewerName}</p>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
