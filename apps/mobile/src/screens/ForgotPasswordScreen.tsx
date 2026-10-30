@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,50 +16,81 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
-import { validateEmail } from '../services/authService';
+import { ACCOUNT_LIMITS, OtpPurpose, passwordSchema } from '@supporters/shared';
+import { toE164Phone } from '../services/authService';
+import { ApiErrorCode } from '../lib/api';
 
 export function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
-  const { forgotPassword, navigate, showToast } = useApp();
+  const { requestOtp, resetPassword, navigate, routeParams, showToast } = useApp();
 
-  const [email, setEmail] = useState('');
+  // Step 1 asks for the phone and sends a code; the OTP screen returns here with both.
+  const verified = routeParams as { phone?: string; otp?: string };
+  const isPasswordStep = Boolean(verified.phone && verified.otp);
+
+  const [value, setValue] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isCodeRejected, setIsCodeRejected] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const handleEmailChange = (val: string) => {
-    setEmail(val);
-    if (emailError) setEmailError(null);
+  // "Request a new code" returns to step 1 on this same screen: start it clean.
+  useEffect(() => {
+    setValue('');
+    setFieldError(null);
+    setIsCodeRejected(false);
+  }, [isPasswordStep]);
+
+  const handleValueChange = (val: string) => {
+    setValue(val);
+    if (fieldError) setFieldError(null);
     if (errorMessage) setErrorMessage(null);
+  };
+
+  const handleSendCode = async () => {
+    const phone = toE164Phone(value);
+    if (!phone) {
+      setFieldError('Enter your 10-digit mobile number');
+      return;
+    }
+    const result = await requestOtp(OtpPurpose.Reset, phone);
+    if (!result.success) {
+      setErrorMessage(result.error ?? 'Something went wrong. Try again.');
+      return;
+    }
+    navigate('verify_otp', { purpose: OtpPurpose.Reset, phone });
+  };
+
+  const handleResetPassword = async () => {
+    if (!passwordSchema.safeParse(value).success) {
+      const { min, max } = ACCOUNT_LIMITS.password;
+      setFieldError(`Use ${min} to ${max} characters`);
+      return;
+    }
+    const result = await resetPassword({
+      phone: verified.phone ?? '',
+      otp: verified.otp ?? '',
+      newPassword: value,
+    });
+    if (result.success) {
+      setSubmitted(true);
+      showToast('Password updated. Sign in with your new password.', 'success');
+      return;
+    }
+    setIsCodeRejected(
+      result.code === ApiErrorCode.OtpInvalid || result.code === ApiErrorCode.OtpAttemptsExceeded,
+    );
+    setErrorMessage(result.error ?? 'Something went wrong. Try again.');
   };
 
   const handleSubmit = async () => {
     Keyboard.dismiss();
     setErrorMessage(null);
-
-    const cleanEmail = email.trim();
-    if (!cleanEmail) {
-      setEmailError('Email address is required');
-      return;
-    }
-
-    if (!validateEmail(cleanEmail)) {
-      setEmailError('Please enter a valid email address');
-      return;
-    }
-
     setLoading(true);
     try {
-      const result = await forgotPassword(cleanEmail);
-      if (!result.success) {
-        setErrorMessage(result.error || 'Unable to process recovery request.');
-      } else {
-        setSubmitted(true);
-        showToast('Password reset link dispatched to your inbox!', 'success');
-      }
-    } catch {
-      setErrorMessage('A network error occurred. Please try again.');
+      await (isPasswordStep ? handleResetPassword() : handleSendCode());
     } finally {
       setLoading(false);
     }
@@ -84,7 +115,9 @@ export function ForgotPasswordScreen() {
             </View>
             <Text style={styles.heading}>Reset Password</Text>
             <Text style={styles.subtitle}>
-              Enter your registered email address to receive password recovery instructions.
+              {isPasswordStep
+                ? 'Choose a new password for your account.'
+                : 'Enter your registered mobile number and we will send you a code by SMS.'}
             </Text>
           </View>
 
@@ -100,13 +133,12 @@ export function ForgotPasswordScreen() {
             {submitted ? (
               <View style={styles.successContainer}>
                 <View style={styles.successIconCircle}>
-                  <Ionicons name="mail-unread" size={28} color={colors.primary} />
+                  <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
                 </View>
-                <Text style={styles.successTitle}>Check Your Inbox</Text>
+                <Text style={styles.successTitle}>Password Updated</Text>
                 <Text style={styles.successMessage}>
-                  We have dispatched a secure password reset link to{' '}
-                  <Text style={styles.boldEmail}>{email}</Text>. Please check your inbox and follow
-                  the instructions.
+                  Your password has been changed and other devices were signed out. Sign in with
+                  your new password.
                 </Text>
 
                 <TouchableOpacity
@@ -119,27 +151,54 @@ export function ForgotPasswordScreen() {
             ) : (
               <>
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.fieldLabel}>Registered Email</Text>
-                  <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
+                  <Text style={styles.fieldLabel}>
+                    {isPasswordStep ? 'New Password' : 'Mobile Number (+91)'}
+                  </Text>
+                  <View style={[styles.inputWrapper, fieldError ? styles.inputWrapperError : null]}>
                     <Feather
-                      name="mail"
+                      name={isPasswordStep ? 'lock' : 'phone'}
                       size={16}
-                      color={emailError ? colors.danger : '#667085'}
+                      color={fieldError ? colors.danger : '#667085'}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={styles.textInput}
-                      value={email}
-                      onChangeText={handleEmailChange}
-                      placeholder="name@business.com"
+                      value={value}
+                      onChangeText={handleValueChange}
+                      placeholder={isPasswordStep ? 'Enter a new password' : '98765 43210'}
                       placeholderTextColor="#9CA3AF"
-                      keyboardType="email-address"
+                      keyboardType={isPasswordStep ? 'default' : 'phone-pad'}
+                      secureTextEntry={isPasswordStep && !showPassword}
+                      textContentType={isPasswordStep ? 'newPassword' : 'telephoneNumber'}
+                      autoComplete={isPasswordStep ? 'new-password' : 'tel-national'}
+                      accessibilityLabel={isPasswordStep ? 'New password' : 'Mobile number'}
                       autoCapitalize="none"
                       autoCorrect={false}
                       editable={!loading}
                     />
+                    {isPasswordStep && (
+                      <TouchableOpacity
+                        onPress={() => setShowPassword(!showPassword)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        <Feather
+                          name={showPassword ? 'eye-off' : 'eye'}
+                          size={18}
+                          color="#667085"
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                  {emailError && <Text style={styles.fieldErrorText}>{emailError}</Text>}
+                  {fieldError && <Text style={styles.fieldErrorText}>{fieldError}</Text>}
+                  {isCodeRejected && (
+                    <TouchableOpacity
+                      onPress={() => navigate('forgot_password', {})}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.fieldErrorText}>Request a new code</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 <TouchableOpacity
@@ -151,11 +210,15 @@ export function ForgotPasswordScreen() {
                   {loading ? (
                     <View style={styles.buttonLoadingRow}>
                       <ActivityIndicator size="small" color="#FFFFFF" />
-                      <Text style={styles.primaryButtonText}>Sending Link...</Text>
+                      <Text style={styles.primaryButtonText}>
+                        {isPasswordStep ? 'Saving...' : 'Sending Code...'}
+                      </Text>
                     </View>
                   ) : (
                     <View style={styles.buttonContentRow}>
-                      <Text style={styles.primaryButtonText}>Send Recovery Link</Text>
+                      <Text style={styles.primaryButtonText}>
+                        {isPasswordStep ? 'Save Password' : 'Send Code'}
+                      </Text>
                       <Feather name="arrow-right" size={16} color="#FFFFFF" />
                     </View>
                   )}
@@ -347,10 +410,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 10,
-  },
-  boldEmail: {
-    fontWeight: '700',
-    color: colors.textPrimary,
   },
   footerRow: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import { PortalHost } from '@rn-primitives/portal';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { AppProvider, useApp } from './src/context/AppContext';
+import { AUTH_ROUTES, AppProvider, useApp } from './src/context/AppContext';
 import { Header } from './src/components/Header';
 import { BottomTabBar } from './src/components/BottomTabBar';
 import { DrawerMenu } from './src/components/DrawerMenu';
@@ -19,6 +19,9 @@ import { queryClient } from './src/lib/query-client';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { SignUpScreen } from './src/screens/SignUpScreen';
 import { ForgotPasswordScreen } from './src/screens/ForgotPasswordScreen';
+import { OtpVerifyScreen } from './src/screens/otp-verify-screen';
+import { UpdateRequiredScreen } from './src/screens/update-required-screen';
+import { useSessionStore } from './src/stores/session-store';
 
 // Main App Screens
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -43,7 +46,13 @@ import { BusinessSettingsScreen } from './src/screens/BusinessSettingsScreen';
 import { colors } from './src/styles/theme';
 
 function MainApp() {
-  const { currentRoute, isAuthenticated, isLoadingAuth } = useApp();
+  const { currentRoute, isLoadingAuth } = useApp();
+  const isUpgradeRequired = useSessionStore((state) => state.isUpgradeRequired);
+
+  // The API refused this app version (426): nothing else is usable until it is updated.
+  if (isUpgradeRequired) {
+    return <UpdateRequiredScreen />;
+  }
 
   // Loading indicator while checking stored session
   if (isLoadingAuth) {
@@ -54,15 +63,14 @@ function MainApp() {
     );
   }
 
-  // Authentication Flow
-  const isAuthRoute =
-    currentRoute === 'sign_in' || currentRoute === 'sign_up' || currentRoute === 'forgot_password';
-
-  if (!isAuthenticated || isAuthRoute) {
+  // Authentication Flow. Without a session the main app still opens, in guest mode.
+  if (AUTH_ROUTES.includes(currentRoute)) {
     const renderAuthScreen = () => {
       switch (currentRoute) {
         case 'sign_up':
           return <SignUpScreen />;
+        case 'verify_otp':
+          return <OtpVerifyScreen />;
         case 'forgot_password':
           return <ForgotPasswordScreen />;
         case 'sign_in':

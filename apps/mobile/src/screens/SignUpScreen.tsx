@@ -18,17 +18,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../styles/theme';
-import { validateEmail, validatePassword } from '../services/authService';
+import { ACCOUNT_LIMITS, OtpPurpose, passwordSchema } from '@supporters/shared';
+import { toE164Phone, validateName } from '../services/authService';
+
+const PASSWORD = ACCOUNT_LIMITS.password;
 
 export function SignUpScreen() {
   const insets = useSafeAreaInsets();
-  const { signUp, navigate, showToast } = useApp();
+  const { requestOtp, navigate } = useApp();
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('SUPPORT123');
+  const [referralCode, setReferralCode] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +42,7 @@ export function SignUpScreen() {
   // Error states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [termsError, setTermsError] = useState<string | null>(null);
@@ -50,9 +53,9 @@ export function SignUpScreen() {
     if (errorMessage) setErrorMessage(null);
   };
 
-  const handleEmailChange = (val: string) => {
-    setEmail(val);
-    if (emailError) setEmailError(null);
+  const handlePhoneChange = (val: string) => {
+    setPhone(val);
+    if (phoneError) setPhoneError(null);
     if (errorMessage) setErrorMessage(null);
   };
 
@@ -79,30 +82,29 @@ export function SignUpScreen() {
 
     let hasError = false;
     const cleanName = name.trim();
-    const cleanEmail = email.trim();
+    const e164Phone = toE164Phone(phone);
 
     if (!cleanName) {
       setNameError('Full Name is required');
       hasError = true;
-    } else if (cleanName.length < 2) {
+    } else if (!validateName(cleanName)) {
       setNameError('Please enter a valid full name');
       hasError = true;
     }
 
-    if (!cleanEmail) {
-      setEmailError('Email address is required');
+    if (!phone.trim()) {
+      setPhoneError('Mobile number is required');
       hasError = true;
-    } else if (!validateEmail(cleanEmail)) {
-      setEmailError('Please enter a valid business email address');
+    } else if (!e164Phone) {
+      setPhoneError('Enter a 10-digit Indian mobile number');
       hasError = true;
     }
 
-    const passwordValidation = validatePassword(password);
     if (!password) {
       setPasswordError('Password is required');
       hasError = true;
-    } else if (!passwordValidation.isValid) {
-      setPasswordError(passwordValidation.message || 'Password must be at least 6 characters');
+    } else if (!passwordSchema.safeParse(password).success) {
+      setPasswordError(`Use ${PASSWORD.min} to ${PASSWORD.max} characters`);
       hasError = true;
     }
 
@@ -119,23 +121,25 @@ export function SignUpScreen() {
       hasError = true;
     }
 
-    if (hasError) {
+    if (hasError || !e164Phone) {
       return;
     }
 
     setLoading(true);
     try {
-      const result = await signUp({
-        name: cleanName,
-        email: cleanEmail,
-        password,
-        referralCode: referralCode.trim() || undefined,
-      });
-
+      const result = await requestOtp(OtpPurpose.Signup, e164Phone);
       if (!result.success) {
-        setErrorMessage(result.error || 'Registration failed. Please check details.');
+        setErrorMessage(result.error || 'Something went wrong. Try again.');
       } else {
-        showToast('Account created successfully! Welcome to Supporters.', 'success');
+        // The account is created on the OTP screen. The referral code is kept for when
+        // /auth/register accepts it (it is not part of registerSchema yet).
+        navigate('verify_otp', {
+          purpose: OtpPurpose.Signup,
+          phone: e164Phone,
+          name: cleanName,
+          password,
+          referralCode: referralCode.trim() || undefined,
+        });
       }
     } catch {
       setErrorMessage('A network error occurred. Please try again.');
@@ -196,29 +200,31 @@ export function SignUpScreen() {
               {nameError && <Text style={styles.fieldErrorText}>{nameError}</Text>}
             </View>
 
-            {/* Email Address */}
+            {/* Mobile Number */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Business Email</Text>
-              <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
+              <Text style={styles.fieldLabel}>Mobile Number (+91)</Text>
+              <View style={[styles.inputWrapper, phoneError ? styles.inputWrapperError : null]}>
                 <Feather
-                  name="mail"
+                  name="phone"
                   size={16}
-                  color={emailError ? colors.danger : '#667085'}
+                  color={phoneError ? colors.danger : '#667085'}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.textInput}
-                  value={email}
-                  onChangeText={handleEmailChange}
-                  placeholder="name@business.com"
+                  value={phone}
+                  onChangeText={handlePhoneChange}
+                  placeholder="98765 43210"
                   placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  autoComplete="tel-national"
+                  accessibilityLabel="Mobile number"
                   autoCorrect={false}
                   editable={!loading}
                 />
               </View>
-              {emailError && <Text style={styles.fieldErrorText}>{emailError}</Text>}
+              {phoneError && <Text style={styles.fieldErrorText}>{phoneError}</Text>}
             </View>
 
             {/* Password */}
@@ -235,9 +241,12 @@ export function SignUpScreen() {
                   style={styles.textInput}
                   value={password}
                   onChangeText={handlePasswordChange}
-                  placeholder="At least 6 characters"
+                  placeholder={`At least ${PASSWORD.min} characters`}
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showPassword}
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  accessibilityLabel="Password"
                   autoCapitalize="none"
                   editable={!loading}
                 />
@@ -274,6 +283,9 @@ export function SignUpScreen() {
                   placeholder="Re-enter password"
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showConfirmPassword}
+                  textContentType="newPassword"
+                  autoComplete="new-password"
+                  accessibilityLabel="Confirm password"
                   autoCapitalize="none"
                   editable={!loading}
                 />
@@ -308,17 +320,13 @@ export function SignUpScreen() {
                   style={styles.textInput}
                   value={referralCode}
                   onChangeText={(val) => setReferralCode(val.toUpperCase())}
-                  placeholder="SUPPORT123"
+                  placeholder="e.g. ASHA2026"
+                  accessibilityLabel="Referral code, optional"
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="characters"
                   editable={!loading}
                 />
               </View>
-              {referralCode === 'SUPPORT123' && (
-                <Text style={styles.referralHint}>
-                  ✓ Partner referral code applied (₹250 Welcome bonus eligible)
-                </Text>
-              )}
             </View>
 
             {/* Terms and Conditions Checkbox */}
@@ -356,11 +364,11 @@ export function SignUpScreen() {
               {loading ? (
                 <View style={styles.buttonLoadingRow}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.primaryButtonText}>Creating Account...</Text>
+                  <Text style={styles.primaryButtonText}>Sending Code...</Text>
                 </View>
               ) : (
                 <View style={styles.buttonContentRow}>
-                  <Text style={styles.primaryButtonText}>Create Account</Text>
+                  <Text style={styles.primaryButtonText}>Continue</Text>
                   <Feather name="arrow-right" size={16} color="#FFFFFF" />
                 </View>
               )}
@@ -541,12 +549,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
     marginTop: 4,
     fontWeight: '500',
-  },
-  referralHint: {
-    fontSize: 11,
-    color: colors.accentMagenta,
-    marginTop: 4,
-    fontWeight: '600',
   },
   termsRow: {
     flexDirection: 'row',

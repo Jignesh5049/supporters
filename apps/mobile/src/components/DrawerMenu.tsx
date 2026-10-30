@@ -27,6 +27,7 @@ export function DrawerMenu() {
     unreadMessagesCount,
     showToast,
     signOut,
+    isAuthenticated,
   } = useApp();
 
   const handleNavigate = (route: any, params?: any) => {
@@ -155,10 +156,17 @@ export function DrawerMenu() {
               <Text style={styles.menuItemText}>Settings & Preferences</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Feather name="log-out" size={18} color={colors.danger} />
-              <Text style={[styles.menuItemText, { color: colors.danger }]}>Sign Out</Text>
-            </TouchableOpacity>
+            {isAuthenticated ? (
+              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                <Feather name="log-out" size={18} color={colors.danger} />
+                <Text style={[styles.menuItemText, { color: colors.danger }]}>Sign Out</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('sign_in')}>
+                <Feather name="log-in" size={18} color={colors.primary} />
+                <Text style={[styles.menuItemText, { color: colors.primary }]}>Sign In</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>
