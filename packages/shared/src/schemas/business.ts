@@ -4,6 +4,7 @@ import { emailSchema } from './auth';
 import { categoryRefSchema } from './categories';
 import { slugPattern, webUrlSchema } from './common';
 import { citySchema, stateSchema } from './places';
+import { mediaSchema } from './uploads';
 
 /** Product spec, "Who it serves". */
 export const BusinessType = {
@@ -94,6 +95,9 @@ const tagsSchema = z
 /** Fields an owner may leave empty, and clear later with `null`. */
 const optionalFields = {
   subcategoryId: z.uuid(),
+  /** Ready uploads with purpose `avatar` (logo) and `cover`. */
+  logoMediaId: z.uuid(),
+  coverMediaId: z.uuid(),
   gstin: gstinSchema,
   about: z.string().trim().max(BUSINESS_LIMITS.about.max),
   establishedYear: z
@@ -162,6 +166,8 @@ export const businessSchema = z.object({
   type: businessTypeSchema,
   category: categoryRefSchema,
   subcategory: categoryRefSchema.nullable(),
+  logo: mediaSchema.nullable(),
+  cover: mediaSchema.nullable(),
   city: citySchema,
   state: stateSchema,
   gstin: z.string().nullable(),
@@ -202,6 +208,7 @@ export const businessSummarySchema = z.object({
   id: z.uuid(),
   slug: z.string(),
   name: z.string(),
+  logo: mediaSchema.nullable(),
   city: citySchema,
   isVerified: z.boolean(),
   isPremium: z.boolean(),

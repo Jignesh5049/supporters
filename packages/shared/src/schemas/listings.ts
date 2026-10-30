@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { LISTING_LIMITS, TEXT_LIMITS } from '../limits';
+import { LISTING_LIMITS, MEDIA_LIMITS, TEXT_LIMITS } from '../limits';
 import { businessSummarySchema } from './business';
 import { categoryRefSchema } from './categories';
 import { moneyInputSchema, moneySchema, paginationQuerySchema } from './common';
 import { citySchema, stateSchema } from './places';
+import { mediaSchema } from './uploads';
 
 /** Only published listings are public and indexed (product spec, Listings). */
 export const ListingStatus = {
@@ -99,6 +100,15 @@ const featuresSchema = z
   .array(z.string().trim().min(1).max(LISTING_LIMITS.serviceFeature.max))
   .max(LISTING_LIMITS.serviceFeaturesMax);
 
+/**
+ * Ready `listing` uploads, in display order. Published listings need at least
+ * one (product spec, Listings: 1 to 10 images); drafts may have none.
+ */
+const mediaIdsSchema = z
+  .array(z.uuid())
+  .max(MEDIA_LIMITS.imagesPerListing.max)
+  .refine((ids) => new Set(ids).size === ids.length, { message: 'Each image may appear once' });
+
 const leadTimeSchema = z.string().trim().min(1).max(LISTING_LIMITS.leadTime.max);
 
 const listingCoreFields = {
@@ -130,6 +140,7 @@ export const createProductSchema = z
     availability: productAvailabilitySchema.default(ProductAvailability.InStock),
     shippingArea: areaInputSchema(false).default({ allIndia: true, stateIds: [], cityIds: [] }),
     specs: specsSchema.default([]),
+    mediaIds: mediaIdsSchema.default([]),
     status: listingStatusSchema.default(ListingStatus.Draft),
   })
   .refine(priceAboveOriginal, priceOrderIssue);
@@ -149,6 +160,7 @@ export const updateProductSchema = z
     availability: productAvailabilitySchema.optional(),
     shippingArea: areaInputSchema(false).optional(),
     specs: specsSchema.optional(),
+    mediaIds: mediaIdsSchema.optional(),
     status: listingStatusSchema.optional(),
   })
   .refine(priceAboveOriginal, priceOrderIssue);
@@ -163,6 +175,7 @@ export const createServiceSchema = z.strictObject({
   availability: serviceAvailabilitySchema.default(ServiceAvailability.ByAppointment),
   serviceArea: areaInputSchema(true).default({ allIndia: true, stateIds: [], cityIds: [] }),
   features: featuresSchema.default([]),
+  mediaIds: mediaIdsSchema.default([]),
   status: listingStatusSchema.default(ListingStatus.Draft),
 });
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
@@ -177,6 +190,7 @@ export const updateServiceSchema = z.strictObject({
   availability: serviceAvailabilitySchema.optional(),
   serviceArea: areaInputSchema(true).optional(),
   features: featuresSchema.optional(),
+  mediaIds: mediaIdsSchema.optional(),
   status: listingStatusSchema.optional(),
 });
 export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
@@ -189,6 +203,7 @@ const listingBaseSchema = z.object({
   description: z.string(),
   /** Null means "Ask for price". */
   price: moneySchema.nullable(),
+  images: z.array(mediaSchema),
   status: listingStatusSchema,
   publishedAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),

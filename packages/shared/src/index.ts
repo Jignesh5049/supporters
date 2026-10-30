@@ -5,3 +5,4 @@ export * from './schemas/categories';
 export * from './schemas/common';
 export * from './schemas/listings';
 export * from './schemas/places';
+export * from './schemas/uploads';
