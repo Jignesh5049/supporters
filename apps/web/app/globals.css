@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import '@supporters/ui-web/globals.css';
 
 @theme {
   --color-brand-primary: #2e3192;

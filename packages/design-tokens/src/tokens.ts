@@ -90,14 +90,21 @@ export const colors = {
   subtle: palette.gray400,
 } as const;
 
-/** Corner radius in px. `lg` (12) is the default card and input radius. */
+/**
+ * Corner radius in px. Matches Tailwind's default scale, so `rounded-*`
+ * classes in the existing screens keep their size when tokens are wired in.
+ * `xl` (12) is the default card and input radius.
+ */
 export const radius = {
   none: 0,
-  sm: 6,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  '2xl': 24,
+  xs: 2,
+  sm: 4,
+  md: 6,
+  lg: 8,
+  xl: 12,
+  '2xl': 16,
+  '3xl': 24,
+  '4xl': 32,
   full: 9999,
 } as const;
 

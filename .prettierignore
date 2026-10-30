@@ -7,6 +7,7 @@ pnpm-lock.yaml
 **/coverage/
 **/android/
 **/ios/
+**/next-env.d.ts
 packages/design-tokens/css/
 
 # Markdown is hand-formatted: Prettier pads wide tables, which makes specs hard to diff.

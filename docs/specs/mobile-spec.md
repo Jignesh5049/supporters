@@ -86,12 +86,12 @@ packages/
     tailwind.config.js   # NativeWind preset generated from design-tokens
     src/components/      # button.tsx, input.tsx, card.tsx, dialog.tsx, sheet.tsx, tabs.tsx, ...
     src/patterns/        # BusinessCard, ProductCard, FeedPostCard, EmptyState, ...
-    src/lib/cn.ts        # clsx + tailwind-merge
+    src/lib/utils.ts     # cn(): clsx + tailwind-merge
 ```
 
 - **Adding a component:** run `pnpm dlx @react-native-reusables/cli@latest add <name>` inside `packages/ui-native`, then align it to the tokens.
 - **Version note:** NativeWind 4.2.7 is the latest stable release and runs on Tailwind CSS **3.4.19**, while web uses Tailwind 4.3. Both read the same values from `design-tokens/tokens.ts`, so they stay in sync. We move mobile to NativeWind 5 (Tailwind 4) once it leaves release candidate.
-- **Variants** use `class-variance-authority` 0.7 with the same names as web: `variant` (default, secondary, outline, ghost, destructive, link) and `size` (sm, md, lg, icon).
+- **Variants** use `class-variance-authority` 0.7 with the same names as web: `variant` (default, secondary, outline, ghost, destructive, link) and `size` (default, sm, lg, icon).
 - **Icons** come from `lucide-react-native` 1.63, the same icon set as web's `lucide-react`. The prototype's `@expo/vector-icons` are replaced.
 - **Rules:** no inline `StyleSheet` colours or hex values in app code (lint-enforced), and touch targets of at least 44 × 44 pt are built into the components. The prototype's `src/styles/theme.ts` is replaced by design-tokens.
 

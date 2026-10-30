@@ -76,11 +76,11 @@ packages/
     components.json   # shadcn monorepo config: aliases point into this package
     src/components/   # button.tsx, input.tsx, card.tsx, dialog.tsx, sheet.tsx, tabs.tsx, ...
     src/patterns/     # composed pieces: BusinessCard, ProductCard, FeedPostCard, EmptyState, ...
-    src/lib/cn.ts     # clsx + tailwind-merge
+    src/lib/utils.ts  # cn(): clsx + tailwind-merge
 ```
 
 - **Adding a component:** run `pnpm dlx shadcn@latest add <name>` from `packages/ui-web` (the monorepo `components.json` places it there), then adapt it to the tokens. Components are copied into our code, so we own and review every line.
-- **Variants** use `class-variance-authority` (0.7). Every component exposes the same variant names as its mobile twin: `variant` (default, secondary, outline, ghost, destructive, link) and `size` (sm, md, lg, icon).
+- **Variants** use `class-variance-authority` (0.7). Every component exposes the same variant names as its mobile twin: `variant` (default, secondary, outline, ghost, destructive, link) and `size` (default, sm, lg, icon). Names follow shadcn/ui and React Native Reusables so CLI updates apply cleanly. Web also has xs and icon-xs, icon-sm, icon-lg.
 - **Tokens only:** colours, radius and spacing come from CSS variables in `tokens.css`, which are mapped in the Tailwind `@theme`. Hex values or arbitrary values like `bg-[#111111]` in app code fail lint. The prototype's hard-coded colours migrate to tokens as each screen is wired.
 - **Existing components** (`components/common/*`, `feed/*`, `product/*`, `messaging/*`) are rebuilt on library primitives and moved to `ui-web/src/patterns`. The duplicate pieces, such as `Badge`, `Avatar`, `Toast` and `ConfirmationDialog`, are replaced by shadcn `Badge`, `Avatar`, `Sonner` and `AlertDialog`.
 - **Accessibility** comes from Radix (focus traps, keyboard, ARIA). Wrappers must not remove it.
