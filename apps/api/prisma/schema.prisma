@@ -1,10 +1,10 @@
-// Identity tables (backend spec, "Data model"). Every table has a UUIDv7 id
+// Identity, business and catalog tables (backend spec, "Data model"). Every table has a UUIDv7 id
 // from PostgreSQL 18's native uuidv7(), plus created_at and updated_at.
 
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "esm"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
 }
 
 datasource db {
@@ -54,17 +54,18 @@ model User {
   passwordHash    String     @map("password_hash")
   role            UserRole   @default(user)
   status          UserStatus @default(active)
-  /// References cities once the places tables land (Phase 1, catalog PR).
   cityId          String?    @map("city_id") @db.Uuid
   /// Admins only, encrypted at the application layer.
   totpSecret      Bytes?     @map("totp_secret")
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  city      City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
   sessions  Session[]
   devices   Device[]
   consents  Consent[]
   interests UserInterest[]
+  business  Business?
 
   @@map("users")
 }
@@ -72,14 +73,15 @@ model User {
 model UserInterest {
   id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   userId     String   @map("user_id") @db.Uuid
-  /// References categories once the catalog tables land.
   categoryId String   @map("category_id") @db.Uuid
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([userId, categoryId], map: "uq_user_interests_user_id_category_id")
+  @@index([categoryId], map: "idx_user_interests_category_id")
   @@map("user_interests")
 }
 
@@ -163,4 +165,126 @@ model Consent {
 
   @@index([userId], map: "idx_consents_user_id")
   @@map("consents")
+}
+
+enum BusinessType {
+  manufacturer
+  wholesaler
+  retailer
+  distributor
+  brand
+  service_provider
+
+  @@map("business_type")
+}
+
+enum VerificationStatus {
+  none
+  pending
+  verified
+  rejected
+
+  @@map("verification_status")
+}
+
+
+
+
+/// States and union territories. Reference data loaded by prisma/seed.ts.
+model State {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// ISO 3166-2:IN suffix, e.g. MH.
+  code      String   @unique(map: "uq_states_code")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  cities     City[]
+  businesses Business[]
+
+  @@map("states")
+}
+
+model City {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  stateId   String   @map("state_id") @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  state      State      @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  users      User[]
+  businesses Business[]
+
+  @@unique([stateId, name], map: "uq_cities_state_id_name")
+  @@map("cities")
+}
+
+/// Two levels: a category has no parent, a subcategory's parent is a category.
+model Category {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  parentId  String?  @map("parent_id") @db.Uuid
+  name      String
+  slug      String   @unique(map: "uq_categories_slug")
+  position  Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  parent                Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children              Category[]     @relation("CategoryTree")
+  interests             UserInterest[]
+  businesses            Business[]     @relation("BusinessCategory")
+  subcategoryBusinesses Business[]     @relation("BusinessSubcategory")
+
+  @@index([parentId, position], map: "idx_categories_parent_id_position")
+  @@map("categories")
+}
+
+model Business {
+  id                 String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// One business per account (product spec, Decisions 3).
+  ownerUserId        String             @unique(map: "uq_businesses_owner_user_id") @map("owner_user_id") @db.Uuid
+  /// Immutable once verified_at is set.
+  slug               String             @unique(map: "uq_businesses_slug")
+  name               String
+  type               BusinessType
+  categoryId         String             @map("category_id") @db.Uuid
+  subcategoryId      String?            @map("subcategory_id") @db.Uuid
+  cityId             String             @map("city_id") @db.Uuid
+  /// Always the city's state; kept for filtering without a join.
+  stateId            String             @map("state_id") @db.Uuid
+  gstin              String?
+  about              String?
+  establishedYear    Int?               @map("established_year") @db.SmallInt
+  tags               String[]           @default([])
+  website            String?
+  contactPerson      String?            @map("contact_person")
+  contactPhone       String?            @map("contact_phone")
+  contactEmail       String?            @map("contact_email")
+  isContactPublic    Boolean            @default(false) @map("is_contact_public")
+  address            String?
+  pincode            String?
+  mapUrl             String?            @map("map_url")
+  socials            Json               @default("{}")
+  openingHours       Json               @default("[]") @map("opening_hours")
+  verificationStatus VerificationStatus @default(none) @map("verification_status")
+  /// First verification; locks the slug for good.
+  verifiedAt         DateTime?          @map("verified_at") @db.Timestamptz(6)
+  premiumUntil       DateTime?          @map("premium_until") @db.Timestamptz(6)
+  profileCompletion  Int                @default(0) @map("profile_completion") @db.SmallInt
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner       User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  category    Category  @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory Category? @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
+  city        City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  state       State     @relation(fields: [stateId], references: [id], onDelete: Restrict)
+
+  @@index([categoryId], map: "idx_businesses_category_id")
+  @@index([subcategoryId], map: "idx_businesses_subcategory_id")
+  @@index([cityId], map: "idx_businesses_city_id")
+  @@index([stateId], map: "idx_businesses_state_id")
+  @@map("businesses")
 }

@@ -13,7 +13,7 @@ docker compose up -d            # PostgreSQL 18 + Valkey 9
 cp .env.example .env
 pnpm --silent keys:generate >> .env   # JWT signing key and OTP HMAC key
 pnpm db:deploy                  # apply migrations
-pnpm db:seed                    # two demo users, password printed by the script
+pnpm db:seed                    # states, cities, placeholder categories, two demo users
 pnpm dev                        # http://127.0.0.1:3001
 ```
 
@@ -29,7 +29,7 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 | `test`                 | Vitest. Starts PostgreSQL and Valkey in Testcontainers, so Docker must be running |
 | `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                           |
 | `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)        |
-| `db:deploy`, `db:seed` | Applies migrations; seeds non-production data                                     |
+| `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users |
 
 ## Layout
 

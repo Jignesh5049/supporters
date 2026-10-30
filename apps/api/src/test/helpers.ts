@@ -78,10 +78,10 @@ export async function createTestApp(
   return { app, sms, env };
 }
 
-/** Tests share one database: empty it, and Valkey, before each test. */
+/** Tests share one database: empty it (keeping reference data), and Valkey, before each test. */
 export async function resetState() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests CASCADE',
+    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses CASCADE',
   );
   await valkey.flushdb();
 }

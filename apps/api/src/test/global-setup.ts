@@ -3,6 +3,8 @@ import { createRequire } from 'node:module';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { TestProject } from 'vitest/node';
+import { seedReferenceData } from '../../prisma/reference-data';
+import { createPrisma } from '../plugins/data';
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -29,6 +31,9 @@ export async function setup(project: TestProject) {
     env: { ...process.env, DATABASE_URL: databaseUrl },
     stdio: 'pipe',
   });
+  const prisma = createPrisma(databaseUrl);
+  await seedReferenceData(prisma);
+  await prisma.$disconnect();
 
   project.provide('databaseUrl', databaseUrl);
   project.provide('valkeyUrl', `redis://${valkey.getHost()}:${valkey.getMappedPort(6379)}`);

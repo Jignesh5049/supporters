@@ -11,6 +11,10 @@ import type { Redis } from 'ioredis';
 import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
 import { authRoutes } from './modules/auth/auth.routes';
+import { businessesRoutes } from './modules/businesses/businesses.routes';
+import { BusinessesService } from './modules/businesses/businesses.service';
+import { categoriesRoutes } from './modules/categories/categories.routes';
+import { CategoriesService } from './modules/categories/categories.service';
 import { AuthService } from './modules/auth/auth.service';
 import { OtpService } from './modules/auth/otp.service';
 import {
@@ -21,6 +25,8 @@ import {
 import { SessionService } from './modules/auth/session.service';
 import { ConsoleSmsSender, type SmsSender } from './modules/auth/sms';
 import { healthRoutes } from './modules/health/health.routes';
+import { placesRoutes } from './modules/places/places.routes';
+import { PlacesService } from './modules/places/places.service';
 import { usersRoutes } from './modules/users/users.routes';
 import { UsersService } from './modules/users/users.service';
 import { authPlugin } from './plugins/auth';
@@ -124,10 +130,16 @@ export async function buildApp(options: BuildAppOptions) {
     (env.BREACHED_PASSWORD_CHECK
       ? new HibpPasswordChecker(app.log)
       : new DisabledPasswordChecker());
+  const categories = new CategoriesService(app.prisma);
+  const places = new PlacesService(app.prisma);
+  const businesses = new BusinessesService(app.prisma, categories, places);
   app.decorate('services', {
     sessions,
     auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
     users: new UsersService(app.prisma),
+    categories,
+    places,
+    businesses,
   });
 
   await app.register(healthRoutes);
@@ -135,6 +147,9 @@ export async function buildApp(options: BuildAppOptions) {
     async (v1) => {
       await v1.register(authRoutes);
       await v1.register(usersRoutes);
+      await v1.register(categoriesRoutes);
+      await v1.register(placesRoutes);
+      await v1.register(businessesRoutes);
     },
     { prefix: '/v1' },
   );

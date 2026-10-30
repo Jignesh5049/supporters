@@ -21,6 +21,9 @@ export const ErrorCode = {
   PasswordBreached: 'PASSWORD_BREACHED',
   PolicyVersionOutdated: 'POLICY_VERSION_OUTDATED',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
+  BusinessExists: 'BUSINESS_EXISTS',
+  SlugTaken: 'SLUG_TAKEN',
+  SlugLocked: 'SLUG_LOCKED',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   InternalError: 'INTERNAL_ERROR',
 } as const;
@@ -61,6 +64,14 @@ export class AppError extends Error {
 
 export const unauthenticated = () =>
   new AppError(401, ErrorCode.Unauthenticated, 'Sign in to continue');
+
+export const notFound = () => new AppError(404, ErrorCode.NotFound, 'Not found');
+
+/** A body field that names a row that doesn't exist (unknown category, city, ...). */
+export const invalidField = (path: string, message: string) =>
+  new AppError(400, ErrorCode.ValidationFailed, 'Validation failed', {
+    errors: [{ path, message }],
+  });
 
 export const rateLimited = (retryAfter: number) =>
   new AppError(429, ErrorCode.RateLimited, 'Too many requests', {
