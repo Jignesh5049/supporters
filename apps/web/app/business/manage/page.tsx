@@ -25,7 +25,7 @@ import {
   TrendingUp,
   Sliders,
   ShieldCheck,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 
 function BusinessNavHeaderInner() {
@@ -38,7 +38,7 @@ function BusinessNavHeaderInner() {
     { label: 'Catalog Products', href: '/business/products', icon: Package },
     { label: 'Services', href: '/business/services', icon: Wrench },
     { label: 'Received Enquiries', href: '/business/enquiries', icon: FileQuestion },
-    { label: 'Trade Analytics', href: '/business/analytics', icon: BarChart3 }
+    { label: 'Trade Analytics', href: '/business/analytics', icon: BarChart3 },
   ];
 
   return (
@@ -50,14 +50,18 @@ function BusinessNavHeaderInner() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-[#111111]">{userBusiness?.name || 'Business Suite'}</h2>
+              <h2 className="text-base font-bold text-[#111111]">
+                {userBusiness?.name || 'Business Suite'}
+              </h2>
               {userBusiness?.verified && (
                 <span className="text-[10px] font-bold text-[#00AEEF] bg-[#00AEEF]/10 px-2 py-0.5 rounded-full">
                   ✓ Verified
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#667085]">{userBusiness?.city}, {userBusiness?.state} · Business Manager</p>
+            <p className="text-xs text-[#667085]">
+              {userBusiness?.city}, {userBusiness?.state} · Business Manager
+            </p>
           </div>
         </div>
 
@@ -105,7 +109,9 @@ function BusinessNavHeaderInner() {
 
 export function BusinessNavHeader() {
   return (
-    <Suspense fallback={<div className="h-24 bg-white border border-[#E5E7EB] rounded-2xl animate-pulse" />}>
+    <Suspense
+      fallback={<div className="h-24 bg-white border border-[#E5E7EB] rounded-2xl animate-pulse" />}
+    >
       <BusinessNavHeaderInner />
     </Suspense>
   );
@@ -141,7 +147,9 @@ export default function BusinessManagePage() {
   }
 
   const businessPosts = posts.filter((p) => p.businessId === userBusiness.id);
-  const publishedPostsCount = businessPosts.filter((p) => p.postStatus !== 'Draft' && p.postStatus !== 'Archived').length;
+  const publishedPostsCount = businessPosts.filter(
+    (p) => p.postStatus !== 'Draft' && p.postStatus !== 'Archived',
+  ).length;
   const draftPostsCount = businessPosts.filter((p) => p.postStatus === 'Draft').length;
   const businessProducts = products.filter((p) => p.businessId === userBusiness.id);
   const businessServices = services.filter((s) => s.businessId === userBusiness.id);
@@ -205,7 +213,8 @@ export default function BusinessManagePage() {
                   )}
                 </div>
                 <p className="text-xs text-[#667085]">
-                  {userBusiness.businessType} · {userBusiness.category} · {userBusiness.city}, {userBusiness.state}
+                  {userBusiness.businessType} · {userBusiness.category} · {userBusiness.city},{' '}
+                  {userBusiness.state}
                 </p>
               </div>
             </div>
@@ -232,9 +241,7 @@ export default function BusinessManagePage() {
           {/* Profile Completion Bar */}
           <div className="bg-[#F8FAFC] border border-gray-200 rounded-2xl p-4 mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-[#111111]">
-                Profile Completion: {completion}%
-              </span>
+              <span className="font-bold text-[#111111]">Profile Completion: {completion}%</span>
               <Link href="/business/edit" className="text-[#2E3192] font-bold hover:underline">
                 Complete all fields →
               </Link>
@@ -258,7 +265,9 @@ export default function BusinessManagePage() {
           title="Click to view followers list"
         >
           <div className="flex items-center justify-between text-[#667085]">
-            <span className="text-xs font-bold uppercase tracking-wider group-hover:text-[#2E3192]">Followers</span>
+            <span className="text-xs font-bold uppercase tracking-wider group-hover:text-[#2E3192]">
+              Followers
+            </span>
             <Users className="w-4 h-4 text-[#2E3192]" />
           </div>
           <p className="text-2xl font-black text-[#111111] group-hover:text-[#2E3192]">
@@ -275,9 +284,7 @@ export default function BusinessManagePage() {
             <span className="text-xs font-bold uppercase tracking-wider">Published Posts</span>
             <FileText className="w-4 h-4 text-[#A3238E]" />
           </div>
-          <p className="text-2xl font-black text-[#A3238E]">
-            {publishedPostsCount}
-          </p>
+          <p className="text-2xl font-black text-[#A3238E]">{publishedPostsCount}</p>
           <span className="text-[11px] text-[#667085]">{draftPostsCount} drafts saved</span>
         </div>
 
@@ -286,9 +293,7 @@ export default function BusinessManagePage() {
             <span className="text-xs font-bold uppercase tracking-wider">Products</span>
             <Package className="w-4 h-4 text-[#00AEEF]" />
           </div>
-          <p className="text-2xl font-black text-[#00AEEF]">
-            {businessProducts.length}
-          </p>
+          <p className="text-2xl font-black text-[#00AEEF]">{businessProducts.length}</p>
           <span className="text-[11px] text-[#667085]">In trade catalogue</span>
         </div>
 
@@ -297,9 +302,7 @@ export default function BusinessManagePage() {
             <span className="text-xs font-bold uppercase tracking-wider">Services</span>
             <Wrench className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-black text-emerald-600">
-            {businessServices.length}
-          </p>
+          <p className="text-2xl font-black text-emerald-600">{businessServices.length}</p>
           <span className="text-[11px] text-[#667085]">Active offerings</span>
         </div>
       </div>
@@ -314,7 +317,8 @@ export default function BusinessManagePage() {
             </div>
             <h2 className="text-base font-bold text-[#111111]">Manage Updates & Posts</h2>
             <p className="text-xs text-[#667085]">
-              Create new announcements, manage drafts, publish or archive posts displayed on your public feed.
+              Create new announcements, manage drafts, publish or archive posts displayed on your
+              public feed.
             </p>
           </div>
           <Link
@@ -334,7 +338,8 @@ export default function BusinessManagePage() {
             </div>
             <h2 className="text-base font-bold text-[#111111]">Catalog & Inventory</h2>
             <p className="text-xs text-[#667085]">
-              Update your wholesale product specifications, MOQ, pricing units, and service offerings.
+              Update your wholesale product specifications, MOQ, pricing units, and service
+              offerings.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -361,7 +366,8 @@ export default function BusinessManagePage() {
             </div>
             <h2 className="text-base font-bold text-[#111111]">Profile & Settings</h2>
             <p className="text-xs text-[#667085]">
-              Manage business contact info, Instagram handle, opening hours, Google Maps link, and preferences.
+              Manage business contact info, Instagram handle, opening hours, Google Maps link, and
+              preferences.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -404,9 +410,7 @@ export default function BusinessManagePage() {
             <span className="text-[#667085] font-bold block uppercase tracking-wider text-[10px]">
               Instagram Handle
             </span>
-            <p className="font-bold text-[#111111]">
-              {userBusiness.instagram || 'Not connected'}
-            </p>
+            <p className="font-bold text-[#111111]">{userBusiness.instagram || 'Not connected'}</p>
           </div>
 
           <div className="p-3 bg-[#F8FAFC] rounded-xl space-y-1">
@@ -439,7 +443,8 @@ export default function BusinessManagePage() {
               Address & Maps
             </span>
             <p className="font-bold text-[#111111] truncate">
-              {userBusiness.fullAddress || `${userBusiness.addressLine || ''}, ${userBusiness.city}, ${userBusiness.state}`}
+              {userBusiness.fullAddress ||
+                `${userBusiness.addressLine || ''}, ${userBusiness.city}, ${userBusiness.state}`}
             </p>
           </div>
         </div>

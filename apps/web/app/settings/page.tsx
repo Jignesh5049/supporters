@@ -21,14 +21,16 @@ import {
   Check,
   Smartphone,
   Lock,
-  Globe
+  Globe,
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { openConfirmationModal, showToast, userBusiness, updateBusinessProfile } = useApp();
 
-  const [activeSection, setActiveSection] = useState<'account' | 'preferences' | 'privacy' | 'business' | 'subscription' | 'support' | 'legal'>('account');
+  const [activeSection, setActiveSection] = useState<
+    'account' | 'preferences' | 'privacy' | 'business' | 'subscription' | 'support' | 'legal'
+  >('account');
 
   // Form states
   const [name, setName] = useState(CURRENT_USER.name);
@@ -37,7 +39,7 @@ export default function SettingsPage() {
   const [bio, setBio] = useState(CURRENT_USER.bio);
   const [profileVisibility, setProfileVisibility] = useState('public');
   const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
-    userBusiness?.showPhone ?? CURRENT_USER.showPhone ?? true
+    userBusiness?.showPhone ?? CURRENT_USER.showPhone ?? true,
   );
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
@@ -50,7 +52,7 @@ export default function SettingsPage() {
       val
         ? 'Phone number will now be shown on your catalog'
         : 'Phone number is now hidden from your catalog',
-      'info'
+      'info',
     );
   };
 
@@ -68,20 +70,21 @@ export default function SettingsPage() {
       onConfirm: () => {
         showToast('Logged out successfully', 'info');
         router.push('/login');
-      }
+      },
     });
   };
 
   const handleDeleteAccount = () => {
     openConfirmationModal({
       title: 'Delete Account Permanently',
-      message: 'This will irreversibly erase your profile, catalog items, saved bookmarks and message logs. Are you certain?',
+      message:
+        'This will irreversibly erase your profile, catalog items, saved bookmarks and message logs. Are you certain?',
       confirmLabel: 'Delete Forever',
       isDestructive: true,
       onConfirm: () => {
         showToast('Account scheduled for deactivation', 'info');
         router.push('/login');
-      }
+      },
     });
   };
 
@@ -92,7 +95,7 @@ export default function SettingsPage() {
     { id: 'business', label: 'Business Settings', icon: Building },
     { id: 'subscription', label: 'Subscription & Billing', icon: Crown },
     { id: 'support', label: 'Support & Assistance', icon: HelpCircle },
-    { id: 'legal', label: 'Legal & Policies', icon: FileText }
+    { id: 'legal', label: 'Legal & Policies', icon: FileText },
   ];
 
   return (
@@ -102,7 +105,8 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-xl font-black text-[#111111]">Platform Settings</h1>
           <p className="text-xs text-[#667085] mt-0.5">
-            Manage your account credentials, notifications, privacy preferences and business parameters.
+            Manage your account credentials, notifications, privacy preferences and business
+            parameters.
           </p>
         </div>
       </div>
@@ -128,7 +132,9 @@ export default function SettingsPage() {
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#667085]'}`} />
                   <span>{s.label}</span>
                 </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#667085]'}`} />
+                <ChevronRight
+                  className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#667085]'}`}
+                />
               </button>
             );
           })}
@@ -165,7 +171,9 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[#111111] mb-1">Registered Phone</label>
+                    <label className="block text-xs font-bold text-[#111111] mb-1">
+                      Registered Phone
+                    </label>
                     <input
                       type="text"
                       value={phone}
@@ -176,7 +184,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">Email Address</label>
+                  <label className="block text-xs font-bold text-[#111111] mb-1">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     value={email}
@@ -186,7 +196,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">Professional Bio</label>
+                  <label className="block text-xs font-bold text-[#111111] mb-1">
+                    Professional Bio
+                  </label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
@@ -235,7 +247,9 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-rose-50/50 border border-rose-200">
                   <div>
                     <p className="text-xs font-bold text-rose-900">Delete Account</p>
-                    <p className="text-[11px] text-rose-700">Permanently delete your profile and trade listings</p>
+                    <p className="text-[11px] text-rose-700">
+                      Permanently delete your profile and trade listings
+                    </p>
                   </div>
                   <button
                     onClick={handleDeleteAccount}
@@ -257,7 +271,9 @@ export default function SettingsPage() {
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">Platform Language</label>
+                  <label className="block text-xs font-bold text-[#111111] mb-1">
+                    Platform Language
+                  </label>
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
@@ -274,7 +290,9 @@ export default function SettingsPage() {
                   <label className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
                     <div>
                       <span className="font-bold text-[#111111] block">Email Trade Digest</span>
-                      <span className="text-[#667085] text-[11px]">Receive daily enquiry summaries and verified quotes</span>
+                      <span className="text-[#667085] text-[11px]">
+                        Receive daily enquiry summaries and verified quotes
+                      </span>
                     </div>
                     <input
                       type="checkbox"
@@ -286,8 +304,12 @@ export default function SettingsPage() {
 
                   <label className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
                     <div>
-                      <span className="font-bold text-[#111111] block">WhatsApp Immediate Lead Alerts</span>
-                      <span className="text-[#667085] text-[11px]">Instant notifications when buyers submit RFQ inquiries</span>
+                      <span className="font-bold text-[#111111] block">
+                        WhatsApp Immediate Lead Alerts
+                      </span>
+                      <span className="text-[#667085] text-[11px]">
+                        Instant notifications when buyers submit RFQ inquiries
+                      </span>
                     </div>
                     <input
                       type="checkbox"
@@ -322,7 +344,9 @@ export default function SettingsPage() {
                       />
                       <div>
                         <span className="font-bold text-[#111111] block">Public (Recommended)</span>
-                        <span className="text-[#667085] text-[11px]">Visible to all buyers, search engines, and network members</span>
+                        <span className="text-[#667085] text-[11px]">
+                          Visible to all buyers, search engines, and network members
+                        </span>
                       </div>
                     </label>
 
@@ -335,8 +359,12 @@ export default function SettingsPage() {
                         onChange={() => setProfileVisibility('verified-only')}
                       />
                       <div>
-                        <span className="font-bold text-[#111111] block">Verified Businesses Only</span>
-                        <span className="text-[#667085] text-[11px]">Only KYC-verified companies can view your contact info</span>
+                        <span className="font-bold text-[#111111] block">
+                          Verified Businesses Only
+                        </span>
+                        <span className="text-[#667085] text-[11px]">
+                          Only KYC-verified companies can view your contact info
+                        </span>
                       </div>
                     </label>
                   </div>
@@ -358,7 +386,8 @@ export default function SettingsPage() {
                         </span>
                       </div>
                       <span className="text-[#667085] text-[11px] block">
-                        Allow buyers to view your contact number ({phone || userBusiness?.phone}) directly on your catalog storefront
+                        Allow buyers to view your contact number ({phone || userBusiness?.phone})
+                        directly on your catalog storefront
                       </span>
                     </div>
                     <input
@@ -380,7 +409,8 @@ export default function SettingsPage() {
                 Business Suite Configuration
               </h2>
               <p className="text-xs text-[#667085]">
-                Configure company legal info, GST credentials, manufacturing locations and bank details for your supplier profile.
+                Configure company legal info, GST credentials, manufacturing locations and bank
+                details for your supplier profile.
               </p>
               <Link
                 href="/business/manage"
@@ -443,19 +473,31 @@ export default function SettingsPage() {
                 Legal & Governance Documents
               </h2>
               <div className="space-y-2 text-xs">
-                <Link href="/privacy" className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium">
+                <Link
+                  href="/privacy"
+                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
+                >
                   <span>Privacy Policy</span>
                   <ChevronRight className="w-4 h-4 text-[#667085]" />
                 </Link>
-                <Link href="/terms" className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium">
+                <Link
+                  href="/terms"
+                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
+                >
                   <span>Terms & Conditions</span>
                   <ChevronRight className="w-4 h-4 text-[#667085]" />
                 </Link>
-                <Link href="/refund-policy" className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium">
+                <Link
+                  href="/refund-policy"
+                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
+                >
                   <span>Refund & Cancellation Policy</span>
                   <ChevronRight className="w-4 h-4 text-[#667085]" />
                 </Link>
-                <Link href="/community-guidelines" className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium">
+                <Link
+                  href="/community-guidelines"
+                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
+                >
                   <span>Community & Fair Trade Guidelines</span>
                   <ChevronRight className="w-4 h-4 text-[#667085]" />
                 </Link>

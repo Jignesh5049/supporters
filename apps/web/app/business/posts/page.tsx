@@ -20,7 +20,7 @@ import {
   Image as ImageIcon,
   Send,
   Save,
-  X
+  X,
 } from 'lucide-react';
 
 export default function BusinessPostsPage() {
@@ -32,7 +32,7 @@ export default function BusinessPostsPage() {
     setBusinessPostStatus,
     deletePost,
     openConfirmationModal,
-    showToast
+    showToast,
   } = useApp();
 
   const [filter, setFilter] = useState<'All' | 'Published' | 'Draft' | 'Archived'>('All');
@@ -45,9 +45,7 @@ export default function BusinessPostsPage() {
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
   const [postType, setPostType] = useState<FeedPost['postType']>('update');
 
-  const myPosts = posts.filter(
-    (p) => p.businessId === (userBusiness?.id || 'b-1')
-  );
+  const myPosts = posts.filter((p) => p.businessId === (userBusiness?.id || 'b-1'));
 
   const filteredPosts = myPosts.filter((p) => {
     const status = p.postStatus || 'Published';
@@ -228,7 +226,9 @@ export default function BusinessPostsPage() {
               {imageUrl.trim() && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-[#111111] block mb-1">Aspect Ratio</label>
+                    <label className="text-xs font-bold text-[#111111] block mb-1">
+                      Aspect Ratio
+                    </label>
                     <select
                       value={aspectRatio}
                       onChange={(e) => setAspectRatio(e.target.value as typeof aspectRatio)}
@@ -239,7 +239,9 @@ export default function BusinessPostsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-[#111111] block mb-1">Post Category</label>
+                    <label className="text-xs font-bold text-[#111111] block mb-1">
+                      Post Category
+                    </label>
                     <select
                       value={postType}
                       onChange={(e) => setPostType(e.target.value as typeof postType)}
@@ -310,15 +312,13 @@ export default function BusinessPostsPage() {
                         status === 'Published'
                           ? 'bg-emerald-100 text-emerald-800'
                           : status === 'Draft'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-gray-100 text-gray-800'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-gray-100 text-gray-800'
                       }`}
                     >
                       {status}
                     </span>
-                    <span className="text-xs text-[#667085]">
-                      Created on {post.createdAt}
-                    </span>
+                    <span className="text-xs text-[#667085]">Created on {post.createdAt}</span>
                     <span className="text-xs text-[#667085]">· {post.postType}</span>
                   </div>
 
@@ -340,7 +340,8 @@ export default function BusinessPostsPage() {
                   {/* Basic engagement placeholder */}
                   <div className="flex items-center gap-4 text-xs text-[#667085] pt-1">
                     <span className="inline-flex items-center gap-1 text-rose-600 font-medium">
-                      <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> {post.likesCount || 0} Likes
+                      <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />{' '}
+                      {post.likesCount || 0} Likes
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <MessageSquare className="w-3.5 h-3.5" /> {post.commentsCount || 0} Enquiries

@@ -37,9 +37,7 @@ export function ProductCard({ product }: ProductCardProps) {
             toggleSaveProduct(product.id);
           }}
           className={`absolute top-2.5 right-2.5 p-2 rounded-full backdrop-blur-xs transition-colors shadow-xs ${
-            isSaved
-              ? 'bg-[#2E3192] text-white'
-              : 'bg-white/85 text-[#111111] hover:bg-white'
+            isSaved ? 'bg-[#2E3192] text-white' : 'bg-white/85 text-[#111111] hover:bg-white'
           }`}
           aria-label={isSaved ? 'Remove from saved' : 'Save product'}
         >
@@ -122,8 +120,8 @@ export function ProductCard({ product }: ProductCardProps) {
                   id: product.id,
                   title: product.title,
                   price: product.price,
-                  image: product.images[0]
-                }
+                  image: product.images[0],
+                },
               })
             }
             className="flex-1 py-2 px-2 text-center text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs flex items-center justify-center gap-1.5 min-w-0"

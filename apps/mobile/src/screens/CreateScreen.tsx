@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -18,18 +18,33 @@ import { PostType } from '../../mock';
 import { colors } from '../styles/theme';
 
 const BUSINESS_PRESET_IMAGES = [
-  { label: 'Industrial / Factory', uri: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Electronics / Tech', uri: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Textiles & Silk', uri: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Spices & Food', uri: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80' },
-  { label: 'Woodwork & Interior', uri: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&auto=format&fit=crop&q=80' },
+  {
+    label: 'Industrial / Factory',
+    uri: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Electronics / Tech',
+    uri: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Textiles & Silk',
+    uri: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Spices & Food',
+    uri: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Woodwork & Interior',
+    uri: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&auto=format&fit=crop&q=80',
+  },
 ];
 
 export function CreateScreen() {
   const { addPost, navigate, routeParams, showToast } = useApp();
 
   const [activeTab, setActiveTab] = useState<PostType>(
-    (routeParams?.initialTab as PostType) || 'update'
+    (routeParams?.initialTab as PostType) || 'update',
   );
 
   // Form states
@@ -53,7 +68,7 @@ export function CreateScreen() {
       if (!permissionResult.granted) {
         Alert.alert(
           'Permission Required',
-          'Supporters needs access to your photo library to attach images to your listings.'
+          'Supporters needs access to your photo library to attach images to your listings.',
         );
         setIsUploading(false);
         return;
@@ -90,7 +105,7 @@ export function CreateScreen() {
       if (!cameraPerm.granted) {
         Alert.alert(
           'Camera Permission',
-          'Supporters needs camera access to capture catalog and workshop photos.'
+          'Supporters needs camera access to capture catalog and workshop photos.',
         );
         setIsUploading(false);
         return;
@@ -151,7 +166,9 @@ export function CreateScreen() {
           id: `p-${Date.now()}`,
           title: title.trim(),
           price: parseInt(price) || 999,
-          image: imageUri || 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+          image:
+            imageUri ||
+            'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
           moq: parseInt(moq) || 1,
           unit: unit.trim() || 'Units',
         },
@@ -170,7 +187,9 @@ export function CreateScreen() {
           id: `s-${Date.now()}`,
           title: title.trim(),
           startingPrice: parseInt(price) || 1500,
-          image: imageUri || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
+          image:
+            imageUri ||
+            'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
           unit: unit.trim() || 'per job',
         },
       });
@@ -182,7 +201,8 @@ export function CreateScreen() {
       addPost({
         postType: 'offer',
         offerTag: offerTag.trim() || 'LIMITED TIME DISCOUNT',
-        content: content.trim() || `Special commercial discount available on ${title || 'bulk orders'}!`,
+        content:
+          content.trim() || `Special commercial discount available on ${title || 'bulk orders'}!`,
         images: postImages,
         aspectRatio,
         attachedProduct: title.trim()
@@ -190,7 +210,9 @@ export function CreateScreen() {
               id: `p-${Date.now()}`,
               title: title.trim(),
               price: parseInt(price) || 4999,
-              image: imageUri || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
+              image:
+                imageUri ||
+                'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
               moq: parseInt(moq) || 1,
               unit: unit.trim() || 'Lot',
             }
@@ -229,9 +251,7 @@ export function CreateScreen() {
               onPress={() => setActiveTab(tab.key as any)}
               style={[styles.tabItem, isActive && styles.tabItemActive]}
             >
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                {tab.label}
-              </Text>
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -245,8 +265,8 @@ export function CreateScreen() {
               {activeTab === 'product'
                 ? 'Product Title / Name *'
                 : activeTab === 'service'
-                ? 'Service Title *'
-                : 'Offer Headline *'}
+                  ? 'Service Title *'
+                  : 'Offer Headline *'}
             </Text>
             <TextInput
               style={styles.textInput}
@@ -331,16 +351,10 @@ export function CreateScreen() {
               <View
                 style={[
                   styles.previewImageContainer,
-                  aspectRatio === '9:16'
-                    ? styles.previewContainer916
-                    : styles.previewContainer169,
+                  aspectRatio === '9:16' ? styles.previewContainer916 : styles.previewContainer169,
                 ]}
               >
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.previewImage}
-                  resizeMode="cover"
-                />
+                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
               </View>
 
               <View style={styles.previewActions}>
@@ -394,7 +408,11 @@ export function CreateScreen() {
               {/* Quick Preset Images */}
               <View style={styles.presetSection}>
                 <Text style={styles.presetHeading}>Or pick a sample category photo:</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.presetScroller}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.presetScroller}
+                >
                   {BUSINESS_PRESET_IMAGES.map((preset, index) => (
                     <TouchableOpacity
                       key={index}
@@ -417,15 +435,12 @@ export function CreateScreen() {
         <View style={styles.infoBanner}>
           <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
           <Text style={styles.infoText}>
-            Listings with {aspectRatio} images get up to 3.4x more inquiries from verified B2B buyers.
+            Listings with {aspectRatio} images get up to 3.4x more inquiries from verified B2B
+            buyers.
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.publishBtn}
-          onPress={handleSubmit}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity style={styles.publishBtn} onPress={handleSubmit} activeOpacity={0.85}>
           <Feather name="check" size={16} color="#FFFFFF" />
           <Text style={styles.publishBtnText}>Publish to Supporters Feed</Text>
         </TouchableOpacity>

@@ -19,7 +19,7 @@ export default function BusinessProductsPage() {
       isDestructive: true,
       onConfirm: () => {
         showToast(`Product "${title}" removed from catalog.`, 'info');
-      }
+      },
     });
   };
 
@@ -31,7 +31,9 @@ export default function BusinessProductsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
           <div>
             <h2 className="text-base font-bold text-[#111111]">Product Catalog Management</h2>
-            <p className="text-xs text-[#667085]">Manage wholesale units, pricing, inventory stock and specifications</p>
+            <p className="text-xs text-[#667085]">
+              Manage wholesale units, pricing, inventory stock and specifications
+            </p>
           </div>
 
           <Link
@@ -61,14 +63,24 @@ export default function BusinessProductsPage() {
                   <td className="py-3.5 font-bold text-[#111111]">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-100 shrink-0 border border-[#E5E7EB]">
-                        <Image src={p.images[0]} alt={p.title} fill className="object-cover" unoptimized />
+                        <Image
+                          src={p.images[0]}
+                          alt={p.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
                       </div>
                       <span className="line-clamp-1 max-w-xs">{p.title}</span>
                     </div>
                   </td>
                   <td className="py-3.5 text-[#667085]">{p.category}</td>
-                  <td className="py-3.5 font-extrabold text-[#2E3192]">₹{p.price.toLocaleString('en-IN')}</td>
-                  <td className="py-3.5 text-[#111111]">{p.minOrderQuantity} {p.unit}</td>
+                  <td className="py-3.5 font-extrabold text-[#2E3192]">
+                    ₹{p.price.toLocaleString('en-IN')}
+                  </td>
+                  <td className="py-3.5 text-[#111111]">
+                    {p.minOrderQuantity} {p.unit}
+                  </td>
                   <td className="py-3.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
                       {p.availability}

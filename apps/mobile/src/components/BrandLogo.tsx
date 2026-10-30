@@ -34,9 +34,7 @@ export function BrandLogo({
       </View>
       <View style={styles.textColumn}>
         <Text style={[styles.brandName, { fontSize: titleFontSize }]}>Supporters</Text>
-        {showSubtitle && (
-          <Text style={styles.subtitle}>{subtitleText}</Text>
-        )}
+        {showSubtitle && <Text style={styles.subtitle}>{subtitleText}</Text>}
       </View>
     </View>
   );

@@ -18,14 +18,16 @@ export function ConfirmationDialog() {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              confirmationState.isDestructive ? 'bg-red-50 text-red-600' : 'bg-[#2E3192]/10 text-[#2E3192]'
-            }`}>
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                confirmationState.isDestructive
+                  ? 'bg-red-50 text-red-600'
+                  : 'bg-[#2E3192]/10 text-[#2E3192]'
+              }`}
+            >
               <AlertCircle className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-semibold text-[#111111]">
-              {confirmationState.title}
-            </h3>
+            <h3 className="text-lg font-semibold text-[#111111]">{confirmationState.title}</h3>
           </div>
           <button
             onClick={closeConfirmationModal}
@@ -35,9 +37,7 @@ export function ConfirmationDialog() {
           </button>
         </div>
 
-        <p className="text-sm text-[#667085] mt-3 leading-relaxed">
-          {confirmationState.message}
-        </p>
+        <p className="text-sm text-[#667085] mt-3 leading-relaxed">{confirmationState.message}</p>
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <button

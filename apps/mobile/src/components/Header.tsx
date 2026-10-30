@@ -11,7 +11,7 @@ export function Header() {
     setDrawerOpen,
     navigate,
     isHeaderVisible,
-    currentRoute
+    currentRoute,
   } = useApp();
 
   const anim = useRef(new Animated.Value(1)).current;

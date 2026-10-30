@@ -12,7 +12,7 @@ import {
   Users,
   Building2,
   MapPin,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 
 export interface FollowListItem {
@@ -42,7 +42,7 @@ export function FollowListModal({
   title,
   subtitle,
   items,
-  onToggleFollow
+  onToggleFollow,
 }: FollowListModalProps) {
   const { openConversationWithBusiness, toggleFollowBusiness, followedBusinessIds } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +55,7 @@ export function FollowListModal({
         item.name.toLowerCase().includes(q) ||
         (item.username && item.username.toLowerCase().includes(q)) ||
         (item.category && item.category.toLowerCase().includes(q)) ||
-        (item.city && item.city.toLowerCase().includes(q))
+        (item.city && item.city.toLowerCase().includes(q)),
     );
   }, [items, searchQuery]);
 
@@ -91,9 +91,7 @@ export function FollowListModal({
               <Users className="w-5 h-5 text-[#2E3192]" />
               <span>{title}</span>
             </h2>
-            {subtitle && (
-              <p className="text-xs text-[#667085] mt-0.5 truncate">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-[#667085] mt-0.5 truncate">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
@@ -140,8 +138,7 @@ export function FollowListModal({
             </div>
           ) : (
             filteredItems.map((item) => {
-              const isCurrentlyFollowing =
-                item.isFollowed ?? followedBusinessIds.includes(item.id);
+              const isCurrentlyFollowing = item.isFollowed ?? followedBusinessIds.includes(item.id);
 
               return (
                 <div
@@ -154,12 +151,7 @@ export function FollowListModal({
                     onClick={onClose}
                     className="flex items-center gap-3 min-w-0 flex-1 group"
                   >
-                    <Avatar
-                      src={item.avatar}
-                      name={item.name}
-                      size="md"
-                      verified={item.verified}
-                    />
+                    <Avatar src={item.avatar} name={item.name} size="md" verified={item.verified} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs sm:text-sm font-bold text-[#111111] group-hover:text-[#2E3192] truncate transition-colors">
@@ -174,9 +166,7 @@ export function FollowListModal({
                         {item.city ? ` · ${item.city}` : ''}
                       </p>
                       {item.username && (
-                        <p className="text-[10px] text-gray-400 truncate">
-                          @{item.username}
-                        </p>
+                        <p className="text-[10px] text-gray-400 truncate">@{item.username}</p>
                       )}
                     </div>
                   </Link>
@@ -213,10 +203,7 @@ export function FollowListModal({
         {/* Footer */}
         <div className="px-5 py-3 border-t border-[#E5E7EB] bg-[#F7F8FC] flex items-center justify-between text-[11px] text-[#667085] shrink-0">
           <span>{filteredItems.length} accounts listed</span>
-          <button
-            onClick={onClose}
-            className="font-bold text-[#2E3192] hover:underline"
-          >
+          <button onClick={onClose} className="font-bold text-[#2E3192] hover:underline">
             Done
           </button>
         </div>

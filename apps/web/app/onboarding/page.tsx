@@ -17,7 +17,7 @@ export default function OnboardingPage() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([
     'Electronics',
     'Home',
-    'Services'
+    'Services',
   ]);
 
   const interestCategories = [
@@ -30,12 +30,12 @@ export default function OnboardingPage() {
     'Services',
     'Beauty',
     'Education',
-    'Technology'
+    'Technology',
   ];
 
   const toggleInterest = (cat: string) => {
     setSelectedInterests((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
   };
 
@@ -52,9 +52,7 @@ export default function OnboardingPage() {
           <span className="text-xs font-bold uppercase tracking-wider text-[#00AEEF]">
             Step 2 of 2 · Profile Personalization
           </span>
-          <h1 className="text-2xl font-black text-[#111111]">
-            Welcome to the Supporters Network
-          </h1>
+          <h1 className="text-2xl font-black text-[#111111]">Welcome to the Supporters Network</h1>
           <p className="text-xs text-[#667085]">
             Tailor your business discovery feed to your industry vertical and commercial interests.
           </p>

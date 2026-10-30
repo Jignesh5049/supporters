@@ -6,14 +6,7 @@ import Image from 'next/image';
 import { Conversation } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
-import {
-  Send,
-  Paperclip,
-  Phone,
-  Building,
-  CheckCheck,
-  ChevronLeft
-} from 'lucide-react';
+import { Send, Paperclip, Phone, Building, CheckCheck, ChevronLeft } from 'lucide-react';
 
 interface MessageWindowProps {
   conversation: Conversation;
@@ -96,10 +89,7 @@ export function MessageWindow({ conversation, onBackMobile }: MessageWindowProps
         </div>
 
         {conversation.messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}
-          >
+          <div key={msg.id} className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
             <div
               className={`max-w-[85%] sm:max-w-md rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed shadow-2xs ${
                 msg.isMe
@@ -120,9 +110,7 @@ export function MessageWindow({ conversation, onBackMobile }: MessageWindowProps
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold line-clamp-1">
-                      {msg.attachedProduct.title}
-                    </p>
+                    <p className="text-xs font-bold line-clamp-1">{msg.attachedProduct.title}</p>
                     <p className="text-xs font-semibold text-amber-300">
                       ₹{msg.attachedProduct.price.toLocaleString('en-IN')}
                     </p>
@@ -146,7 +134,10 @@ export function MessageWindow({ conversation, onBackMobile }: MessageWindowProps
       </div>
 
       {/* Message Input Box */}
-      <form onSubmit={handleSend} className="p-3 sm:p-4 bg-white border-t border-[#E5E7EB] flex items-center gap-2">
+      <form
+        onSubmit={handleSend}
+        className="p-3 sm:p-4 bg-white border-t border-[#E5E7EB] flex items-center gap-2"
+      >
         <button
           type="button"
           onClick={() => alert('Attachments support images, RFQ PDF specs, and GST certificates.')}

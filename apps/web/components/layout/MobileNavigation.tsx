@@ -19,7 +19,7 @@ function MobileNavigationInner() {
       label: 'Messages',
       href: '/messages',
       icon: MessageSquare,
-      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
     },
     { label: 'Profile', href: '/profile', icon: User },
   ];
@@ -59,19 +59,21 @@ function MobileNavigationInner() {
               }`}
             >
               <div className="relative flex items-center justify-center">
-                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'stroke-[2.3] scale-105' : 'stroke-[1.8]'}`} />
+                <Icon
+                  className={`w-5 h-5 transition-transform ${isActive ? 'stroke-[2.3] scale-105' : 'stroke-[1.8]'}`}
+                />
                 {item.badge && (
                   <span className="absolute -top-1.5 -right-2 bg-[#00AEEF] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full border-2 border-white shadow-xs">
                     {item.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] mt-0.5 tracking-tight ${isActive ? 'font-bold text-[#2E3192]' : 'font-medium'}`}>
+              <span
+                className={`text-[10px] mt-0.5 tracking-tight ${isActive ? 'font-bold text-[#2E3192]' : 'font-medium'}`}
+              >
                 {item.label}
               </span>
-              {isActive && (
-                <span className="w-1 h-1 rounded-full bg-[#2E3192] mt-0.5" />
-              )}
+              {isActive && <span className="w-1 h-1 rounded-full bg-[#2E3192] mt-0.5" />}
             </Link>
           );
         })}

@@ -20,7 +20,7 @@ export default function BusinessEnquiriesPage() {
       phone: '+91 98251 09421',
       time: '2 hours ago',
       notes: 'Need delivery within 7 days at our Piplod Surat site with GST invoice.',
-      status: 'Pending'
+      status: 'Pending',
     },
     {
       id: 'enq-102',
@@ -31,7 +31,7 @@ export default function BusinessEnquiriesPage() {
       phone: '+91 97240 88123',
       time: 'Yesterday 4:30 PM',
       notes: 'Required for corporate meeting rooms. Wall-mount bracket required.',
-      status: 'Quoted'
+      status: 'Quoted',
     },
     {
       id: 'enq-103',
@@ -42,13 +42,11 @@ export default function BusinessEnquiriesPage() {
       phone: '+91 94270 19382',
       time: '3 days ago',
       notes: 'Looking for distributor bulk pricing for Saurashtra territory retail supply.',
-      status: 'Quoted'
-    }
+      status: 'Quoted',
+    },
   ];
 
-  const filtered = enquiries.filter(
-    (e) => filterStatus === 'All' || e.status === filterStatus
-  );
+  const filtered = enquiries.filter((e) => filterStatus === 'All' || e.status === filterStatus);
 
   return (
     <div className="space-y-6">
@@ -58,7 +56,9 @@ export default function BusinessEnquiriesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
           <div>
             <h2 className="text-base font-bold text-[#111111]">Received Trade RFQ Inquiries</h2>
-            <p className="text-xs text-[#667085]">Direct inquiries generated through your Supporters catalog & feed posts</p>
+            <p className="text-xs text-[#667085]">
+              Direct inquiries generated through your Supporters catalog & feed posts
+            </p>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs">
@@ -114,7 +114,9 @@ export default function BusinessEnquiriesPage() {
               </div>
 
               <div className="flex items-center justify-between pt-1 text-xs">
-                <span className="text-[#667085]">Phone / WA: <strong className="text-[#111111]">{enq.phone}</strong></span>
+                <span className="text-[#667085]">
+                  Phone / WA: <strong className="text-[#111111]">{enq.phone}</strong>
+                </span>
 
                 <div className="flex items-center gap-2">
                   <a

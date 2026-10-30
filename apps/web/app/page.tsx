@@ -7,16 +7,7 @@ import { CategoryScroller } from '@/components/feed/CategoryScroller';
 import { CreatePostWidget } from '@/components/feed/CreatePostWidget';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { EmptyState } from '@/components/common/EmptyState';
-import {
-  Sparkles,
-  FilePlus,
-  Plus,
-  X,
-  Send,
-  CheckCircle2,
-  Building,
-  Upload
-} from 'lucide-react';
+import { Sparkles, FilePlus, Plus, X, Send, CheckCircle2, Building, Upload } from 'lucide-react';
 
 export default function HomePage() {
   const { posts, addPost, showToast } = useApp();
@@ -46,7 +37,9 @@ export default function HomePage() {
         id: `req-${Date.now()}`,
         title: previewTitle,
         price: 0,
-        image: reqImageUrl.trim() || 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+        image:
+          reqImageUrl.trim() ||
+          'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
         moq: 1,
         unit: 'Units',
       },
@@ -66,12 +59,29 @@ export default function HomePage() {
     if (selectedCategory === 'all') return true;
 
     // Map category
-    if (selectedCategory === 'electronics' && post.businessName.toLowerCase().includes('electronics')) return true;
-    if (selectedCategory === 'fashion' && (post.businessName.toLowerCase().includes('silk') || post.content.toLowerCase().includes('saree'))) return true;
-    if (selectedCategory === 'food' && post.businessName.toLowerCase().includes('spices')) return true;
-    if (selectedCategory === 'home' && post.businessName.toLowerCase().includes('wood')) return true;
-    if (selectedCategory === 'technology' && post.businessName.toLowerCase().includes('tech')) return true;
-    if (selectedCategory === 'services' && (post.businessName.toLowerCase().includes('packaging') || post.businessName.toLowerCase().includes('tech'))) return true;
+    if (
+      selectedCategory === 'electronics' &&
+      post.businessName.toLowerCase().includes('electronics')
+    )
+      return true;
+    if (
+      selectedCategory === 'fashion' &&
+      (post.businessName.toLowerCase().includes('silk') ||
+        post.content.toLowerCase().includes('saree'))
+    )
+      return true;
+    if (selectedCategory === 'food' && post.businessName.toLowerCase().includes('spices'))
+      return true;
+    if (selectedCategory === 'home' && post.businessName.toLowerCase().includes('wood'))
+      return true;
+    if (selectedCategory === 'technology' && post.businessName.toLowerCase().includes('tech'))
+      return true;
+    if (
+      selectedCategory === 'services' &&
+      (post.businessName.toLowerCase().includes('packaging') ||
+        post.businessName.toLowerCase().includes('tech'))
+    )
+      return true;
 
     return true;
   });
@@ -124,9 +134,7 @@ export default function HomePage() {
               }}
             />
           ) : (
-            filteredPosts.map((post) => (
-              <FeedPostCard key={post.id} post={post} />
-            ))
+            filteredPosts.map((post) => <FeedPostCard key={post.id} post={post} />)
           )}
         </div>
       </div>

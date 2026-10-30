@@ -28,7 +28,7 @@ import {
   Send,
   CheckCircle2,
   Package,
-  Wrench
+  Wrench,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -45,21 +45,23 @@ function BusinessProfileContent() {
     toggleFollowBusiness,
     openConversationWithBusiness,
     openEnquiryModal,
-    userBusiness
+    userBusiness,
   } = useApp();
 
   const business = businesses.find((b) => b.id === businessId) || businesses[0];
   const isFollowing = followedBusinessIds.includes(business.id);
   const isOwner = userBusiness?.id === business.id;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'services' | 'posts' | 'reviews'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'products' | 'services' | 'posts' | 'reviews'
+  >('overview');
   const [showFollowersModal, setShowFollowersModal] = useState(false);
 
   const businessProducts = products.filter((p) => p.businessId === business.id);
   const businessServices = services.filter((s) => s.businessId === business.id);
   // Requirements: Only published posts should appear on the public storefront
   const businessPosts = posts.filter(
-    (p) => p.businessId === business.id && p.postStatus !== 'Draft' && p.postStatus !== 'Archived'
+    (p) => p.businessId === business.id && p.postStatus !== 'Draft' && p.postStatus !== 'Archived',
   );
 
   const getInstagramUrl = (handleOrUrl?: string) => {
@@ -72,7 +74,9 @@ function BusinessProfileContent() {
   const getDirectionsUrl = () => {
     if (business.mapUrl) return business.mapUrl;
     const query = encodeURIComponent(
-      business.fullAddress || `${business.addressLine || ''} ${business.city} ${business.state}`.trim() || business.name
+      business.fullAddress ||
+        `${business.addressLine || ''} ${business.city} ${business.state}`.trim() ||
+        business.name,
     );
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   };
@@ -106,9 +110,7 @@ function BusinessProfileContent() {
 
       {/* Top Breadcrumb/Subtitle */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-[#667085]">
-          Business Profile · {business.name}
-        </span>
+        <span className="text-xs text-[#667085]">Business Profile · {business.name}</span>
       </div>
       {/* Business Cover & Header Banner */}
       <div className="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-2xs">
@@ -140,9 +142,7 @@ function BusinessProfileContent() {
               </div>
               <div className="space-y-0.5 pt-1 sm:pt-0 sm:pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-black text-[#111111]">
-                    {business.name}
-                  </h1>
+                  <h1 className="text-xl sm:text-2xl font-black text-[#111111]">{business.name}</h1>
                   {business.verified && (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-[#00AEEF] bg-[#00AEEF]/10 px-2 py-0.5 rounded-full">
                       ✓ Verified Supplier
@@ -196,7 +196,7 @@ function BusinessProfileContent() {
                   openEnquiryModal({
                     title: `General B2B Inquiry for ${business.name}`,
                     businessName: business.name,
-                    businessId: business.id
+                    businessId: business.id,
                   })
                 }
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#111111] bg-[#F7F8FC] hover:bg-gray-100 border border-[#E5E7EB] rounded-xl transition-colors"
@@ -245,7 +245,9 @@ function BusinessProfileContent() {
                       Official Contact Number
                     </span>
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-medium text-emerald-700">Available for Trade</span>
+                    <span className="text-[10px] font-medium text-emerald-700">
+                      Available for Trade
+                    </span>
                   </div>
                   <p className="text-sm font-extrabold text-gray-900 mt-0.5">{business.phone}</p>
                 </div>
@@ -292,12 +294,8 @@ function BusinessProfileContent() {
           <div className="lg:col-span-2 space-y-6">
             {/* About Box */}
             <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-2xs space-y-3">
-              <h3 className="text-sm font-bold text-[#111111]">
-                About {business.name}
-              </h3>
-              <p className="text-xs sm:text-sm text-[#667085] leading-relaxed">
-                {business.about}
-              </p>
+              <h3 className="text-sm font-bold text-[#111111]">About {business.name}</h3>
+              <p className="text-xs sm:text-sm text-[#667085] leading-relaxed">{business.about}</p>
               <div className="flex flex-wrap gap-1.5 pt-2">
                 {business.tags.map((tag) => (
                   <span
@@ -314,9 +312,7 @@ function BusinessProfileContent() {
             {businessProducts.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-[#111111]">
-                    Featured Products
-                  </h3>
+                  <h3 className="text-sm font-bold text-[#111111]">Featured Products</h3>
                   <button
                     onClick={() => setActiveTab('products')}
                     className="text-xs font-semibold text-[#00AEEF] hover:underline"
@@ -335,9 +331,7 @@ function BusinessProfileContent() {
             {/* Latest Social Posts */}
             {businessPosts.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-sm font-bold text-[#111111]">
-                  Latest Social Updates
-                </h3>
+                <h3 className="text-sm font-bold text-[#111111]">Latest Social Updates</h3>
                 <div className="space-y-4">
                   {businessPosts.slice(0, 2).map((post) => (
                     <FeedPostCard key={post.id} post={post} />
@@ -368,7 +362,8 @@ function BusinessProfileContent() {
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <span className="font-semibold text-[#111111] block">Facility Address</span>
                     <span className="text-[#667085] block">
-                      {business.fullAddress || `${business.addressLine || ''}, ${business.city}, ${business.state}`}
+                      {business.fullAddress ||
+                        `${business.addressLine || ''}, ${business.city}, ${business.state}`}
                     </span>
                     <a
                       href={getDirectionsUrl()}
@@ -429,7 +424,12 @@ function BusinessProfileContent() {
                     <Phone className="w-4 h-4 text-[#00AEEF] shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-[#111111] block">Phone / WhatsApp</span>
-                      <a href={`tel:${business.phone}`} className="hover:text-[#2E3192] font-semibold text-[#2E3192]">{business.phone}</a>
+                      <a
+                        href={`tel:${business.phone}`}
+                        className="hover:text-[#2E3192] font-semibold text-[#2E3192]"
+                      >
+                        {business.phone}
+                      </a>
                     </div>
                   </div>
                 )}
@@ -438,7 +438,9 @@ function BusinessProfileContent() {
                   <Mail className="w-4 h-4 text-[#00AEEF] shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold text-[#111111] block">Business Email</span>
-                    <a href={`mailto:${business.email}`} className="hover:text-[#2E3192]">{business.email}</a>
+                    <a href={`mailto:${business.email}`} className="hover:text-[#2E3192]">
+                      {business.email}
+                    </a>
                   </div>
                 </div>
 
@@ -447,7 +449,12 @@ function BusinessProfileContent() {
                     <Globe className="w-4 h-4 text-[#2E3192] shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-[#111111] block">Official Website</span>
-                      <a href={business.website} target="_blank" rel="noreferrer" className="text-[#00AEEF] hover:underline">
+                      <a
+                        href={business.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#00AEEF] hover:underline"
+                      >
                         {business.website} ↗
                       </a>
                     </div>
@@ -507,9 +514,7 @@ function BusinessProfileContent() {
               description="Follow this business to receive notifications when they post."
             />
           ) : (
-            businessPosts.map((post) => (
-              <FeedPostCard key={post.id} post={post} />
-            ))
+            businessPosts.map((post) => <FeedPostCard key={post.id} post={post} />)
           )}
         </div>
       )}
@@ -533,7 +538,9 @@ function BusinessProfileContent() {
             </div>
 
             <button
-              onClick={() => alert('Review submission open for buyers with completed trade enquiry orders.')}
+              onClick={() =>
+                alert('Review submission open for buyers with completed trade enquiry orders.')
+              }
               className="px-4 py-2.5 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs"
             >
               Write Trade Review
@@ -542,23 +549,24 @@ function BusinessProfileContent() {
 
           <div className="space-y-4">
             {MOCK_REVIEWS.map((rev) => (
-              <div key={rev.id} className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-2">
+              <div
+                key={rev.id}
+                className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-2xs space-y-2"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Avatar src={rev.authorAvatar} name={rev.authorName} size="sm" />
                     <div>
                       <h4 className="text-xs font-bold text-[#111111]">{rev.authorName}</h4>
-                      <p className="text-[10px] text-[#667085]">{rev.authorCity} · Verified Buyer</p>
+                      <p className="text-[10px] text-[#667085]">
+                        {rev.authorCity} · Verified Buyer
+                      </p>
                     </div>
                   </div>
                   <span className="text-[11px] text-[#667085]">{rev.date}</span>
                 </div>
-                <div className="flex text-amber-400 text-xs">
-                  {'★'.repeat(rev.rating)}
-                </div>
-                <p className="text-xs text-[#111111] leading-relaxed">
-                  {rev.comment}
-                </p>
+                <div className="flex text-amber-400 text-xs">{'★'.repeat(rev.rating)}</div>
+                <p className="text-xs text-[#111111] leading-relaxed">{rev.comment}</p>
               </div>
             ))}
           </div>
@@ -590,7 +598,11 @@ function BusinessProfileContent() {
 
 export default function BusinessProfilePage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-[#667085]">Loading business profile...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs text-[#667085]">Loading business profile...</div>
+      }
+    >
       <BusinessProfileContent />
     </Suspense>
   );

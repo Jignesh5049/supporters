@@ -10,15 +10,7 @@ import { ServiceCard } from '@/components/service/ServiceCard';
 import { BusinessCard } from '@/components/business/BusinessCard';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { EmptyState } from '@/components/common/EmptyState';
-import {
-  Bookmark,
-  Package,
-  Building2,
-  Wrench,
-  Sparkles,
-  MapPin,
-  Trash2
-} from 'lucide-react';
+import { Bookmark, Package, Building2, Wrench, Sparkles, MapPin, Trash2 } from 'lucide-react';
 
 export default function SavedPage() {
   const {
@@ -29,10 +21,12 @@ export default function SavedPage() {
     savedProductIds,
     savedBusinessIds,
     savedServiceIds,
-    savedPostIds
+    savedPostIds,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'businesses' | 'services' | 'posts'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'businesses' | 'services' | 'posts'>(
+    'products',
+  );
 
   const savedProducts = products.filter((p) => savedProductIds.includes(p.id));
   const savedBusinesses = businesses.filter((b) => savedBusinessIds.includes(b.id));
@@ -109,8 +103,8 @@ export default function SavedPage() {
 
       {/* Tab Panes */}
       <div>
-        {activeTab === 'products' && (
-          savedProducts.length === 0 ? (
+        {activeTab === 'products' &&
+          (savedProducts.length === 0 ? (
             <EmptyState
               icon={Package}
               title="No saved products yet"
@@ -124,11 +118,10 @@ export default function SavedPage() {
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === 'businesses' && (
-          savedBusinesses.length === 0 ? (
+        {activeTab === 'businesses' &&
+          (savedBusinesses.length === 0 ? (
             <EmptyState
               icon={Building2}
               title="No saved businesses yet"
@@ -142,11 +135,10 @@ export default function SavedPage() {
                 <BusinessCard key={b.id} business={b} />
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === 'services' && (
-          savedServices.length === 0 ? (
+        {activeTab === 'services' &&
+          (savedServices.length === 0 ? (
             <EmptyState
               icon={Wrench}
               title="No saved services yet"
@@ -160,11 +152,10 @@ export default function SavedPage() {
                 <ServiceCard key={s.id} service={s} />
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === 'posts' && (
-          savedPosts.length === 0 ? (
+        {activeTab === 'posts' &&
+          (savedPosts.length === 0 ? (
             <EmptyState
               icon={Sparkles}
               title="No saved posts yet"
@@ -178,8 +169,7 @@ export default function SavedPage() {
                 <FeedPostCard key={post.id} post={post} />
               ))}
             </div>
-          )
-        )}
+          ))}
       </div>
     </div>
   );

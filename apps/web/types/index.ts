@@ -1,4 +1,5 @@
-export type BusinessType = 'Manufacturer' | 'Wholesaler' | 'Retailer' | 'Distributor' | 'Service Provider' | 'Brand';
+export type BusinessType =
+  'Manufacturer' | 'Wholesaler' | 'Retailer' | 'Distributor' | 'Service Provider' | 'Brand';
 
 export interface Business {
   id: string;
@@ -161,7 +162,8 @@ export interface Conversation {
   messages: Message[];
 }
 
-export type NotificationCategory = 'All' | 'Business' | 'Messages' | 'Enquiries' | 'Referrals' | 'Subscription';
+export type NotificationCategory =
+  'All' | 'Business' | 'Messages' | 'Enquiries' | 'Referrals' | 'Subscription';
 
 export interface NotificationItem {
   id: string;

@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -28,7 +28,7 @@ export function MessagesScreen() {
   } = useApp();
 
   const [inChatView, setInChatView] = useState(() =>
-    Boolean(routeParams?.openChat || routeParams?.conversationId || routeParams?.businessId)
+    Boolean(routeParams?.openChat || routeParams?.conversationId || routeParams?.businessId),
   );
   const [inputText, setInputText] = useState('');
   const [searchConv, setSearchConv] = useState('');
@@ -37,7 +37,8 @@ export function MessagesScreen() {
   const targetConvId = routeParams?.conversationId;
   const activeConv =
     (targetConvId && conversations.find((c) => c.id === targetConvId)) ||
-    (routeParams?.businessId && conversations.find((c) => c.businessId === routeParams.businessId)) ||
+    (routeParams?.businessId &&
+      conversations.find((c) => c.businessId === routeParams.businessId)) ||
     conversations.find((c) => c.id === activeConversationId) ||
     conversations[0];
 
@@ -70,7 +71,7 @@ export function MessagesScreen() {
   const filteredConversations = conversations.filter(
     (c) =>
       c.businessName.toLowerCase().includes(searchConv.toLowerCase()) ||
-      c.lastMessage.toLowerCase().includes(searchConv.toLowerCase())
+      c.lastMessage.toLowerCase().includes(searchConv.toLowerCase()),
   );
 
   // If in Chat Thread View
@@ -82,10 +83,7 @@ export function MessagesScreen() {
       >
         {/* Chat Thread Header */}
         <View style={styles.chatHeader}>
-          <TouchableOpacity
-            onPress={() => setInChatView(false)}
-            style={styles.backBtn}
-          >
+          <TouchableOpacity onPress={() => setInChatView(false)} style={styles.backBtn}>
             <Feather name="arrow-left" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
 
@@ -106,9 +104,7 @@ export function MessagesScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={() =>
-              navigate('business_detail', { businessId: activeConv.businessId })
-            }
+            onPress={() => navigate('business_detail', { businessId: activeConv.businessId })}
             style={styles.catalogShortcut}
           >
             <Feather name="external-link" size={18} color="#667085" />
@@ -128,7 +124,8 @@ export function MessagesScreen() {
               </View>
               <Text style={styles.emptyThreadTitle}>Chat with {activeConv.businessName}</Text>
               <Text style={styles.emptyThreadSubtitle}>
-                Send a direct enquiry regarding product prices, bulk order MOQ, sample requests, or delivery timelines.
+                Send a direct enquiry regarding product prices, bulk order MOQ, sample requests, or
+                delivery timelines.
               </Text>
             </View>
           }
@@ -164,19 +161,21 @@ export function MessagesScreen() {
                       <Text style={styles.attachedProductPrice}>
                         ₹{item.attachedProduct.price.toLocaleString('en-IN')}
                       </Text>
-                      <Text style={{ fontSize: 9.5, color: colors.primary, fontWeight: '700', marginTop: 2 }}>
+                      <Text
+                        style={{
+                          fontSize: 9.5,
+                          color: colors.primary,
+                          fontWeight: '700',
+                          marginTop: 2,
+                        }}
+                      >
                         View Product ↗
                       </Text>
                     </View>
                   </TouchableOpacity>
                 )}
 
-                <View
-                  style={[
-                    styles.messageBubble,
-                    isMe ? styles.myBubble : styles.otherBubble,
-                  ]}
-                >
+                <View style={[styles.messageBubble, isMe ? styles.myBubble : styles.otherBubble]}>
                   <Text
                     style={[
                       styles.messageText,
@@ -210,10 +209,7 @@ export function MessagesScreen() {
           />
           <TouchableOpacity
             onPress={handleSendMessage}
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled,
-            ]}
+            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
             disabled={!inputText.trim()}
           >
             <Feather name="send" size={16} color="#FFFFFF" />

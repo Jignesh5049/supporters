@@ -20,13 +20,16 @@ export default function ReportProblemPage() {
     'Payment Issue',
     'Business Issue',
     'Abuse / Spam',
-    'Other'
+    'Other',
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    showToast('Incident reported. Case ID #SUP-' + Math.floor(10000 + Math.random() * 90000), 'success');
+    showToast(
+      'Incident reported. Case ID #SUP-' + Math.floor(10000 + Math.random() * 90000),
+      'success',
+    );
   };
 
   return (
@@ -51,7 +54,8 @@ export default function ReportProblemPage() {
             </div>
             <h2 className="text-lg font-bold text-[#111111]">Report Submitted Successfully</h2>
             <p className="text-xs text-[#667085] max-w-md">
-              Thank you for keeping Supporters safe and reliable. Our compliance team will review your report and notify you by email.
+              Thank you for keeping Supporters safe and reliable. Our compliance team will review
+              your report and notify you by email.
             </p>
             <button
               onClick={() => router.push('/')}

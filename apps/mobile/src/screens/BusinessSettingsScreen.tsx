@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Alert
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -29,9 +21,10 @@ export function BusinessSettingsScreen() {
         {
           text: 'Deactivate',
           style: 'destructive',
-          onPress: () => showToast('Storefront deactivated temporarily. (Backend API sync pending)', 'info'),
+          onPress: () =>
+            showToast('Storefront deactivated temporarily. (Backend API sync pending)', 'info'),
         },
-      ]
+      ],
     );
   };
 
@@ -44,9 +37,10 @@ export function BusinessSettingsScreen() {
         {
           text: 'Delete Forever',
           style: 'destructive',
-          onPress: () => showToast('Profile deletion request scheduled. (Backend API sync pending)', 'error'),
+          onPress: () =>
+            showToast('Profile deletion request scheduled. (Backend API sync pending)', 'error'),
         },
-      ]
+      ],
     );
   };
 
@@ -134,7 +128,9 @@ export function BusinessSettingsScreen() {
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextCol}>
               <Text style={styles.toggleTitle}>Direct Buyer Inquiries</Text>
-              <Text style={styles.toggleSub}>Receive instant push alerts when contractors enquire</Text>
+              <Text style={styles.toggleSub}>
+                Receive instant push alerts when contractors enquire
+              </Text>
             </View>
             <Switch
               value={inquiryAlerts}
@@ -146,7 +142,9 @@ export function BusinessSettingsScreen() {
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextCol}>
               <Text style={styles.toggleTitle}>Feed Post Reactions & Shares</Text>
-              <Text style={styles.toggleSub}>Notifications when other businesses save or like updates</Text>
+              <Text style={styles.toggleSub}>
+                Notifications when other businesses save or like updates
+              </Text>
             </View>
             <Switch
               value={postAlerts}
@@ -158,7 +156,9 @@ export function BusinessSettingsScreen() {
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextCol}>
               <Text style={styles.toggleTitle}>Public Trade Catalog</Text>
-              <Text style={styles.toggleSub}>Visible in regional B2B search and category directories</Text>
+              <Text style={styles.toggleSub}>
+                Visible in regional B2B search and category directories
+              </Text>
             </View>
             <Switch
               value={catalogPublic}
@@ -191,7 +191,8 @@ export function BusinessSettingsScreen() {
                 </View>
               </View>
               <Text style={styles.toggleSub}>
-                Allow buyers to view your contact number ({userBusiness?.phone}) directly on your catalog storefront
+                Allow buyers to view your contact number ({userBusiness?.phone}) directly on your
+                catalog storefront
               </Text>
             </View>
             <Switch
@@ -203,7 +204,7 @@ export function BusinessSettingsScreen() {
                   val
                     ? 'Phone number will now be shown on your catalog'
                     : 'Phone number is now hidden from your catalog',
-                  'info'
+                  'info',
                 );
               }}
               trackColor={{ false: '#CBD5E1', true: colors.primary }}
@@ -238,8 +239,12 @@ export function BusinessSettingsScreen() {
               <Feather name="trash-2" size={16} color="#DC2626" />
             </View>
             <View style={styles.settingTextCol}>
-              <Text style={[styles.dangerTitle, { color: '#DC2626' }]}>Delete Business Storefront</Text>
-              <Text style={styles.settingSub}>Permanently delete company listings and catalog data</Text>
+              <Text style={[styles.dangerTitle, { color: '#DC2626' }]}>
+                Delete Business Storefront
+              </Text>
+              <Text style={styles.settingSub}>
+                Permanently delete company listings and catalog data
+              </Text>
             </View>
           </TouchableOpacity>
         </View>

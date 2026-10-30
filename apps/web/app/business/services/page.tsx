@@ -19,7 +19,7 @@ export default function BusinessServicesPage() {
       isDestructive: true,
       onConfirm: () => {
         showToast(`Service "${title}" removed.`, 'info');
-      }
+      },
     });
   };
 
@@ -31,7 +31,9 @@ export default function BusinessServicesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
           <div>
             <h2 className="text-base font-bold text-[#111111]">Service Offerings Management</h2>
-            <p className="text-xs text-[#667085]">Manage corporate solutions, turnkey contracts, and consulting packages</p>
+            <p className="text-xs text-[#667085]">
+              Manage corporate solutions, turnkey contracts, and consulting packages
+            </p>
           </div>
 
           <Link
@@ -61,13 +63,21 @@ export default function BusinessServicesPage() {
                   <td className="py-3.5 font-bold text-[#111111]">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-100 shrink-0 border border-[#E5E7EB]">
-                        <Image src={s.images[0]} alt={s.title} fill className="object-cover" unoptimized />
+                        <Image
+                          src={s.images[0]}
+                          alt={s.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
                       </div>
                       <span className="line-clamp-1 max-w-xs">{s.title}</span>
                     </div>
                   </td>
                   <td className="py-3.5 text-[#667085]">{s.category}</td>
-                  <td className="py-3.5 font-extrabold text-[#2E3192]">₹{s.startingPrice.toLocaleString('en-IN')}</td>
+                  <td className="py-3.5 font-extrabold text-[#2E3192]">
+                    ₹{s.startingPrice.toLocaleString('en-IN')}
+                  </td>
                   <td className="py-3.5 text-[#667085] line-clamp-1 max-w-xs">{s.serviceArea}</td>
                   <td className="py-3.5 text-[#111111]">{s.turnaroundTime}</td>
                   <td className="py-3.5 text-right">

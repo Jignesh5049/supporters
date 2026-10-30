@@ -7,7 +7,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'Shree Electronics & Systems',
     businessCity: 'Ahmedabad',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
     title: 'Smart LED TV 55-Inch 4K UHD Bezel-less Display',
     slug: 'smart-led-tv-55-inch-4k-uhd',
     category: 'Electronics',
@@ -18,25 +19,26 @@ export const MOCK_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1461151304267-38535e780c79?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1577979749830-f1d742b96791?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1577979749830-f1d742b96791?w=800&auto=format&fit=crop&q=80',
     ],
-    description: 'High dynamic range IPS panel with 3840x2160 resolution, quad-core processor, dual-band Wi-Fi, and certified Dolby Audio. Engineered with anti-surge circuitry designed for Indian voltage conditions. Ideal for regional appliance distributors, corporate offices, and hospitality chains.',
+    description:
+      'High dynamic range IPS panel with 3840x2160 resolution, quad-core processor, dual-band Wi-Fi, and certified Dolby Audio. Engineered with anti-surge circuitry designed for Indian voltage conditions. Ideal for regional appliance distributors, corporate offices, and hospitality chains.',
     specifications: {
       'Display Size': '55 Inches (139 cm)',
-      'Resolution': '3840 x 2160 pixels (4K UHD)',
+      Resolution: '3840 x 2160 pixels (4K UHD)',
       'Refresh Rate': '60 Hz MEMC enabled',
       'Audio Output': '30W Stereo with Dolby Audio',
-      'Connectivity': '3 HDMI, 2 USB 3.0, Optical, LAN, Bluetooth 5.2',
+      Connectivity: '3 HDMI, 2 USB 3.0, Optical, LAN, Bluetooth 5.2',
       'Operating System': 'Android TV 12 with Google Assistant',
-      'Warranty': '2 Years Comprehensive On-Site Warranty',
-      'Origin': 'Made in Gujarat, India (Naroda GIDC)'
+      Warranty: '2 Years Comprehensive On-Site Warranty',
+      Origin: 'Made in Gujarat, India (Naroda GIDC)',
     },
     availability: 'In Stock',
     deliveryTime: '3 - 5 Business Days',
     shippingAreas: ['Gujarat', 'Maharashtra', 'Rajasthan', 'Madhya Pradesh', 'Delhi NCR'],
     rating: 4.8,
     reviewCount: 92,
-    featured: true
+    featured: true,
   },
   {
     id: 'p-2',
@@ -44,7 +46,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'Patel Solid Wood Furniture',
     businessCity: 'Vadodara',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=200&auto=format&fit=crop&q=80',
     title: 'Solid Sheesham Wood 6-Seater Dining Table Set with Cushioned Chairs',
     slug: 'sheesham-wood-6-seater-dining-table',
     category: 'Home',
@@ -55,25 +58,26 @@ export const MOCK_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop&q=80',
     ],
-    description: '100% seasoned North Indian rosewood (Sheesham) dining set treated with non-toxic termite resistant coating and walnut lacquer finish. Comes with 6 ergonomically cushioned chairs upholstered in stain-resistant linen fabric. Tested for commercial grade durability.',
+    description:
+      '100% seasoned North Indian rosewood (Sheesham) dining set treated with non-toxic termite resistant coating and walnut lacquer finish. Comes with 6 ergonomically cushioned chairs upholstered in stain-resistant linen fabric. Tested for commercial grade durability.',
     specifications: {
       'Primary Material': 'Seasoned Sheesham (Rosewood)',
-      'Finish': 'Natural Walnut Polyurethane Matt',
+      Finish: 'Natural Walnut Polyurethane Matt',
       'Table Dimensions': '175cm (L) x 90cm (W) x 76cm (H)',
       'Chair Dimensions': '45cm x 45cm x 95cm',
       'Seating Capacity': '6 Adults',
       'Weight Capacity': 'Table 150 kg, Chairs 140 kg each',
       'Termite Resistance': '10-Year Anti-Borer Guarantee',
-      'Assembly': 'Free Carpenter Assembly upon Delivery'
+      Assembly: 'Free Carpenter Assembly upon Delivery',
     },
     availability: 'Available for Bulk',
     deliveryTime: '5 - 7 Business Days',
     shippingAreas: ['Pan India Delivery via Wooden Crate Packing'],
     rating: 4.9,
     reviewCount: 48,
-    featured: true
+    featured: true,
   },
   {
     id: 'p-3',
@@ -81,7 +85,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'Kevalya Organic Spices & Agro',
     businessCity: 'Anand',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&auto=format&fit=crop&q=80',
     title: 'A-Grade Unpolished Cumin Seeds (Jeera) - 25kg Bulk Bag',
     slug: 'cumin-seeds-jeera-25kg-bulk',
     category: 'Food',
@@ -91,25 +96,26 @@ export const MOCK_PRODUCTS: Product[] = [
     unit: 'Bags (25 kg each)',
     images: [
       'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=800&auto=format&fit=crop&q=80',
     ],
-    description: 'High essential oil content (>3.2%) Gujarat export quality cumin seeds. Machine cleaned, gravity sorted, sortex cleaned to 99.5% purity. Sourced directly from FPOs in Saurashtra and Charotar. Free from artificial colors, moisture controlled below 8%.',
+    description:
+      'High essential oil content (>3.2%) Gujarat export quality cumin seeds. Machine cleaned, gravity sorted, sortex cleaned to 99.5% purity. Sourced directly from FPOs in Saurashtra and Charotar. Free from artificial colors, moisture controlled below 8%.',
     specifications: {
       'Purity Level': '99.5% Machine Cleaned Sortex',
       'Moisture Content': 'Max 7.5%',
       'Volatile Oil': 'Min 3.2%',
-      'Admixture': 'Max 0.5%',
-      'Packaging': 'Food-Grade 25kg PP Woven Bags with Inner Liner',
-      'Certifications': 'FSSAI, APEDA, Spice Board of India',
+      Admixture: 'Max 0.5%',
+      Packaging: 'Food-Grade 25kg PP Woven Bags with Inner Liner',
+      Certifications: 'FSSAI, APEDA, Spice Board of India',
       'Shelf Life': '18 Months from Milling Date',
-      'Harvest Season': 'Fresh Crop Current Season'
+      'Harvest Season': 'Fresh Crop Current Season',
     },
     availability: 'In Stock',
     deliveryTime: '2 - 4 Business Days',
     shippingAreas: ['Pan India Logistics via V-Trans & TCI Freight'],
     rating: 4.8,
     reviewCount: 76,
-    featured: true
+    featured: true,
   },
   {
     id: 'p-4',
@@ -117,7 +123,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'Surat Silk Craft & Jacquards',
     businessCity: 'Surat',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop&q=80',
     title: 'Banarasi Art Silk Zari Woven Saree Collection (Lot of 10 Pieces)',
     slug: 'banarasi-art-silk-zari-woven-saree-lot',
     category: 'Fashion',
@@ -127,24 +134,25 @@ export const MOCK_PRODUCTS: Product[] = [
     unit: 'Lots (10 Sarees)',
     images: [
       '/images/surat_silk_craft.jpg',
-      'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=800&auto=format&fit=crop&q=80',
     ],
-    description: 'Exquisite jacquard loom woven Banarasi art silk sarees with gold and copper antique zari borders and grand pallu motifs. Includes unstitched running brocade blouse piece (0.80m). Tailored for boutique resellers and wedding season retail counters.',
+    description:
+      'Exquisite jacquard loom woven Banarasi art silk sarees with gold and copper antique zari borders and grand pallu motifs. Includes unstitched running brocade blouse piece (0.80m). Tailored for boutique resellers and wedding season retail counters.',
     specifications: {
       'Fabric Composition': 'High-Twist Poly-Silk Jacquard',
       'Zari Type': 'Tested Gold & Copper Electro-Lustre',
-      'Length': '6.3 Meters including blouse piece',
+      Length: '6.3 Meters including blouse piece',
       'Weave Pattern': 'Floral Jaal & Paisley Buttis',
       'Pack Contents': '10 Assorted Festive Colorways',
       'Wash Care': 'Dry Clean Recommended',
-      'Origin': 'Surat Millennium Textile Hub'
+      Origin: 'Surat Millennium Textile Hub',
     },
     availability: 'In Stock',
     deliveryTime: '3 - 6 Business Days',
     shippingAreas: ['All India Post & Express Courier'],
     rating: 4.9,
     reviewCount: 134,
-    featured: true
+    featured: true,
   },
   {
     id: 'p-5',
@@ -152,7 +160,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'Apex Precision Tools & Gears',
     businessCity: 'Rajkot',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=200&auto=format&fit=crop&q=80',
     title: 'Precision Case-Hardened Automotive Helical Gear (Module 2.5)',
     slug: 'case-hardened-automotive-helical-gear',
     category: 'Automotive',
@@ -162,23 +171,24 @@ export const MOCK_PRODUCTS: Product[] = [
     unit: 'Pieces',
     images: [
       'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
     ],
-    description: 'Forged 20MnCr5 steel helical transmission gear manufactured with CNC gear hobbing and tooth grinding. Case carburized to 58-62 HRC hardness for maximum wear resistance in automotive and gearbox assemblies.',
+    description:
+      'Forged 20MnCr5 steel helical transmission gear manufactured with CNC gear hobbing and tooth grinding. Case carburized to 58-62 HRC hardness for maximum wear resistance in automotive and gearbox assemblies.',
     specifications: {
       'Material Grade': '20MnCr5 Case Carburized Steel',
       'Hardness Depth': '0.8mm - 1.2mm, 58 - 62 HRC',
-      'Module': '2.5 mm',
+      Module: '2.5 mm',
       'Teeth Count': '32 Teeth',
       'Accuracy Class': 'DIN Class 7 Ground Profile',
-      'Lead Angle': '21° Right Hand'
+      'Lead Angle': '21° Right Hand',
     },
     availability: 'Made to Order',
     deliveryTime: '10 - 14 Business Days',
     shippingAreas: ['Pan India Industrial Transport'],
     rating: 4.7,
     reviewCount: 39,
-    featured: false
+    featured: false,
   },
   {
     id: 'p-6',
@@ -186,7 +196,8 @@ export const MOCK_PRODUCTS: Product[] = [
     businessName: 'GreenShield Packaging Solutions',
     businessCity: 'Mumbai',
     businessVerified: true,
-    businessAvatar: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=200&auto=format&fit=crop&q=80',
+    businessAvatar:
+      'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=200&auto=format&fit=crop&q=80',
     title: 'Custom Printed 3-Ply Kraft Corrugated Mailer Boxes (Pack of 500)',
     slug: 'custom-printed-3-ply-corrugated-mailer-boxes',
     category: 'Services',
@@ -196,22 +207,23 @@ export const MOCK_PRODUCTS: Product[] = [
     unit: 'Packs (500 boxes)',
     images: [
       'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&auto=format&fit=crop&q=80',
     ],
-    description: 'High burst-strength 180 GSM kraft fluting corrugated folding shipper boxes. 100% recyclable, flat-pack shipped to save storage space. Easy self-locking design with crisp water-based flexographic branding.',
+    description:
+      'High burst-strength 180 GSM kraft fluting corrugated folding shipper boxes. 100% recyclable, flat-pack shipped to save storage space. Easy self-locking design with crisp water-based flexographic branding.',
     specifications: {
-      'Dimensions': '25cm x 18cm x 8cm (Inner)',
+      Dimensions: '25cm x 18cm x 8cm (Inner)',
       'Paper Grade': 'Virgin Kraft Top Liner + Semi-Chemical Flute',
       'Bursting Factor': '18 BF',
       'Print Options': 'Single or Two-Color Flexo Logo Included',
       'Eco-Rating': '100% Biodegradable & Compostable',
-      'Pack Weight': '38 kg bundle'
+      'Pack Weight': '38 kg bundle',
     },
     availability: 'In Stock',
     deliveryTime: '3 - 5 Business Days',
     shippingAreas: ['Pan India Door Delivery'],
     rating: 4.8,
     reviewCount: 61,
-    featured: false
-  }
+    featured: false,
+  },
 ];

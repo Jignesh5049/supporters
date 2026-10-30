@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   Upload,
   Trash2,
-  Maximize2
+  Maximize2,
 } from 'lucide-react';
 
 export function CreatePostWidget() {
@@ -70,17 +70,21 @@ export function CreatePostWidget() {
         id: `custom-p-${Date.now()}`,
         title: title,
         price: parseFloat(price) || 5000,
-        image: imageUrl || 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
+        image:
+          imageUrl ||
+          'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
         moq: 1,
-        unit: 'Units'
+        unit: 'Units',
       };
     } else if (postType === 'service' && title) {
       attachedService = {
         id: `custom-s-${Date.now()}`,
         title: title,
         startingPrice: parseFloat(price) || 2500,
-        image: imageUrl || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
-        unit: 'per job'
+        image:
+          imageUrl ||
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80',
+        unit: 'per job',
       };
     }
 
@@ -91,7 +95,7 @@ export function CreatePostWidget() {
       aspectRatio,
       attachedProduct,
       attachedService,
-      offerTag: postType === 'offer' ? (offerTag || 'SPECIAL OFFER') : undefined
+      offerTag: postType === 'offer' ? offerTag || 'SPECIAL OFFER' : undefined,
     });
 
     // Reset and close
@@ -109,12 +113,7 @@ export function CreatePostWidget() {
       <div className="bg-white border border-[#E5E7EB] rounded-2xl p-4 shadow-2xs">
         {/* Top input bar */}
         <div className="flex items-center gap-3">
-          <Avatar
-            src={CURRENT_USER.avatar}
-            name={CURRENT_USER.name}
-            size="md"
-            verified
-          />
+          <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="md" verified />
           <button
             onClick={() => setModalOpen(true)}
             className="flex-1 bg-[#F7F8FC] hover:bg-gray-100 text-[#667085] text-left px-4 py-2.5 rounded-full text-sm font-normal border border-[#E5E7EB] transition-colors"
@@ -175,7 +174,9 @@ export function CreatePostWidget() {
                 <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="sm" verified />
                 <div>
                   <h3 className="text-sm font-bold text-[#111111]">Create Social Listing</h3>
-                  <p className="text-xs text-[#667085]">Visible to thousands of verified buyers & sellers</p>
+                  <p className="text-xs text-[#667085]">
+                    Visible to thousands of verified buyers & sellers
+                  </p>
                 </div>
               </div>
               <button
@@ -214,10 +215,10 @@ export function CreatePostWidget() {
                     postType === 'product'
                       ? 'Describe your product specifications, availability, and wholesale delivery terms...'
                       : postType === 'service'
-                      ? 'Describe your service expertise, capacity, and client deliverables...'
-                      : postType === 'offer'
-                      ? 'Announce your festive wholesale discounts, bulk lot pricing, or limited deals...'
-                      : 'Share a company milestone, factory expansion, or production update...'
+                        ? 'Describe your service expertise, capacity, and client deliverables...'
+                        : postType === 'offer'
+                          ? 'Announce your festive wholesale discounts, bulk lot pricing, or limited deals...'
+                          : 'Share a company milestone, factory expansion, or production update...'
                   }
                   rows={4}
                   className="w-full text-sm text-[#111111] border border-[#E5E7EB] rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-[#2E3192]/20 focus:border-[#2E3192] resize-none"
@@ -243,7 +244,11 @@ export function CreatePostWidget() {
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder={postType === 'product' ? 'e.g. 55-inch Smart LED TV' : 'e.g. Turnkey Woodwork'}
+                        placeholder={
+                          postType === 'product'
+                            ? 'e.g. 55-inch Smart LED TV'
+                            : 'e.g. Turnkey Woodwork'
+                        }
                         className="w-full px-3 py-1.5 text-xs bg-white border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#2E3192]"
                         required
                       />
@@ -284,9 +289,7 @@ export function CreatePostWidget() {
               {/* Image Upload Section */}
               <div className="space-y-3 pt-1 border-t border-[#E5E7EB]">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-[#111111]">
-                    Post Media Photo
-                  </label>
+                  <label className="block text-xs font-bold text-[#111111]">Post Media Photo</label>
                   <span className="text-[11px] text-[#667085]">Auto-detects image orientation</span>
                 </div>
 
@@ -337,7 +340,8 @@ export function CreatePostWidget() {
                       <Upload className="w-5 h-5" />
                     </div>
                     <p className="text-xs font-bold text-[#0F172A]">
-                      Click to upload image <span className="font-normal text-[#64748B]">({aspectRatio} format)</span>
+                      Click to upload image{' '}
+                      <span className="font-normal text-[#64748B]">({aspectRatio} format)</span>
                     </p>
                     <p className="text-[11px] text-[#94A3B8] mt-0.5">
                       Supports JPG, PNG, WebP up to 10MB

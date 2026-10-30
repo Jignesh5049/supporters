@@ -8,7 +8,7 @@ import {
   Platform,
   Modal,
   TouchableWithoutFeedback,
-  Alert
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { FeedPost } from '../../mock';
@@ -31,7 +31,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
     openConversationWithBusiness,
     navigate,
     showToast,
-    currentUser
+    currentUser,
   } = useApp();
 
   const [menuVisible, setMenuVisible] = useState(false);
@@ -41,11 +41,10 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
   // Check if this post was authored by the logged-in user / account
   const isOwnPost = Boolean(
     post.isOwnPost ||
-    (post.authorId && (
-      post.authorId === currentUser.email ||
-      post.authorId === 'user-me' ||
-      post.authorId === currentUser.username
-    ))
+    (post.authorId &&
+      (post.authorId === currentUser.email ||
+        post.authorId === 'user-me' ||
+        post.authorId === currentUser.username)),
   );
 
   const handleDelete = () => {
@@ -60,7 +59,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style: 'destructive',
           onPress: () => deletePost(post.id),
         },
-      ]
+      ],
     );
   };
 
@@ -92,9 +91,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
               <Text style={styles.businessName} numberOfLines={1}>
                 {post.businessName}
               </Text>
-              {post.businessVerified && (
-                <Text style={styles.verifiedTag}>✓ Verified</Text>
-              )}
+              {post.businessVerified && <Text style={styles.verifiedTag}>✓ Verified</Text>}
             </View>
           </TouchableOpacity>
 
@@ -135,12 +132,10 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
 
       {/* Attached Media / Image without ratio badge */}
       {post.images && post.images.length > 0 && (
-        <View style={post.aspectRatio === '9:16' ? styles.imageContainer916 : styles.imageContainer169}>
-          <Image
-            source={{ uri: post.images[0] }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
+        <View
+          style={post.aspectRatio === '9:16' ? styles.imageContainer916 : styles.imageContainer169}
+        >
+          <Image source={{ uri: post.images[0] }} style={styles.postImage} resizeMode="cover" />
         </View>
       )}
 
@@ -227,8 +222,8 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                   initialMessage: post.attachedProduct
                     ? `Namaste! I am interested in "${post.attachedProduct.title}" (₹${post.attachedProduct.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`
                     : post.attachedService
-                    ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
-                    : undefined,
+                      ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
+                      : undefined,
                   attachedProduct: post.attachedProduct,
                   attachedService: post.attachedService,
                 })
@@ -254,9 +249,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           </Text>
         </View>
 
-        <Text style={styles.counterText}>
-          {post.sharesCount} shares
-        </Text>
+        <Text style={styles.counterText}>{post.sharesCount} shares</Text>
       </View>
 
       {/* Social Actions Bar */}
@@ -267,7 +260,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           activeOpacity={0.7}
         >
           <Ionicons
-            name={isLiked ? "heart" : "heart-outline"}
+            name={isLiked ? 'heart' : 'heart-outline'}
             size={18}
             color={isLiked ? '#E11D48' : '#64748B'}
           />
@@ -296,7 +289,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           activeOpacity={0.7}
         >
           <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
+            name={isSaved ? 'bookmark' : 'bookmark-outline'}
             size={17}
             color={isSaved ? colors.primary : '#667085'}
           />
@@ -351,9 +344,14 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     }}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.menuItemIconCircle, { backgroundColor: isSaved ? '#EEF2FF' : '#F8FAFC' }]}>
+                    <View
+                      style={[
+                        styles.menuItemIconCircle,
+                        { backgroundColor: isSaved ? '#EEF2FF' : '#F8FAFC' },
+                      ]}
+                    >
                       <Ionicons
-                        name={isSaved ? "bookmark" : "bookmark-outline"}
+                        name={isSaved ? 'bookmark' : 'bookmark-outline'}
                         size={18}
                         color={isSaved ? colors.primary : '#475569'}
                       />
@@ -382,7 +380,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={styles.menuItemTitle}>Copy Post Link</Text>
-                      <Text style={styles.menuItemSubtitle}>Share direct link with your network</Text>
+                      <Text style={styles.menuItemSubtitle}>
+                        Share direct link with your network
+                      </Text>
                     </View>
                   </TouchableOpacity>
 
@@ -400,7 +400,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={styles.menuItemTitle}>View Business Profile</Text>
-                      <Text style={styles.menuItemSubtitle}>Explore catalog, verified badge & details</Text>
+                      <Text style={styles.menuItemSubtitle}>
+                        Explore catalog, verified badge & details
+                      </Text>
                     </View>
                   </TouchableOpacity>
 
@@ -417,10 +419,14 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                           <Feather name="trash-2" size={18} color="#DC2626" />
                         </View>
                         <View style={styles.menuItemTextCol}>
-                          <Text style={[styles.menuItemTitle, { color: '#DC2626', fontWeight: '700' }]}>
+                          <Text
+                            style={[styles.menuItemTitle, { color: '#DC2626', fontWeight: '700' }]}
+                          >
                             Delete Post
                           </Text>
-                          <Text style={styles.menuItemSubtitle}>Permanently remove this post from the feed</Text>
+                          <Text style={styles.menuItemSubtitle}>
+                            Permanently remove this post from the feed
+                          </Text>
                         </View>
                       </TouchableOpacity>
                     </>
@@ -440,7 +446,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={[styles.menuItemTitle, { color: '#64748B' }]}>Report Post</Text>
-                      <Text style={styles.menuItemSubtitle}>Flag inappropriate or spam content</Text>
+                      <Text style={styles.menuItemSubtitle}>
+                        Flag inappropriate or spam content
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 </View>

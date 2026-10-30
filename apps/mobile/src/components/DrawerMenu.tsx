@@ -9,7 +9,7 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Alert,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ export function DrawerMenu() {
     unreadNotificationsCount,
     unreadMessagesCount,
     showToast,
-    signOut
+    signOut,
   } = useApp();
 
   const handleNavigate = (route: any, params?: any) => {
@@ -37,25 +37,24 @@ export function DrawerMenu() {
   const handleLogout = () => {
     setDrawerOpen(false);
     if (Platform.OS === 'web') {
-      const confirmed = typeof window !== 'undefined' ? window.confirm('Are you sure you want to log out of Supporters?') : true;
+      const confirmed =
+        typeof window !== 'undefined'
+          ? window.confirm('Are you sure you want to log out of Supporters?')
+          : true;
       if (confirmed) {
         signOut();
       }
     } else {
-      Alert.alert(
-        'Sign Out of Supporters',
-        'Are you sure you want to log out of your session?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: async () => {
-              await signOut();
-            }
-          }
-        ]
-      );
+      Alert.alert('Sign Out of Supporters', 'Are you sure you want to log out of your session?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]);
     }
   };
 
@@ -71,14 +70,16 @@ export function DrawerMenu() {
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
-        <View style={[styles.drawerContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 10 }]}>
+        <View
+          style={[
+            styles.drawerContent,
+            { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 10 },
+          ]}
+        >
           {/* Header Close */}
           <View style={styles.drawerHeader}>
             <Text style={styles.drawerTitle}>Menu</Text>
-            <TouchableOpacity
-              onPress={() => setDrawerOpen(false)}
-              style={styles.closeButton}
-            >
+            <TouchableOpacity onPress={() => setDrawerOpen(false)} style={styles.closeButton}>
               <Feather name="x" size={20} color="#667085" />
             </TouchableOpacity>
           </View>
@@ -107,10 +108,7 @@ export function DrawerMenu() {
             {/* Main items */}
             <Text style={styles.sectionHeader}>COLLECTION</Text>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => handleNavigate('saved')}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('saved')}>
               <Feather name="bookmark" size={18} color={colors.primary} />
               <Text style={styles.menuItemText}>Saved Collection</Text>
             </TouchableOpacity>
@@ -118,18 +116,12 @@ export function DrawerMenu() {
             {/* Growth & Business */}
             <Text style={styles.sectionHeader}>EARNINGS & BUSINESS</Text>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => handleNavigate('wallet')}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('wallet')}>
               <Feather name="credit-card" size={18} color={colors.primary} />
               <Text style={styles.menuItemText}>App Wallet</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => handleNavigate('referral')}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('referral')}>
               <Feather name="gift" size={18} color={colors.accentMagenta} />
               <Text style={[styles.menuItemText, { color: colors.accentMagenta }]}>
                 Refer & Earn
@@ -158,22 +150,14 @@ export function DrawerMenu() {
             {/* Account & Settings */}
             <Text style={styles.sectionHeader}>ACCOUNT</Text>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => handleNavigate('settings')}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('settings')}>
               <Feather name="settings" size={18} color="#667085" />
               <Text style={styles.menuItemText}>Settings & Preferences</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={handleLogout}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <Feather name="log-out" size={18} color={colors.danger} />
-              <Text style={[styles.menuItemText, { color: colors.danger }]}>
-                Sign Out
-              </Text>
+              <Text style={[styles.menuItemText, { color: colors.danger }]}>Sign Out</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

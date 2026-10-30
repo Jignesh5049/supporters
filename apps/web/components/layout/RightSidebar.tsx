@@ -4,11 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
-import {
-  Gift,
-  Building2,
-  ArrowRight,
-} from 'lucide-react';
+import { Gift, Building2, ArrowRight } from 'lucide-react';
 
 export function RightSidebar() {
   const { businesses, followedBusinessIds, toggleFollowBusiness } = useApp();
@@ -34,11 +30,10 @@ export function RightSidebar() {
             </span>
           </div>
 
-          <h4 className="text-sm font-bold text-[#111111] mt-3">
-            Grow your business network
-          </h4>
+          <h4 className="text-sm font-bold text-[#111111] mt-3">Grow your business network</h4>
           <p className="text-xs text-[#667085] mt-1 leading-relaxed">
-            Invite fellow manufacturers and retailers. Earn direct wallet credits when they complete their profile.
+            Invite fellow manufacturers and retailers. Earn direct wallet credits when they complete
+            their profile.
           </p>
 
           <div className="mt-3.5 flex items-center justify-between pt-2 border-t border-[#A3238E]/15">
@@ -60,11 +55,12 @@ export function RightSidebar() {
           <div className="flex items-center justify-between mb-3.5">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#2E3192]" />
-              <h3 className="text-sm font-bold text-[#111111]">
-                Recommended Businesses
-              </h3>
+              <h3 className="text-sm font-bold text-[#111111]">Recommended Businesses</h3>
             </div>
-            <Link href="/discover?tab=businesses" className="text-xs font-semibold text-[#00AEEF] hover:underline">
+            <Link
+              href="/discover?tab=businesses"
+              className="text-xs font-semibold text-[#00AEEF] hover:underline"
+            >
               View All
             </Link>
           </div>
@@ -74,7 +70,10 @@ export function RightSidebar() {
               const isFollowing = followedBusinessIds.includes(biz.id);
               return (
                 <div key={biz.id} className="flex items-start justify-between gap-3">
-                  <Link href={`/business/${biz.id}`} className="flex items-start gap-2.5 min-w-0 group">
+                  <Link
+                    href={`/business/${biz.id}`}
+                    className="flex items-start gap-2.5 min-w-0 group"
+                  >
                     <Avatar src={biz.avatar} name={biz.name} size="sm" verified={biz.verified} />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-[#111111] group-hover:text-[#2E3192] truncate transition-colors">
@@ -104,13 +103,21 @@ export function RightSidebar() {
 
         {/* Footer Links */}
         <div className="pt-2 flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-[#667085] px-1">
-          <Link href="/about" className="hover:underline">About</Link>
+          <Link href="/about" className="hover:underline">
+            About
+          </Link>
           <span>·</span>
-          <Link href="/privacy" className="hover:underline">Privacy</Link>
+          <Link href="/privacy" className="hover:underline">
+            Privacy
+          </Link>
           <span>·</span>
-          <Link href="/terms" className="hover:underline">Terms</Link>
+          <Link href="/terms" className="hover:underline">
+            Terms
+          </Link>
           <span>·</span>
-          <Link href="/help" className="hover:underline">Help</Link>
+          <Link href="/help" className="hover:underline">
+            Help
+          </Link>
           <span>·</span>
           <span>© 2026 Supporters</span>
         </div>

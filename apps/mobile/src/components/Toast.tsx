@@ -16,13 +16,7 @@ export function Toast() {
 
   return (
     <View style={[styles.container, { top: insets.top + 58 }]}>
-      <View
-        style={[
-          styles.toastBox,
-          isSuccess && styles.successBox,
-          isError && styles.errorBox,
-        ]}
-      >
+      <View style={[styles.toastBox, isSuccess && styles.successBox, isError && styles.errorBox]}>
         <Feather
           name={isSuccess ? 'check-circle' : isError ? 'alert-circle' : 'info'}
           size={16}

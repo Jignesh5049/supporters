@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -24,10 +18,7 @@ export function SubscriptionScreen() {
   ];
 
   const handleUpgrade = () => {
-    showToast(
-      'Selected Annual Plan (₹999/year). Redirecting to secure checkout...',
-      'success'
-    );
+    showToast('Selected Annual Plan (₹999/year). Redirecting to secure checkout...', 'success');
   };
 
   return (
@@ -71,14 +62,8 @@ export function SubscriptionScreen() {
         </View>
 
         {/* Upgrade Action */}
-        <TouchableOpacity
-          style={styles.upgradeBtn}
-          onPress={handleUpgrade}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.upgradeBtnText}>
-            Upgrade to Pro for ₹999 / year
-          </Text>
+        <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} activeOpacity={0.85}>
+          <Text style={styles.upgradeBtnText}>Upgrade to Pro for ₹999 / year</Text>
           <Feather name="arrow-right" size={16} color="#FFFFFF" />
         </TouchableOpacity>
 

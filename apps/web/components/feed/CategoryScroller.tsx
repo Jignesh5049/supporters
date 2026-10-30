@@ -15,7 +15,7 @@ import {
   GraduationCap,
   Cpu,
   Hammer,
-  MoreHorizontal
+  MoreHorizontal,
 } from 'lucide-react';
 
 interface CategoryScrollerProps {
@@ -36,13 +36,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
   GraduationCap,
   Cpu,
   Hammer,
-  MoreHorizontal
+  MoreHorizontal,
 };
 
-export function CategoryScroller({
-  selectedCategory,
-  onSelectCategory
-}: CategoryScrollerProps) {
+export function CategoryScroller({ selectedCategory, onSelectCategory }: CategoryScrollerProps) {
   return (
     <div className="w-full bg-white border border-[#E5E7EB] rounded-2xl p-2.5 shadow-2xs">
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">

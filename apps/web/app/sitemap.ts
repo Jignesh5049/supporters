@@ -22,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/refund-policy',
     '/community-guidelines',
     '/login',
-    '/register'
+    '/register',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),

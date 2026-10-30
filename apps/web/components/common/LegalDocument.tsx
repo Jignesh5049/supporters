@@ -13,7 +13,9 @@ export function LegalDocument({ title, lastUpdated, sections }: LegalDocumentPro
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
         <nav className="flex items-center gap-2 text-xs text-[#667085]">
-          <Link href="/" className="hover:text-[#2E3192]">Home</Link>
+          <Link href="/" className="hover:text-[#2E3192]">
+            Home
+          </Link>
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-[#111111] font-medium">{title}</span>
         </nav>

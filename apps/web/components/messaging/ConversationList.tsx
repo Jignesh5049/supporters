@@ -18,11 +18,12 @@ export function ConversationList({
   activeId,
   onSelect,
   searchQuery,
-  onSearchChange
+  onSearchChange,
 }: ConversationListProps) {
-  const filtered = conversations.filter((c) =>
-    c.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = conversations.filter(
+    (c) =>
+      c.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -56,9 +57,7 @@ export function ConversationList({
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
                 className={`w-full p-4 flex items-start gap-3 text-left transition-colors ${
-                  isActive
-                    ? 'bg-[#F7F8FC] border-l-4 border-l-[#2E3192]'
-                    : 'hover:bg-gray-50'
+                  isActive ? 'bg-[#F7F8FC] border-l-4 border-l-[#2E3192]' : 'hover:bg-gray-50'
                 }`}
               >
                 <div className="relative shrink-0">
@@ -83,9 +82,7 @@ export function ConversationList({
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#667085] line-clamp-1">
-                    {conv.lastMessage}
-                  </p>
+                  <p className="text-xs text-[#667085] line-clamp-1">{conv.lastMessage}</p>
 
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-[10px] text-[#00AEEF] font-semibold">

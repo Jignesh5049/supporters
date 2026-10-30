@@ -6,7 +6,7 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -18,7 +18,7 @@ export function SuggestedBusinessesWidget() {
 
   // Filter out currentUser's own business and dismissed cards
   const suggestedList = businesses.filter(
-    (b) => b.id !== currentUser.businessId && !dismissedIds.includes(b.id)
+    (b) => b.id !== currentUser.businessId && !dismissedIds.includes(b.id),
   );
 
   if (suggestedList.length === 0) {

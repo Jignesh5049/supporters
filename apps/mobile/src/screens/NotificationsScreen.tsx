@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  StyleSheet
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { NotificationCategory, NotificationItem } from '../../mock';
 import { colors } from '../styles/theme';
 
 export function NotificationsScreen() {
-  const {
-    notifications,
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    navigate,
-    goBack
-  } = useApp();
+  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, navigate, goBack } =
+    useApp();
 
   const [selectedCategory, setSelectedCategory] = useState<NotificationCategory>('All');
 
@@ -33,7 +21,7 @@ export function NotificationsScreen() {
   ];
 
   const filtered = notifications.filter(
-    (n) => selectedCategory === 'All' || n.category === selectedCategory
+    (n) => selectedCategory === 'All' || n.category === selectedCategory,
   );
 
   const groups: Array<'Today' | 'Yesterday' | 'Earlier'> = ['Today', 'Yesterday', 'Earlier'];
@@ -58,10 +46,7 @@ export function NotificationsScreen() {
             </TouchableOpacity>
             <Text style={styles.heading}>Notifications</Text>
           </View>
-          <TouchableOpacity
-            onPress={markAllNotificationsAsRead}
-            style={styles.markAllBtn}
-          >
+          <TouchableOpacity onPress={markAllNotificationsAsRead} style={styles.markAllBtn}>
             <Text style={styles.markAllText}>Mark all as read</Text>
           </TouchableOpacity>
         </View>
@@ -78,10 +63,7 @@ export function NotificationsScreen() {
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCategory(cat)}
-                style={[
-                  styles.catPill,
-                  isSelected ? styles.catPillActive : styles.catPillInactive,
-                ]}
+                style={[styles.catPill, isSelected ? styles.catPillActive : styles.catPillInactive]}
                 activeOpacity={0.7}
               >
                 <Text
@@ -118,10 +100,7 @@ export function NotificationsScreen() {
                     else if (item.actionUrl?.includes('subscription')) navigate('subscription');
                     else navigate('discover');
                   }}
-                  style={[
-                    styles.notifCard,
-                    !item.read && styles.notifCardUnread,
-                  ]}
+                  style={[styles.notifCard, !item.read && styles.notifCardUnread]}
                   activeOpacity={0.75}
                 >
                   <View style={styles.avatarCol}>

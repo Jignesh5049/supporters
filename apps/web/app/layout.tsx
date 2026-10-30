@@ -11,7 +11,7 @@ import { EnquiryModal } from '@/components/common/EnquiryModal';
 export const metadata: Metadata = {
   title: {
     template: '%s | Supporters',
-    default: 'Supporters - Social Commerce & Business Discovery Platform'
+    default: 'Supporters - Social Commerce & Business Discovery Platform',
   },
   description:
     'Supporters connects manufacturers, retailers, distributors, wholesalers, and service providers across India with modern social discovery and direct business networking.',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     'business discovery',
     'Ahmedabad manufacturers',
     'Surat textile wholesale',
-    'Indian suppliers'
+    'Indian suppliers',
   ],
   authors: [{ name: 'Supporters India' }],
   creator: 'Supporters Technologies India Pvt Ltd',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-  }
+  },
 };
 
 export const viewport: Viewport = {
@@ -49,11 +49,7 @@ export const viewport: Viewport = {
 import React, { Suspense } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="min-h-full antialiased bg-[#F7F8FC]">
       <body className="min-h-full flex flex-col text-[#111111]">
@@ -63,9 +59,7 @@ export default function RootLayout({
           </Suspense>
           <div className="flex-1 flex flex-col">
             <Suspense fallback={null}>
-              <AppShell>
-                {children}
-              </AppShell>
+              <AppShell>{children}</AppShell>
             </Suspense>
           </div>
           <Suspense fallback={null}>

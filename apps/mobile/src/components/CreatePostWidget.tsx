@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Platform
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -44,18 +36,12 @@ export function CreatePostWidget() {
               autoFocus
             />
             <View style={styles.composeActions}>
-              <TouchableOpacity
-                onPress={() => setIsComposing(false)}
-                style={styles.cancelButton}
-              >
+              <TouchableOpacity onPress={() => setIsComposing(false)} style={styles.cancelButton}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handlePublish}
-                style={[
-                  styles.publishButton,
-                  !content.trim() && styles.publishButtonDisabled,
-                ]}
+                style={[styles.publishButton, !content.trim() && styles.publishButtonDisabled]}
                 disabled={!content.trim()}
               >
                 <Text style={styles.publishText}>Post</Text>

@@ -7,7 +7,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Share,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,11 +86,7 @@ export function ShareModal() {
               <Text style={styles.shareLabel}>LinkedIn</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleCopyLink}
-              style={styles.shareItem}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity onPress={handleCopyLink} style={styles.shareItem} activeOpacity={0.7}>
               <View style={[styles.shareIconBox, { backgroundColor: '#4B5563' }]}>
                 <Feather name="copy" size={20} color="#FFFFFF" />
               </View>

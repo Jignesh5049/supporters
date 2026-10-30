@@ -8,14 +8,15 @@ import {
   StyleSheet,
   Platform,
   Modal,
-  TextInput
+  TextInput,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function BusinessHubScreen() {
-  const { userBusiness, posts, products, businesses, openConversationWithBusiness, navigate } = useApp();
+  const { userBusiness, posts, products, businesses, openConversationWithBusiness, navigate } =
+    useApp();
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followersSearch, setFollowersSearch] = useState('');
 
@@ -36,7 +37,8 @@ export function BusinessHubScreen() {
           </View>
           <Text style={styles.emptyTitle}>No Business Profile Found</Text>
           <Text style={styles.emptyDesc}>
-            Create your digital B2B storefront to showcase products, connect with wholesale buyers, and publish company dispatches.
+            Create your digital B2B storefront to showcase products, connect with wholesale buyers,
+            and publish company dispatches.
           </Text>
           <TouchableOpacity
             style={styles.createBizBtn}
@@ -161,20 +163,25 @@ export function BusinessHubScreen() {
             onPress={() => setFollowersModalOpen(true)}
             activeOpacity={0.75}
           >
-            <Text style={[styles.metricNumber, { color: colors.primary }]}>{userBusiness.followersCount}</Text>
-            <Text style={[styles.metricLabel, { color: colors.primary, fontWeight: '700' }]}>Followers ↗</Text>
+            <Text style={[styles.metricNumber, { color: colors.primary }]}>
+              {userBusiness.followersCount}
+            </Text>
+            <Text style={[styles.metricLabel, { color: colors.primary, fontWeight: '700' }]}>
+              Followers ↗
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.metricCard}
-            onPress={() => navigate('business_posts')}
-          >
-            <Text style={[styles.metricNumber, { color: colors.primary }]}>{businessPosts.length}</Text>
+          <TouchableOpacity style={styles.metricCard} onPress={() => navigate('business_posts')}>
+            <Text style={[styles.metricNumber, { color: colors.primary }]}>
+              {businessPosts.length}
+            </Text>
             <Text style={styles.metricLabel}>Posts ({publishedPostsCount} Live)</Text>
           </TouchableOpacity>
 
           <View style={styles.metricCard}>
-            <Text style={[styles.metricNumber, { color: '#00AEEF' }]}>{businessProducts.length}</Text>
+            <Text style={[styles.metricNumber, { color: '#00AEEF' }]}>
+              {businessProducts.length}
+            </Text>
             <Text style={styles.metricLabel}>Catalog Items</Text>
           </View>
         </View>
@@ -190,7 +197,11 @@ export function BusinessHubScreen() {
             activeOpacity={0.8}
           >
             <View style={[styles.hubIconCircle, { backgroundColor: '#EEF2FF' }]}>
-              <MaterialCommunityIcons name="newspaper-variant-outline" size={22} color={colors.primary} />
+              <MaterialCommunityIcons
+                name="newspaper-variant-outline"
+                size={22}
+                color={colors.primary}
+              />
             </View>
             <View style={styles.hubCardText}>
               <View style={styles.hubTitleRow}>
@@ -297,12 +308,17 @@ export function BusinessHubScreen() {
       >
         <View style={styles.followersModalContainer}>
           <View style={styles.followersModalHeader}>
-            <TouchableOpacity onPress={() => setFollowersModalOpen(false)} style={styles.backModalBtn}>
+            <TouchableOpacity
+              onPress={() => setFollowersModalOpen(false)}
+              style={styles.backModalBtn}
+            >
               <Feather name="arrow-left" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={styles.followersModalTitle}>Followers</Text>
-              <Text style={styles.followersModalSub}>{userBusiness.name} · {userBusiness.followersCount} Followers</Text>
+              <Text style={styles.followersModalSub}>
+                {userBusiness.name} · {userBusiness.followersCount} Followers
+              </Text>
             </View>
             <View style={{ width: 28 }} />
           </View>
@@ -325,7 +341,10 @@ export function BusinessHubScreen() {
           </View>
 
           {/* List of Followers */}
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, paddingHorizontal: 16 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1, paddingHorizontal: 16 }}
+          >
             {businesses
               .filter((b) => b.id !== userBusiness.id)
               .filter((b) => {
@@ -351,7 +370,9 @@ export function BusinessHubScreen() {
                       <Image source={{ uri: biz.avatar }} style={styles.followerAvatar} />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={styles.followerName} numberOfLines={1}>{biz.name}</Text>
+                          <Text style={styles.followerName} numberOfLines={1}>
+                            {biz.name}
+                          </Text>
                           {biz.verified && (
                             <Ionicons name="checkmark-circle" size={12} color={colors.accentCyan} />
                           )}

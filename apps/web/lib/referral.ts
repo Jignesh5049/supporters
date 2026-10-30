@@ -32,7 +32,15 @@ export function getReferralMilestoneStatus(successfulCount: number) {
     totalEarned: calculateReferralEarnings(successfulCount),
     maxLimitReached: successfulCount >= 2,
     isCapped: successfulCount >= 2,
-    progressPercent: Math.min(100, Math.round((calculateReferralEarnings(successfulCount) / REFERRAL_REWARD_CONFIG.maxTotalReward) * 100)),
-    remainingToMax: Math.max(0, REFERRAL_REWARD_CONFIG.maxTotalReward - calculateReferralEarnings(successfulCount)),
+    progressPercent: Math.min(
+      100,
+      Math.round(
+        (calculateReferralEarnings(successfulCount) / REFERRAL_REWARD_CONFIG.maxTotalReward) * 100,
+      ),
+    ),
+    remainingToMax: Math.max(
+      0,
+      REFERRAL_REWARD_CONFIG.maxTotalReward - calculateReferralEarnings(successfulCount),
+    ),
   };
 }

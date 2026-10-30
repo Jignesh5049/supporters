@@ -9,13 +9,7 @@ interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({
-  src,
-  name,
-  size = 'md',
-  verified = false,
-  className = ''
-}: AvatarProps) {
+export function Avatar({ src, name, size = 'md', verified = false, className = '' }: AvatarProps) {
   const sizeMap = {
     xs: { px: 24, class: 'w-6 h-6 text-[10px]' },
     sm: { px: 32, class: 'w-8 h-8 text-xs' },
@@ -35,7 +29,9 @@ export function Avatar({
 
   return (
     <div className={`relative inline-block shrink-0 ${className}`}>
-      <div className={`relative rounded-full overflow-hidden bg-[#F7F8FC] border border-[#E5E7EB] flex items-center justify-center font-semibold text-[#2E3192] select-none ${sizeMap[size].class}`}>
+      <div
+        className={`relative rounded-full overflow-hidden bg-[#F7F8FC] border border-[#E5E7EB] flex items-center justify-center font-semibold text-[#2E3192] select-none ${sizeMap[size].class}`}
+      >
         {src ? (
           <Image
             src={src}

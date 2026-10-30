@@ -9,7 +9,7 @@ import {
   Image,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,24 +32,40 @@ export function BusinessEditScreen() {
   const [email, setEmail] = useState(userBusiness?.email || '');
 
   // Social & Website
-  const [instagram, setInstagram] = useState(userBusiness?.instagram || '@shree_electronics_official');
+  const [instagram, setInstagram] = useState(
+    userBusiness?.instagram || '@shree_electronics_official',
+  );
   const [website, setWebsite] = useState(userBusiness?.website || 'https://shreeelectronics.in');
-  const [facebook, setFacebook] = useState(userBusiness?.facebook || 'https://facebook.com/shreeelectronics');
-  const [youtube, setYoutube] = useState(userBusiness?.youtube || 'https://youtube.com/@shreeelectronics');
+  const [facebook, setFacebook] = useState(
+    userBusiness?.facebook || 'https://facebook.com/shreeelectronics',
+  );
+  const [youtube, setYoutube] = useState(
+    userBusiness?.youtube || 'https://youtube.com/@shreeelectronics',
+  );
 
   // Address
-  const [addressLine, setAddressLine] = useState(userBusiness?.addressLine || 'Plot 42, Phase II, GIDC Industrial Estate');
+  const [addressLine, setAddressLine] = useState(
+    userBusiness?.addressLine || 'Plot 42, Phase II, GIDC Industrial Estate',
+  );
   const [area, setArea] = useState(userBusiness?.area || 'Naroda Industrial Zone');
   const [city, setCity] = useState(userBusiness?.city || 'Ahmedabad');
   const [state, setState] = useState(userBusiness?.state || 'Gujarat');
   const [pinCode, setPinCode] = useState(userBusiness?.pinCode || '382330');
   const [country, setCountry] = useState(userBusiness?.country || 'India');
-  const [mapUrl, setMapUrl] = useState(userBusiness?.mapUrl || 'https://maps.google.com/?q=Naroda+GIDC+Ahmedabad');
+  const [mapUrl, setMapUrl] = useState(
+    userBusiness?.mapUrl || 'https://maps.google.com/?q=Naroda+GIDC+Ahmedabad',
+  );
 
   // Operating Info
-  const [openingHours, setOpeningHours] = useState(userBusiness?.openingHours || 'Mon - Sat: 9:00 AM - 7:30 PM');
-  const [availabilityStatus, setAvailabilityStatus] = useState(userBusiness?.availabilityStatus || 'Immediate Dispatch Available');
-  const [priceRange, setPriceRange] = useState(userBusiness?.priceRange || '₹₹ (Wholesale / Bulk Commercial)');
+  const [openingHours, setOpeningHours] = useState(
+    userBusiness?.openingHours || 'Mon - Sat: 9:00 AM - 7:30 PM',
+  );
+  const [availabilityStatus, setAvailabilityStatus] = useState(
+    userBusiness?.availabilityStatus || 'Immediate Dispatch Available',
+  );
+  const [priceRange, setPriceRange] = useState(
+    userBusiness?.priceRange || '₹₹ (Wholesale / Bulk Commercial)',
+  );
 
   // Pick Logo / Avatar
   const handlePickLogo = async () => {
@@ -171,7 +187,10 @@ export function BusinessEditScreen() {
             {/* Visual Logo & Cover preview */}
             <View style={styles.mediaPreviewCard}>
               <View style={styles.coverPreviewContainer}>
-                <Image source={{ uri: coverImage || userBusiness?.coverImage }} style={styles.coverImg} />
+                <Image
+                  source={{ uri: coverImage || userBusiness?.coverImage }}
+                  style={styles.coverImg}
+                />
                 <TouchableOpacity style={styles.changeCoverBtn} onPress={handlePickCover}>
                   <Feather name="camera" size={13} color="#FFFFFF" />
                   <Text style={styles.changeBtnText}>Change Cover</Text>
@@ -268,7 +287,8 @@ export function BusinessEditScreen() {
             <View style={styles.noticeBox}>
               <Feather name="instagram" size={16} color="#A3238E" />
               <Text style={styles.noticeText}>
-                Your Instagram handle will appear as an active, clickable link on your public business page.
+                Your Instagram handle will appear as an active, clickable link on your public
+                business page.
               </Text>
             </View>
 
@@ -340,7 +360,8 @@ export function BusinessEditScreen() {
             <View style={styles.noticeBox}>
               <Feather name="map-pin" size={16} color={colors.primary} />
               <Text style={styles.noticeText}>
-                Your full address will have a direct "Get Directions" action button on the public profile.
+                Your full address will have a direct "Get Directions" action button on the public
+                profile.
               </Text>
             </View>
 
@@ -469,11 +490,7 @@ export function BusinessEditScreen() {
 
         {/* Bottom Actions */}
         <View style={styles.bottomActionsRow}>
-          <TouchableOpacity
-            style={styles.saveBtn}
-            onPress={handleSave}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
             <Feather name="check" size={16} color="#FFFFFF" />
             <Text style={styles.saveBtnText}>Save Profile Changes</Text>
           </TouchableOpacity>

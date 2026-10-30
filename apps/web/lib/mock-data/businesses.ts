@@ -6,8 +6,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Shree Electronics & Systems',
     slug: 'shree-electronics',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200&auto=format&fit=crop&q=80',
     category: 'Electronics',
     businessType: 'Manufacturer',
     city: 'Ahmedabad',
@@ -20,7 +22,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 4280,
     rating: 4.8,
     reviewCount: 156,
-    about: 'Premier manufacturer and distributor of smart LED TVs, commercial digital displays, and energy-efficient lighting panels. Supplying tier-1 retailers and institutions across Western India with certified ISO-9001 components.',
+    about:
+      'Premier manufacturer and distributor of smart LED TVs, commercial digital displays, and energy-efficient lighting panels. Supplying tier-1 retailers and institutions across Western India with certified ISO-9001 components.',
     establishedYear: 2012,
     responseRate: 'Under 1 hour',
     tags: ['Smart TV', 'OEM Manufacturer', 'LED Panels', 'Wholesale Electronics'],
@@ -32,8 +35,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Patel Solid Wood Furniture',
     slug: 'patel-wood-furniture',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1200&auto=format&fit=crop&q=80',
     category: 'Home',
     businessType: 'Manufacturer',
     city: 'Vadodara',
@@ -46,7 +51,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 3120,
     rating: 4.9,
     reviewCount: 94,
-    about: 'Handcrafted Sheesham and Teak wood furniture tailored for residential developers, modern cafes, and interior studios. Custom batch manufacturing with pan-India protected shipping.',
+    about:
+      'Handcrafted Sheesham and Teak wood furniture tailored for residential developers, modern cafes, and interior studios. Custom batch manufacturing with pan-India protected shipping.',
     establishedYear: 2008,
     responseRate: 'Under 2 hours',
     tags: ['Teak Wood', 'Modular Kitchens', 'Dining Sets', 'Architectural Furniture'],
@@ -57,8 +63,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Kevalya Organic Spices & Agro',
     slug: 'kevalya-organic-spices',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1509358271058-acd22cc93898?w=1200&auto=format&fit=crop&q=80',
     category: 'Food',
     businessType: 'Wholesaler',
     city: 'Anand',
@@ -71,7 +79,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 5690,
     rating: 4.7,
     reviewCount: 218,
-    about: 'Direct farmer-connect aggregator offering APEDA certified whole cumin, coriander seeds, turmeric finger, and ground spice blends in custom 5kg to 50kg food-grade bulk bags.',
+    about:
+      'Direct farmer-connect aggregator offering APEDA certified whole cumin, coriander seeds, turmeric finger, and ground spice blends in custom 5kg to 50kg food-grade bulk bags.',
     establishedYear: 2016,
     responseRate: 'Within 30 mins',
     tags: ['Organic Spices', 'APMC Certified', 'Cumin & Fennel', 'Bulk Food Export'],
@@ -82,8 +91,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Surat Silk Craft & Jacquards',
     slug: 'surat-silk-craft',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=1200&auto=format&fit=crop&q=80',
     category: 'Fashion',
     businessType: 'Manufacturer',
     city: 'Surat',
@@ -96,7 +107,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 7850,
     rating: 4.9,
     reviewCount: 310,
-    about: 'Leading weaving mills producing high-density Banarasi, raw silk fabrics, zari embroidery dupattas, and festive bridal ensembles for boutique owners and garment brands.',
+    about:
+      'Leading weaving mills producing high-density Banarasi, raw silk fabrics, zari embroidery dupattas, and festive bridal ensembles for boutique owners and garment brands.',
     establishedYear: 2004,
     responseRate: 'Under 1 hour',
     tags: ['Jacquard Silk', 'Bridal Sarees', 'Textile Mill', 'B2B Apparel'],
@@ -107,8 +119,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Apex Precision Tools & Gears',
     slug: 'apex-precision-tools',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&auto=format&fit=crop&q=80',
     category: 'Automotive',
     businessType: 'Manufacturer',
     city: 'Rajkot',
@@ -121,7 +135,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 2450,
     rating: 4.6,
     reviewCount: 82,
-    about: 'CNC precision turned auto spares, forged transmission gears, and EV motor brackets. Serving Tier-2 automotive OEMs with stringent zero-defect tolerance.',
+    about:
+      'CNC precision turned auto spares, forged transmission gears, and EV motor brackets. Serving Tier-2 automotive OEMs with stringent zero-defect tolerance.',
     establishedYear: 2010,
     responseRate: 'Under 3 hours',
     tags: ['CNC Turning', 'Auto Gears', 'EV Components', 'Industrial Engineering'],
@@ -132,8 +147,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Zenith Tech Softworks',
     slug: 'zenith-tech-softworks',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&auto=format&fit=crop&q=80',
     category: 'Technology',
     businessType: 'Service Provider',
     city: 'Bengaluru',
@@ -146,7 +163,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 6200,
     rating: 4.9,
     reviewCount: 140,
-    about: 'Full-stack software engineering, business automation, mobile apps, and custom inventory ERP for mid-market manufacturing and commerce firms.',
+    about:
+      'Full-stack software engineering, business automation, mobile apps, and custom inventory ERP for mid-market manufacturing and commerce firms.',
     establishedYear: 2018,
     responseRate: 'Under 1 hour',
     tags: ['Custom ERP', 'Mobile Apps', 'Cloud Architecture', 'B2B Software'],
@@ -157,8 +175,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'GreenShield Packaging Solutions',
     slug: 'greenshield-packaging',
     verified: true,
-    avatar: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&auto=format&fit=crop&q=80',
     category: 'Services',
     businessType: 'Manufacturer',
     city: 'Mumbai',
@@ -171,7 +191,8 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 3890,
     rating: 4.8,
     reviewCount: 112,
-    about: 'Biodegradable corrugated shipping boxes, water-activated tapes, custom branded honeycomb mailers, and food-safe takeout packaging for sustainable retail.',
+    about:
+      'Biodegradable corrugated shipping boxes, water-activated tapes, custom branded honeycomb mailers, and food-safe takeout packaging for sustainable retail.',
     establishedYear: 2015,
     responseRate: 'Within 45 mins',
     tags: ['Eco Packaging', 'Corrugated Boxes', 'Custom Printing', 'E-commerce Supplies'],
@@ -182,8 +203,10 @@ export const MOCK_BUSINESSES: Business[] = [
     name: 'Vedic Glow Botanicals',
     slug: 'vedic-glow-botanicals',
     verified: false,
-    avatar: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=200&auto=format&fit=crop&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=200&auto=format&fit=crop&q=80',
+    coverImage:
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&auto=format&fit=crop&q=80',
     category: 'Beauty',
     businessType: 'Brand',
     city: 'Pune',
@@ -195,10 +218,11 @@ export const MOCK_BUSINESSES: Business[] = [
     followersCount: 1840,
     rating: 4.5,
     reviewCount: 67,
-    about: 'Cold-pressed hair elixirs, kumkumadi facial oils, and organic handmade soaps crafted from Ayurvedic herbs. Available for white labeling and spa supply.',
+    about:
+      'Cold-pressed hair elixirs, kumkumadi facial oils, and organic handmade soaps crafted from Ayurvedic herbs. Available for white labeling and spa supply.',
     establishedYear: 2021,
     responseRate: 'Under 4 hours',
     tags: ['Ayurvedic Cosmetics', 'Kumkumadi Oil', 'White Label', 'Organic Skincare'],
     isFollowed: false,
-  }
+  },
 ];

@@ -1,0 +1,4 @@
+# Bulk formatting commits. Use: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# chore(repo): format the codebase with prettier
+4f04e86ce8aa3628442e9c61d3eb8d1c97a4b747

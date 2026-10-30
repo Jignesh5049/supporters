@@ -13,7 +13,7 @@ import {
   MessageSquare,
   Package,
   Wrench,
-  Shield
+  Shield,
 } from 'lucide-react';
 
 export default function HelpPage() {
@@ -25,45 +25,51 @@ export default function HelpPage() {
       id: 'faq-1',
       category: 'Business',
       question: 'How do I get my business profile verified on Supporters?',
-      answer: 'To obtain the blue verified badge, submit your valid GSTIN certificate and business PAN from your Business Dashboard. Our verification team reviews documentation within 24 hours.'
+      answer:
+        'To obtain the blue verified badge, submit your valid GSTIN certificate and business PAN from your Business Dashboard. Our verification team reviews documentation within 24 hours.',
     },
     {
       id: 'faq-2',
       category: 'Account',
       question: 'Can I operate both as a buyer and a manufacturer on Supporters?',
-      answer: 'Yes! Every Supporters account has access to the social commerce feed for purchasing while allowing you to register a business profile to list products and receive enquiries.'
+      answer:
+        'Yes! Every Supporters account has access to the social commerce feed for purchasing while allowing you to register a business profile to list products and receive enquiries.',
     },
     {
       id: 'faq-3',
       category: 'Subscription',
       question: 'What is included in the ₹999/year Supporters Premium plan?',
-      answer: 'Supporters Premium includes verified supplier credentialing, top placement in regional category discovery, unlimited product catalogues, and direct WhatsApp enquiry routing with zero platform transaction commission.'
+      answer:
+        'Supporters Premium includes verified supplier credentialing, top placement in regional category discovery, unlimited product catalogues, and direct WhatsApp enquiry routing with zero platform transaction commission.',
     },
     {
       id: 'faq-4',
       category: 'Messages',
       question: 'How do B2B quotation enquiries work?',
-      answer: 'When a buyer clicks "Contact Supplier" or "Send Enquiry", you receive an instant message thread containing their required quantity, delivery location, and custom specifications.'
+      answer:
+        'When a buyer clicks "Contact Supplier" or "Send Enquiry", you receive an instant message thread containing their required quantity, delivery location, and custom specifications.',
     },
     {
       id: 'faq-5',
       category: 'Payments',
       question: 'Does Supporters take commission on finished purchase orders?',
-      answer: 'No! Supporters is a zero-commission social commerce and discovery network. Direct agreements, payments, and trade terms happen directly between buyers and suppliers.'
+      answer:
+        'No! Supporters is a zero-commission social commerce and discovery network. Direct agreements, payments, and trade terms happen directly between buyers and suppliers.',
     },
     {
       id: 'faq-6',
       category: 'Products',
       question: 'How do I list minimum order quantities (MOQ)?',
-      answer: 'When creating or editing a product, specify the minimum order quantity along with your preferred packaging unit (e.g. 10 Units, 500 Pieces, or 25kg Bags).'
-    }
+      answer:
+        'When creating or editing a product, specify the minimum order quantity along with your preferred packaging unit (e.g. 10 Units, 500 Pieces, or 25kg Bags).',
+    },
   ];
 
   const filteredFaqs = faqs.filter(
     (f) =>
       f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       f.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.category.toLowerCase().includes(searchQuery.toLowerCase())
+      f.category.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -79,7 +85,8 @@ export default function HelpPage() {
             How can we help your business today?
           </h1>
           <p className="text-xs sm:text-sm text-[#667085] mt-1 max-w-lg mx-auto">
-            Search answers on supplier onboarding, verification, order enquiries, and partner rewards.
+            Search answers on supplier onboarding, verification, order enquiries, and partner
+            rewards.
           </p>
         </div>
 
@@ -147,7 +154,8 @@ export default function HelpPage() {
           </div>
           <h3 className="text-sm font-bold text-[#111111]">Contact Supporters Helpdesk</h3>
           <p className="text-xs text-[#667085] leading-relaxed">
-            Our trade operations team is available Monday to Saturday (9 AM - 7 PM IST) for seller onboarding support.
+            Our trade operations team is available Monday to Saturday (9 AM - 7 PM IST) for seller
+            onboarding support.
           </p>
           <a
             href="mailto:support@supporters.in"
@@ -163,7 +171,8 @@ export default function HelpPage() {
           </div>
           <h3 className="text-sm font-bold text-[#111111]">Report a Problem or Abuse</h3>
           <p className="text-xs text-[#667085] leading-relaxed">
-            Report fraudulent listings, copyright infringements, non-responsive suppliers, or platform bugs.
+            Report fraudulent listings, copyright infringements, non-responsive suppliers, or
+            platform bugs.
           </p>
           <Link
             href="/report-problem"
