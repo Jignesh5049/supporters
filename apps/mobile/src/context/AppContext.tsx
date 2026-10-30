@@ -28,8 +28,11 @@ import {
   SignInCredentials,
   SignUpData,
   AuthResult,
-  AuthUser,
+  OtpPurposeValue,
+  ResetPasswordData,
 } from '../services/authService';
+import { restoreSession } from '../lib/auth/session';
+import { SessionStatus, useSessionStore } from '../stores/session-store';
 
 export interface ToastMessage {
   id: string;
@@ -73,6 +76,7 @@ export type ScreenRoute =
   | 'business_settings'
   | 'sign_in'
   | 'sign_up'
+  | 'verify_otp'
   | 'forgot_password';
 
 interface AppContextType {
@@ -89,8 +93,8 @@ interface AppContextType {
   signIn: (credentials: SignInCredentials) => Promise<AuthResult>;
   signUp: (data: SignUpData) => Promise<AuthResult>;
   signOut: () => Promise<void>;
-  googleSignIn: () => Promise<AuthResult>;
-  forgotPassword: (email: string) => Promise<AuthResult>;
+  requestOtp: (purpose: OtpPurposeValue, phone: string) => Promise<AuthResult>;
+  resetPassword: (data: ResetPasswordData) => Promise<AuthResult>;
 
   // Drawer & Header
   drawerOpen: boolean;
@@ -202,18 +206,23 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const AUTH_ROUTES: ScreenRoute[] = ['sign_in', 'sign_up', 'forgot_password'];
+export const AUTH_ROUTES: ScreenRoute[] = ['sign_in', 'sign_up', 'verify_otp', 'forgot_password'];
+
+/** Screens a guest (no session) can browse; the rest ask them to sign in. */
+const GUEST_ROUTES: ScreenRoute[] = ['home', 'discover', 'business_detail', 'product_detail'];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // Navigation & History
-  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('sign_in');
+  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('home');
   const [routeHistory, setRouteHistory] = useState<ScreenRoute[]>([]);
   const [routeParams, setRouteParams] = useState<any>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  // Authentication state lives in the session store; tokens stay in SecureStore.
+  const sessionStatus = useSessionStore((state) => state.status);
+  const sessionUser = useSessionStore((state) => state.user);
+  const isAuthenticated = sessionStatus === SessionStatus.SignedIn;
+  const isLoadingAuth = sessionStatus === SessionStatus.Restoring;
 
   // Data states
   const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
@@ -251,65 +260,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  // Restore session on app mount
+  // Cold start: silent refresh with a stored session, otherwise guest mode.
   useEffect(() => {
-    const restoreUserSession = async () => {
-      setIsLoadingAuth(true);
-      try {
-        const session = await authService.restoreSession();
-        if (session && session.user) {
-          setIsAuthenticated(true);
-          setCurrentRoute('home');
-          setCurrentUser((prev) => ({
-            ...prev,
-            name: session.user.name,
-            email: session.user.email,
-            username: session.user.username || prev.username,
-            avatar: session.user.avatar || prev.avatar,
-          }));
-        } else {
-          setIsAuthenticated(false);
-          setCurrentRoute('sign_in');
-        }
-      } catch {
-        setIsAuthenticated(false);
-        setCurrentRoute('sign_in');
-      } finally {
-        setIsLoadingAuth(false);
-      }
-    };
-
-    restoreUserSession();
+    restoreSession();
   }, []);
+
+  // Profile fields still come from mock data until the profile API lands.
+  useEffect(() => {
+    if (!sessionUser) return;
+    setCurrentUser((prev) => ({
+      ...prev,
+      name: sessionUser.name,
+      email: sessionUser.email ?? '',
+      phone: sessionUser.phone,
+    }));
+  }, [sessionUser]);
+
+  // Signed out (or the session expired) while on a protected screen: back to browsing.
+  useEffect(() => {
+    if (sessionStatus !== SessionStatus.Guest) return;
+    if (AUTH_ROUTES.includes(currentRoute) || GUEST_ROUTES.includes(currentRoute)) return;
+    setRouteHistory([]);
+    setCurrentRoute('home');
+    // Only a session change should trigger this, not every navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionStatus]);
 
   // Guarded Navigation
   const navigate = useCallback(
     (targetRoute: ScreenRoute, params: any = {}) => {
       const isAuthTarget = AUTH_ROUTES.includes(targetRoute);
+      let route = targetRoute;
 
-      // Guard: Unauthenticated users cannot access protected screens
-      if (!isAuthenticated && !isAuthTarget) {
-        showToast('Please sign in to access this screen', 'info');
-        setCurrentRoute('sign_in');
-        setRouteParams({});
-        setDrawerOpen(false);
-        return;
+      if (!isAuthenticated && !isAuthTarget && !GUEST_ROUTES.includes(targetRoute)) {
+        // Guests browse freely; anything personal asks them to sign in first.
+        showToast('Sign in to continue', 'info');
+        route = 'sign_in';
+        params = {};
+      } else if (isAuthenticated && isAuthTarget) {
+        route = 'home';
+        params = {};
       }
 
-      // Guard: Authenticated users cannot navigate back to auth screens without signing out
-      if (isAuthenticated && isAuthTarget) {
-        setCurrentRoute('home');
-        setRouteParams({});
-        setDrawerOpen(false);
-        return;
-      }
-
-      // Record in history if changing routes
-      if (targetRoute !== currentRoute) {
+      if (route !== currentRoute) {
         setRouteHistory((prev) => [...prev, currentRoute]);
       }
-
-      setCurrentRoute(targetRoute);
+      setCurrentRoute(route);
       setRouteParams(params);
       setDrawerOpen(false);
     },
@@ -318,33 +314,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Hardware and In-App Back Navigation
   const goBack = useCallback((): boolean => {
-    if (!isAuthenticated) {
-      if (currentRoute === 'sign_up' || currentRoute === 'forgot_password') {
-        setCurrentRoute('sign_in');
-        return true;
-      }
-      // On sign_in, let system handle exit
-      return false;
+    // Signed in: never step back into auth screens. Guest: never into protected ones.
+    const canReturnTo = (route: ScreenRoute) =>
+      isAuthenticated
+        ? !AUTH_ROUTES.includes(route)
+        : AUTH_ROUTES.includes(route) || GUEST_ROUTES.includes(route);
+    const newHistory = [...routeHistory];
+    let previous = newHistory.pop();
+    while (previous && !canReturnTo(previous)) {
+      previous = newHistory.pop();
+    }
+    if (previous) {
+      setRouteHistory(newHistory);
+      setCurrentRoute(previous);
+      return true;
     }
 
-    // When authenticated
-    if (routeHistory.length > 0) {
-      const newHistory = [...routeHistory];
-      let previous = newHistory.pop();
-
-      // Ensure we don't go back to auth routes while logged in
-      while (previous && AUTH_ROUTES.includes(previous) && newHistory.length > 0) {
-        previous = newHistory.pop();
-      }
-
-      if (previous && !AUTH_ROUTES.includes(previous)) {
-        setRouteHistory(newHistory);
-        setCurrentRoute(previous);
-        return true;
-      }
-    }
-
-    // Default authenticated fall-back
     if (currentRoute !== 'home') {
       setCurrentRoute('home');
       setRouteHistory([]);
@@ -372,69 +357,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [goBack]);
 
   // Authentication Handlers
+  const enterApp = () => {
+    setRouteHistory([]);
+    setRouteParams({});
+    setCurrentRoute('home');
+  };
+
   const signIn = async (credentials: SignInCredentials): Promise<AuthResult> => {
     const result = await authService.signIn(credentials);
-    if (result.success && result.user) {
-      setIsAuthenticated(true);
-      setCurrentUser((prev) => ({
-        ...prev,
-        name: result.user!.name,
-        email: result.user!.email,
-        username: result.user!.username || prev.username,
-        avatar: result.user!.avatar || prev.avatar,
-      }));
-      setRouteHistory([]);
-      setCurrentRoute('home');
-    }
+    if (result.success) enterApp();
     return result;
   };
 
   const signUp = async (data: SignUpData): Promise<AuthResult> => {
     const result = await authService.signUp(data);
-    if (result.success && result.user) {
-      setIsAuthenticated(true);
-      setCurrentUser((prev) => ({
-        ...prev,
-        name: result.user!.name,
-        email: result.user!.email,
-        username: result.user!.username || prev.username,
-        avatar: result.user!.avatar || prev.avatar,
-      }));
-      setRouteHistory([]);
-      setCurrentRoute('home');
-    }
+    if (result.success) enterApp();
     return result;
   };
 
   const signOut = async (): Promise<void> => {
     await authService.signOut();
-    setIsAuthenticated(false);
-    setRouteHistory([]);
-    setCurrentRoute('sign_in');
     setDrawerOpen(false);
-    showToast('Signed out of Supporters successfully', 'info');
+    enterApp();
+    showToast('Signed out of Supporters', 'info');
   };
 
-  const googleSignIn = async (): Promise<AuthResult> => {
-    const result = await authService.googleSignIn();
-    if (result.success && result.user) {
-      setIsAuthenticated(true);
-      setCurrentUser((prev) => ({
-        ...prev,
-        name: result.user!.name,
-        email: result.user!.email,
-        username: result.user!.username || prev.username,
-        avatar: result.user!.avatar || prev.avatar,
-      }));
-      setRouteHistory([]);
-      setCurrentRoute('home');
-    }
-    return result;
-  };
+  const requestOtp = (purpose: OtpPurposeValue, phone: string) =>
+    authService.requestOtp(purpose, phone);
 
-  const forgotPassword = async (email: string): Promise<AuthResult> => {
-    return await authService.forgotPassword(email);
-  };
+  const resetPassword = (data: ResetPasswordData) => authService.resetPassword(data);
 
   const toggleLikePost = (postId: string) => {
     setLikedPostIds((prev) => {
@@ -839,8 +790,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
-        googleSignIn,
-        forgotPassword,
+        requestOtp,
+        resetPassword,
         drawerOpen,
         setDrawerOpen,
         currentUser,

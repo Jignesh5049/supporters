@@ -12,29 +12,28 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../styles/theme';
-import { validateEmail } from '../services/authService';
+import { toLoginIdentifier } from '../services/authService';
 
 export function SignInScreen() {
   const insets = useSafeAreaInsets();
-  const { signIn, googleSignIn, navigate, showToast } = useApp();
+  const { signIn, navigate, showToast } = useApp();
 
-  const [email, setEmail] = useState('aarav.mehta@enterpriseventures.in');
-  const [password, setPassword] = useState('Supporters@2026');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const [identifierError, setIdentifierError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const handleEmailChange = (val: string) => {
-    setEmail(val);
-    if (emailError) setEmailError(null);
+  const handleIdentifierChange = (val: string) => {
+    setIdentifier(val);
+    if (identifierError) setIdentifierError(null);
     if (errorMessage) setErrorMessage(null);
   };
 
@@ -44,27 +43,18 @@ export function SignInScreen() {
     if (errorMessage) setErrorMessage(null);
   };
 
-  const handleAutofillDemo = () => {
-    setEmail('aarav.mehta@enterpriseventures.in');
-    setPassword('Supporters@2026');
-    setEmailError(null);
-    setPasswordError(null);
-    setErrorMessage(null);
-    showToast('Demo credentials loaded!', 'info');
-  };
-
   const handleSubmit = async () => {
     Keyboard.dismiss();
     setErrorMessage(null);
 
     let hasValidationError = false;
-    const cleanEmail = email.trim();
+    const cleanIdentifier = identifier.trim();
 
-    if (!cleanEmail) {
-      setEmailError('Email is required');
+    if (!cleanIdentifier) {
+      setIdentifierError('Mobile number or email is required');
       hasValidationError = true;
-    } else if (!validateEmail(cleanEmail)) {
-      setEmailError('Please enter a valid email address');
+    } else if (!toLoginIdentifier(cleanIdentifier)) {
+      setIdentifierError('Enter a 10-digit mobile number or an email address');
       hasValidationError = true;
     }
 
@@ -79,10 +69,7 @@ export function SignInScreen() {
 
     setLoading(true);
     try {
-      const result = await signIn({
-        email: cleanEmail,
-        password,
-      });
+      const result = await signIn({ identifier: cleanIdentifier, password });
 
       if (!result.success) {
         setErrorMessage(result.error || 'Authentication failed. Please verify credentials.');
@@ -93,24 +80,6 @@ export function SignInScreen() {
       setErrorMessage('A network error occurred. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    Keyboard.dismiss();
-    setErrorMessage(null);
-    setSocialLoading(true);
-    try {
-      const result = await googleSignIn();
-      if (!result.success) {
-        setErrorMessage(result.error || 'Google sign-in could not be completed.');
-      } else {
-        showToast('Signed in with Google Workspace', 'success');
-      }
-    } catch {
-      setErrorMessage('Unable to connect to Google service.');
-    } finally {
-      setSocialLoading(false);
     }
   };
 
@@ -143,29 +112,34 @@ export function SignInScreen() {
               </View>
             )}
 
-            {/* Email Input Field */}
+            {/* Mobile Number or Email Input Field */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Email Address</Text>
-              <View style={[styles.inputWrapper, emailError ? styles.inputWrapperError : null]}>
+              <Text style={styles.fieldLabel}>Mobile Number or Email</Text>
+              <View
+                style={[styles.inputWrapper, identifierError ? styles.inputWrapperError : null]}
+              >
                 <Feather
-                  name="mail"
+                  name="user"
                   size={16}
-                  color={emailError ? colors.danger : '#667085'}
+                  color={identifierError ? colors.danger : '#667085'}
                   style={styles.inputIcon}
                 />
                 <TextInput
                   style={styles.textInput}
-                  value={email}
-                  onChangeText={handleEmailChange}
-                  placeholder="name@business.com"
+                  value={identifier}
+                  onChangeText={handleIdentifierChange}
+                  placeholder="98765 43210 or name@business.com"
                   placeholderTextColor="#9CA3AF"
                   keyboardType="email-address"
+                  textContentType="username"
+                  autoComplete="username"
+                  accessibilityLabel="Mobile number or email"
                   autoCapitalize="none"
                   autoCorrect={false}
                   editable={!loading}
                 />
               </View>
-              {emailError && <Text style={styles.fieldErrorText}>{emailError}</Text>}
+              {identifierError && <Text style={styles.fieldErrorText}>{identifierError}</Text>}
             </View>
 
             {/* Password Input Field */}
@@ -194,6 +168,9 @@ export function SignInScreen() {
                   placeholder="Enter your password"
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showPassword}
+                  textContentType="password"
+                  autoComplete="current-password"
+                  accessibilityLabel="Password"
                   autoCapitalize="none"
                   editable={!loading}
                 />
@@ -209,21 +186,11 @@ export function SignInScreen() {
               {passwordError && <Text style={styles.fieldErrorText}>{passwordError}</Text>}
             </View>
 
-            {/* Demo Credentials Quick Pill */}
-            <TouchableOpacity
-              onPress={handleAutofillDemo}
-              style={styles.demoPill}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="flash-outline" size={13} color={colors.primary} />
-              <Text style={styles.demoPillText}>Fill Demo Account (Aarav Mehta)</Text>
-            </TouchableOpacity>
-
             {/* Primary Sign In Button */}
             <TouchableOpacity
               style={[styles.primaryButton, loading && styles.buttonDisabled]}
               onPress={handleSubmit}
-              disabled={loading || socialLoading}
+              disabled={loading}
               activeOpacity={0.85}
             >
               {loading ? (
@@ -236,30 +203,6 @@ export function SignInScreen() {
                   <Text style={styles.primaryButtonText}>Sign In</Text>
                   <Feather name="arrow-right" size={16} color="#FFFFFF" />
                 </View>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider with "OR" */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign-In Button */}
-            <TouchableOpacity
-              style={[styles.socialButton, socialLoading && styles.buttonDisabled]}
-              onPress={handleGoogleSignIn}
-              disabled={loading || socialLoading}
-              activeOpacity={0.8}
-            >
-              {socialLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={18} color="#EA4335" />
-                  <Text style={styles.socialButtonText}>Continue with Google</Text>
-                </>
               )}
             </TouchableOpacity>
           </View>
@@ -395,22 +338,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
-  demoPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primaryLight,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 18,
-    gap: 6,
-  },
-  demoPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-  },
   primaryButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
@@ -441,38 +368,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.2,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 18,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textSecondary,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    height: 46,
-    gap: 8,
-  },
-  socialButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
   },
   footerRow: {
     flexDirection: 'row',
