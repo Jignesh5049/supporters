@@ -1,36 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useApp } from '@/context/AppContext';
-import { UserPlus, Mail, Lock, Gift, User, ArrowRight } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { OtpPurpose } from '@supporters/shared';
+import { Button } from '@supporters/ui-web/components/button';
+import { ArrowRight } from 'lucide-react';
+import { useSendOtp } from '@/features/auth/auth-api';
+import { registerFormSchema } from '@/features/auth/auth-forms';
+import { FormError, FormField } from '@/features/auth/form-field';
+import { pendingFlow } from '@/features/auth/pending-flow';
+import { errorMessage } from '@/lib/api/errors';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { showToast } = useApp();
+  const sendOtp = useSendOtp();
+  const form = useForm({ resolver: zodResolver(registerFormSchema) });
+  const { errors } = form.formState;
 
-  const [name, setName] = useState('');
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('SUPPORT123');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
-      return;
-    }
-
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Account credentials created! Please verify OTP.', 'success');
-      router.push('/verify');
-    }, 600);
-  };
+  const handleSubmit = form.handleSubmit(async ({ name, phone, password }) => {
+    // A failure is shown from `sendOtp.error`.
+    const isSent = await sendOtp.mutateAsync({ purpose: OtpPurpose.Signup, phone }).then(
+      () => true,
+      () => false,
+    );
+    if (!isSent) return;
+    pendingFlow.setSignup({ name, phone, password });
+    router.push('/verify');
+  });
 
   return (
     <div className="w-full min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
@@ -53,103 +52,62 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">
-                Full Name / Business Proprietor
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ramesh Patel"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">
-                Email Address or Mobile Number
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="ramesh@patelfurniture.com or +91"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                  required
-                />
-              </div>
-            </div>
-
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <FormField
+              label="Full name"
+              autoComplete="name"
+              placeholder="e.g. Ramesh Patel"
+              error={errors.name?.message}
+              {...form.register('name')}
+            />
+            <FormField
+              label="Mobile number"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              placeholder="+91 98765 43210"
+              error={errors.phone?.message}
+              {...form.register('phone')}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[#111111] mb-1">Password</label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#111111] mb-1">Confirm</label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                    required
-                  />
-                </div>
-              </div>
+              <FormField
+                label="Password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.password?.message}
+                {...form.register('password')}
+              />
+              <FormField
+                label="Confirm password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.confirmPassword?.message}
+                {...form.register('confirmPassword')}
+              />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">
-                Referral Code (Optional)
-              </label>
-              <div className="relative">
-                <Gift className="w-4 h-4 text-[#A3238E] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  placeholder="SUPPORT123"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#A3238E] font-mono"
-                />
-              </div>
-              {referralCode === 'SUPPORT123' && (
-                <span className="text-[11px] text-[#A3238E] mt-1 block">
-                  ✓ Special partner code applied (Welcome bonus enabled)
-                </span>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              By continuing you agree to our{' '}
+              <Link href="/terms" className="text-primary underline-offset-4 hover:underline">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-primary underline-offset-4 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
 
-            <button
+            <FormError message={sendOtp.error ? errorMessage(sendOtp.error) : null} />
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors disabled:opacity-50"
+              size="lg"
+              className="w-full"
+              disabled={form.formState.isSubmitting}
             >
-              {loading ? <span>Processing...</span> : <span>Create Supporters Account</span>}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              {form.formState.isSubmitting ? 'Sending code...' : 'Create Supporters Account'}
+              <ArrowRight />
+            </Button>
           </form>
 
           <div className="pt-2 text-center text-xs text-[#667085]">

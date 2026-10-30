@@ -21,3 +21,4 @@ Copy `.env.example` to `.env.local` only if the API runs somewhere else.
 ## Tests
 
 - `pnpm --filter @supporters/web test`: Vitest unit tests.
+- `pnpm --filter @supporters/web e2e`: Playwright, local only for now. It needs Docker running `apps/api/docker-compose.yml`, a prepared `apps/api/.env` with migrations applied, and nothing on port 3001. It starts its own API (to read the dev OTPs it prints) and reuses a running `next dev`. Run `pnpm --filter @supporters/web exec playwright install chromium` once.

@@ -1,26 +1,39 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ACCOUNT_LIMITS } from '@supporters/shared';
+import { Button } from '@supporters/ui-web/components/button';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-import { Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useResetPassword } from '@/features/auth/auth-api';
+import { resetPasswordFormSchema } from '@/features/auth/auth-forms';
+import { FormError, FormField } from '@/features/auth/form-field';
+import { formatPhone, pendingFlow } from '@/features/auth/pending-flow';
+import { errorMessage } from '@/lib/api/errors';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const { showToast } = useApp();
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone] = useState(pendingFlow.getResetPhone);
+  const resetPassword = useResetPassword();
+  const form = useForm({ resolver: zodResolver(resetPasswordFormSchema) });
+  const { errors } = form.formState;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
-      return;
-    }
-
-    showToast('Your password has been successfully updated!', 'success');
+  const handleSubmit = form.handleSubmit(async ({ otp, newPassword }) => {
+    if (!phone) return;
+    const isReset = await resetPassword.mutateAsync({ phone, otp, newPassword }).then(
+      () => true,
+      () => false,
+    );
+    if (!isReset) return;
+    pendingFlow.setResetPhone(null);
+    showToast('Your password has been updated. Sign in with it now.', 'success');
     router.push('/login');
-  };
+  });
 
   return (
     <div className="w-full min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
@@ -32,51 +45,47 @@ export default function ResetPasswordPage() {
             </div>
             <h1 className="text-xl font-black text-[#111111]">Set New Password</h1>
             <p className="text-xs text-[#667085]">
-              Choose a strong password with at least 8 characters.
+              {phone
+                ? `Enter the code sent to ${formatPhone(phone)} and choose a password of at least ${ACCOUNT_LIMITS.password.min} characters.`
+                : 'Your reset request was cleared. Request a new code to continue.'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">New Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#111111] mb-1">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors"
-            >
-              <span>Update Password</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+          {phone ? (
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <FormField
+                label="Code"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                error={errors.otp?.message}
+                {...form.register('otp')}
+              />
+              <FormField
+                label="New password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.newPassword?.message}
+                {...form.register('newPassword')}
+              />
+              <FormField
+                label="Confirm new password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.confirmPassword?.message}
+                {...form.register('confirmPassword')}
+              />
+              <FormError message={resetPassword.error ? errorMessage(resetPassword.error) : null} />
+              <Button type="submit" size="lg" className="w-full" disabled={resetPassword.isPending}>
+                {resetPassword.isPending ? 'Updating...' : 'Update Password'}
+                <ArrowRight />
+              </Button>
+            </form>
+          ) : (
+            <Button asChild size="lg" className="w-full">
+              <Link href="/forgot-password">Request a new code</Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>
