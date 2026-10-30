@@ -36,6 +36,10 @@ export const MEDIA_LIMITS = {
   videoTypes: ['video/mp4'],
   documentMaxBytes: 10 * MB,
   documentTypes: ['application/pdf'],
+  /** KYC also takes photos of certificates and IDs. */
+  kycImageTypes: ['image/jpeg', 'image/png'],
+  /** Presigned upload URLs expire after this (backend spec, Security: Uploads). */
+  presignTtlSec: 300,
 } as const;
 
 export const LISTING_LIMITS = {

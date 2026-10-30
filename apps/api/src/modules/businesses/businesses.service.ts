@@ -16,10 +16,13 @@ import { AppError, ErrorCode, isUniqueViolation, notFound } from '../../lib/erro
 import type { CategoriesService } from '../categories/categories.service';
 import { toCategoryRef } from '../categories/categories.service';
 import { toCity, type PlacesService } from '../places/places.service';
+import { type MediaUrl, toMedia, type UploadsService } from '../uploads/uploads.service';
 
 const businessInclude = {
   category: true,
   subcategory: true,
+  logo: true,
+  cover: true,
   city: { include: { state: true } },
 } satisfies Prisma.BusinessInclude;
 type BusinessRow = Prisma.BusinessGetPayload<{ include: typeof businessInclude }>;
@@ -57,8 +60,10 @@ export function slugify(name: string): string {
   return slug.length >= 3 ? slug : 'business';
 }
 
-/** Optional fields that count towards profile completion (logo and cover join with uploads). */
+/** Optional fields that count towards profile completion. */
 const COMPLETION_CHECKS: ((row: BusinessData) => boolean)[] = [
+  (row) => row.logoUploadId !== null,
+  (row) => row.coverUploadId !== null,
   (row) => Boolean(row.subcategoryId),
   (row) => Boolean(row.about),
   (row) => row.establishedYear !== null,
@@ -75,6 +80,8 @@ const REQUIRED_FIELD_COUNT = 4; // name, type, category, city
 
 interface BusinessData {
   subcategoryId: string | null;
+  logoUploadId: string | null;
+  coverUploadId: string | null;
   about: string | null;
   establishedYear: number | null;
   gstin: string | null;
@@ -100,28 +107,34 @@ const readJson = (row: BusinessRow) => ({
   openingHours: openingHoursSchema.catch([]).parse(row.openingHours),
 });
 
-export function toBusinessSummary(row: {
-  id: string;
-  slug: string;
-  name: string;
-  verificationStatus: string;
-  premiumUntil: Date | null;
-  city: { id: string; name: string; state: { code: string } };
-}): BusinessSummary {
+export function toBusinessSummary(
+  row: {
+    id: string;
+    slug: string;
+    name: string;
+    verificationStatus: string;
+    premiumUntil: Date | null;
+    logo: { id: string; key: string } | null;
+    city: { id: string; name: string; state: { code: string } };
+  },
+  mediaUrl: MediaUrl,
+): BusinessSummary {
   return {
     id: row.id,
     slug: row.slug,
     name: row.name,
+    logo: toMedia(row.logo, mediaUrl),
     city: toCity(row.city),
     isVerified: row.verificationStatus === 'verified',
     isPremium: isPremium(row),
   };
 }
 
-function toPublicBusiness(row: BusinessRow): Business {
+function toPublicBusiness(row: BusinessRow, mediaUrl: MediaUrl): Business {
   const showContact = row.isContactPublic;
   return {
-    ...toBusinessSummary(row),
+    ...toBusinessSummary(row, mediaUrl),
+    cover: toMedia(row.cover, mediaUrl),
     type: row.type,
     category: toCategoryRef(row.category),
     subcategory: row.subcategory ? toCategoryRef(row.subcategory) : null,
@@ -161,6 +174,7 @@ export class BusinessesService {
     private readonly prisma: PrismaClient,
     private readonly categories: CategoriesService,
     private readonly places: PlacesService,
+    private readonly uploads: UploadsService,
   ) {}
 
   /** The signed-in user's business id and plan, for listing writes. */
@@ -179,7 +193,7 @@ export class BusinessesService {
       include: businessInclude,
     });
     if (!row) throw notFound();
-    return toPublicBusiness(row);
+    return toPublicBusiness(row, this.mediaUrl);
   }
 
   /** The id of a public business, for its listing tabs. */
@@ -213,6 +227,8 @@ export class BusinessesService {
       socials: input.socials ?? {},
       openingHours: input.openingHours ?? [],
       subcategoryId: input.subcategoryId ?? null,
+      logoUploadId: await this.imageId(userId, input.logoMediaId, 'avatar', 'body.logoMediaId'),
+      coverUploadId: await this.imageId(userId, input.coverMediaId, 'cover', 'body.coverMediaId'),
       gstin: input.gstin ?? null,
       about: input.about || null,
       establishedYear: input.establishedYear ?? null,
@@ -268,6 +284,22 @@ export class BusinessesService {
     for (const field of CLEARABLE_FIELDS) {
       const value = input[field];
       if (value !== undefined) data[field] = value === '' ? null : value;
+    }
+    if (input.logoMediaId !== undefined) {
+      data.logoUploadId = await this.imageId(
+        userId,
+        input.logoMediaId,
+        'avatar',
+        'body.logoMediaId',
+      );
+    }
+    if (input.coverMediaId !== undefined) {
+      data.coverUploadId = await this.imageId(
+        userId,
+        input.coverMediaId,
+        'cover',
+        'body.coverMediaId',
+      );
     }
     if (input.name !== undefined) data.name = input.name;
     if (input.type !== undefined) data.type = input.type;
@@ -327,13 +359,28 @@ export class BusinessesService {
     return products + (await db.service.count({ where }));
   }
 
+  /** Bound so mappers can turn object keys into media URLs. */
+  readonly mediaUrl: MediaUrl = (key) => this.uploads.publicUrl(key);
+
+  /** A ready logo or cover upload of this user, or null to clear it. */
+  private async imageId(
+    userId: string,
+    id: string | null | undefined,
+    purpose: 'avatar' | 'cover',
+    path: string,
+  ): Promise<string | null> {
+    if (!id) return null;
+    const [upload] = await this.uploads.requireReady(userId, [id], purpose, path);
+    return upload?.id ?? null;
+  }
+
   private suffixed(name: string) {
     return `${slugify(name).slice(0, 44)}-${randomBytes(4).readUInt32BE().toString(36).slice(0, 5)}`;
   }
 
   private async toMyBusiness(row: BusinessRow): Promise<MyBusiness> {
     return {
-      ...toPublicBusiness(row),
+      ...toPublicBusiness(row, this.mediaUrl),
       contactPhone: row.contactPhone,
       contactEmail: row.contactEmail,
       isContactPublic: row.isContactPublic,

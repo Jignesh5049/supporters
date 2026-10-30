@@ -13,11 +13,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "keys:generate": "tsx scripts/generate-keys.ts",
+    "storage:init": "tsx --env-file=.env scripts/init-storage.ts",
     "typecheck": "prisma generate && tsc --noEmit",
     "lint": "prisma generate && eslint .",
     "test": "prisma generate && vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1159.0",
+    "@aws-sdk/s3-request-presigner": "3.1159.0",
     "@fastify/cookie": "11.1.5",
     "@fastify/cors": "11.3.1",
     "@fastify/helmet": "13.2.0",

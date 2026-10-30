@@ -78,6 +78,17 @@ const envSchema = z
     /** Check new passwords against Have I Been Pwned's k-anonymity range API. */
     BREACHED_PASSWORD_CHECK: booleanString.default(true),
     SMS_PROVIDER: z.enum(['console']).default('console'),
+    /** The one private media bucket (backend spec, Security: Uploads). */
+    S3_BUCKET: z.string().min(3).max(63),
+    S3_REGION: z.string().min(1).default('ap-south-1'),
+    /** S3-compatible endpoint (MinIO) for local development and tests. Unset on AWS. */
+    S3_ENDPOINT: z.url().optional(),
+    S3_FORCE_PATH_STYLE: booleanString.default(false),
+    /** Local MinIO only; AWS uses the instance role. */
+    S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+    S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    /** Base URL that serves the public/ prefix, e.g. https://media.<domain>. */
+    MEDIA_PUBLIC_URL: z.url().transform((value) => value.replace(/\/+$/, '')),
   })
   .superRefine((env, ctx) => {
     const isDeployed = env.NODE_ENV === 'staging' || env.NODE_ENV === 'production';
@@ -89,6 +100,23 @@ const envSchema = z
     }
     if (isDeployed && DEV_ONLY_SMS_PROVIDERS.has(env.SMS_PROVIDER)) {
       ctx.addIssue({ code: 'custom', path: ['SMS_PROVIDER'], message: 'console is dev-only' });
+    }
+    if (isDeployed && !env.MEDIA_PUBLIC_URL.startsWith('https://')) {
+      ctx.addIssue({ code: 'custom', path: ['MEDIA_PUBLIC_URL'], message: 'must use https' });
+    }
+    if (isDeployed && (env.S3_ACCESS_KEY_ID ?? env.S3_SECRET_ACCESS_KEY ?? env.S3_ENDPOINT)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['S3_ACCESS_KEY_ID'],
+        message: 'S3 endpoint and static keys are local-only; use the instance role',
+      });
+    }
+    if (Boolean(env.S3_ACCESS_KEY_ID) !== Boolean(env.S3_SECRET_ACCESS_KEY)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['S3_SECRET_ACCESS_KEY'],
+        message: 'set both S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY, or neither',
+      });
     }
     if (Boolean(env.JWT_PREVIOUS_PUBLIC_KEY) !== Boolean(env.JWT_PREVIOUS_KEY_ID)) {
       ctx.addIssue({

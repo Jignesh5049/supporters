@@ -68,6 +68,7 @@ model User {
   consents  Consent[]
   interests UserInterest[]
   business  Business?
+  uploads   Upload[]
 
   @@map("users")
 }
@@ -276,6 +277,8 @@ model Business {
   type               BusinessType
   categoryId         String             @map("category_id") @db.Uuid
   subcategoryId      String?            @map("subcategory_id") @db.Uuid
+  logoUploadId       String?            @unique(map: "uq_businesses_logo_upload_id") @map("logo_upload_id") @db.Uuid
+  coverUploadId      String?            @unique(map: "uq_businesses_cover_upload_id") @map("cover_upload_id") @db.Uuid
   cityId             String             @map("city_id") @db.Uuid
   /// Always the city's state; kept for filtering without a join.
   stateId            String             @map("state_id") @db.Uuid
@@ -306,6 +309,8 @@ model Business {
   subcategory Category? @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
   city        City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
   state       State     @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  logo        Upload?   @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
+  cover       Upload?   @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
   products    Product[]
   services    Service[]
 
@@ -339,8 +344,9 @@ model Product {
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media    ListingMedia[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_products_business_id_status_id")
@@ -369,11 +375,75 @@ model Service {
   createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media    ListingMedia[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_services_business_id_status_id")
   @@index([categoryId, id], map: "idx_services_published_category_id_id", where: raw("status = 'published' AND deleted_at IS NULL"))
   @@map("services")
+}
+
+enum UploadPurpose {
+  avatar
+  cover
+  listing
+  post
+  chat
+  kyc
+
+  @@map("upload_purpose")
+}
+
+enum UploadStatus {
+  pending
+  ready
+  rejected
+
+  @@map("upload_status")
+}
+
+/// A file uploaded straight to S3 through a presigned PUT (backend spec, Security: Uploads).
+/// Unreferenced uploads older than 24 h are orphans for the nightly cleanup job.
+model Upload {
+  id          String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  purpose     UploadPurpose
+  /// Object key: public/<purpose>/<random> for public media, chat/ or kyc/ otherwise.
+  key         String        @unique(map: "uq_uploads_key")
+  contentType String        @map("content_type")
+  sizeBytes   Int           @map("size_bytes")
+  status      UploadStatus  @default(pending)
+  completedAt DateTime?     @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingMedia  ListingMedia?
+  businessLogo  Business?     @relation("BusinessLogo")
+  businessCover Business?     @relation("BusinessCover")
+
+  @@index([userId, createdAt], map: "idx_uploads_user_id_created_at")
+  @@index([status, createdAt], map: "idx_uploads_status_created_at")
+  @@map("uploads")
+}
+
+/// Ordered images of a product or a service; exactly one of the two is set (CHECK in the migration).
+model ListingMedia {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  uploadId  String   @unique(map: "uq_listing_media_upload_id") @map("upload_id") @db.Uuid
+  productId String?  @map("product_id") @db.Uuid
+  serviceId String?  @map("service_id") @db.Uuid
+  position  Int      @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  upload  Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position], map: "idx_listing_media_product_id_position")
+  @@index([serviceId, position], map: "idx_listing_media_service_id_position")
+  @@map("listing_media")
 }

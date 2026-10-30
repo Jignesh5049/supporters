@@ -74,7 +74,15 @@ export class ServicesService {
     await this.places.assertArea(input.serviceArea, 'body.serviceArea');
 
     const isPublishing = input.status === 'published';
-    const row = await this.writer.write(business, isPublishing, (db) =>
+    const options = {
+      userId,
+      kind: 'service',
+      isPublishing,
+      willBePublished: isPublishing,
+      mediaIds: input.mediaIds,
+      currentImageCount: 0,
+    } as const;
+    const row = await this.writer.write(business, options, this.read, (db) =>
       db.service.create({
         data: {
           businessId: business.id,
@@ -92,7 +100,7 @@ export class ServicesService {
           status: input.status,
           publishedAt: isPublishing ? new Date() : null,
         },
-        include: listingInclude,
+        select: { id: true },
       }),
     );
     return this.one(row);
@@ -129,11 +137,23 @@ export class ServicesService {
     if (input.status !== undefined) data.status = input.status;
     if (isPublishing) data.publishedAt = new Date();
 
-    const row = await this.writer.write(business, isPublishing, (db) =>
+    const willBePublished = (input.status ?? current.status) === 'published';
+    const options = {
+      userId,
+      kind: 'service',
+      isPublishing,
+      willBePublished,
+      mediaIds: input.mediaIds,
+      currentImageCount:
+        willBePublished && input.mediaIds === undefined
+          ? await this.prisma.listingMedia.count({ where: { serviceId: id } })
+          : 0,
+    } as const;
+    const row = await this.writer.write(business, options, this.read, (db) =>
       db.service.update({
         where: { id, businessId: business.id, deletedAt: null },
         data,
-        include: listingInclude,
+        select: { id: true },
       }),
     );
     return this.one(row);
@@ -149,6 +169,9 @@ export class ServicesService {
     if (count === 0) throw notFound();
   }
 
+  private readonly read = (db: Prisma.TransactionClient, id: string) =>
+    db.service.findUniqueOrThrow({ where: { id }, include: listingInclude });
+
   private async one(row: ServiceRow): Promise<Service> {
     const [service] = await this.toServices([row]);
     if (!service) throw notFound();
@@ -163,7 +186,7 @@ export class ServicesService {
   private async toServices(rows: ServiceRow[]): Promise<Service[]> {
     const areas = await this.places.describeAreas(rows);
     return rows.map((row, index) => ({
-      ...listingBase(row),
+      ...listingBase(row, this.businesses.mediaUrl),
       priceUnit: servicePriceUnitSchema.nullable().catch(null).parse(row.priceUnit),
       turnaround: row.turnaround,
       availability: row.availability,

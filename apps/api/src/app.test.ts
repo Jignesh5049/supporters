@@ -174,7 +174,28 @@ describe('env', () => {
         JWT_PRIVATE_KEY: base.JWT_PRIVATE_KEY.privatePem,
         JWT_KEY_ID: 'k',
         OTP_HMAC_KEY: base.OTP_HMAC_KEY.toString('base64'),
+        S3_BUCKET: 'supporters-media',
+        MEDIA_PUBLIC_URL: 'https://media.supporters.in',
       }),
     ).toThrow(/APP_ORIGIN: must use https[\s\S]*SMS_PROVIDER/);
+  });
+
+  it('keeps MinIO endpoints and static S3 keys out of deployed environments', () => {
+    const base = testEnv();
+    expect(() =>
+      loadEnv({
+        NODE_ENV: 'staging',
+        APP_ORIGIN: 'https://staging.supporters.in',
+        DATABASE_URL: base.DATABASE_URL,
+        VALKEY_URL: base.VALKEY_URL,
+        JWT_PRIVATE_KEY: base.JWT_PRIVATE_KEY.privatePem,
+        JWT_KEY_ID: 'k',
+        OTP_HMAC_KEY: base.OTP_HMAC_KEY.toString('base64'),
+        S3_BUCKET: 'supporters-media',
+        S3_ACCESS_KEY_ID: 'static-key-id',
+        S3_SECRET_ACCESS_KEY: 'static-secret',
+        MEDIA_PUBLIC_URL: 'http://media.supporters.in',
+      }),
+    ).toThrow(/MEDIA_PUBLIC_URL: must use https[\s\S]*S3_ACCESS_KEY_ID: S3 endpoint/);
   });
 });

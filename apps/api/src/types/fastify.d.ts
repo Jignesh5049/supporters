@@ -8,6 +8,7 @@ import type { CategoriesService } from '../modules/categories/categories.service
 import type { PlacesService } from '../modules/places/places.service';
 import type { ProductsService } from '../modules/products/products.service';
 import type { ServicesService } from '../modules/services/services.service';
+import type { UploadsService } from '../modules/uploads/uploads.service';
 import type { SessionService } from '../modules/auth/session.service';
 import type { UsersService } from '../modules/users/users.service';
 import type { AccessClaims, AuthContext } from '../plugins/auth';
@@ -31,6 +32,7 @@ declare module 'fastify' {
       businesses: BusinessesService;
       products: ProductsService;
       services: ServicesService;
+      uploads: UploadsService;
     };
   }
 
