@@ -151,7 +151,7 @@ export default function ProfilePage() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`py-3 px-4 text-xs font-bold border-b-2 whitespace-nowrap transition-all ${
                 activeTab === tab.id
                   ? 'border-[#2E3192] text-[#2E3192] bg-white'

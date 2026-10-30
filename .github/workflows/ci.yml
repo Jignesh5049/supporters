@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: jobs only read the repo unless they say otherwise.
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            test
+            docs
+            chore
+            ci
+            build
+          scopes: |
+            api
+            web
+            mobile
+            shared
+            tokens
+            ui-web
+            ui-native
+            infra
+            docs
+            repo
+          requireScope: true
+          subjectPattern: ^[a-z].*[^.]$
+          subjectPatternError: Start the summary with a lower-case letter and don't end it with a period.
+
+  web:
+    name: Web (lint, types, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test --if-present
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  mobile:
+    name: Mobile (types, config, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - name: Validate Expo config
+        run: npx expo config --type public > /dev/null
+      - run: npm test --if-present
+
+  audit:
+    name: Dependency audit (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: frontend
+            blocking: true
+          # Expo SDK 57 build tooling has known high advisories that the
+          # SDK 58 upgrade fixes. Report-only until that upgrade lands.
+          - app: mobile
+            blocking: false
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # A report-only app posts a warning annotation instead of failing,
+      # so the check stays green while the advisories remain visible.
+      - name: npm audit
+        env:
+          BLOCKING: ${{ matrix.blocking }}
+          APP: ${{ matrix.app }}
+        run: |
+          if npm audit --omit=dev --audit-level=high; then exit 0; fi
+          if [ "$BLOCKING" = "true" ]; then exit 1; fi
+          echo "::warning title=npm audit ($APP)::High-severity advisories found. Report-only until the Expo SDK 58 upgrade."

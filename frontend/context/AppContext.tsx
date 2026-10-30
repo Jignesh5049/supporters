@@ -8,6 +8,7 @@ import {
   Service,
   Business,
   Conversation,
+  Message,
   NotificationItem,
   PostType,
   ReferralStat,
@@ -106,16 +107,16 @@ interface AppContextType {
   sendMessage: (
     conversationId: string,
     text: string,
-    attachedProduct?: any,
-    attachedService?: any
+    attachedProduct?: Message['attachedProduct'],
+    attachedService?: Message['attachedService']
   ) => void;
   unreadMessagesCount: number;
   openConversationWithBusiness: (
     businessId: string,
     options?: {
       initialMessage?: string;
-      attachedProduct?: any;
-      attachedService?: any;
+      attachedProduct?: Message['attachedProduct'];
+      attachedService?: Message['attachedService'];
     }
   ) => void;
 
@@ -224,6 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedDraft = localStorage.getItem('supporters_active_draft');
       if (savedDraft) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- read localStorage after mount to avoid an SSR hydration mismatch; replaced by API-backed drafts in Phase 1
         setDraftListing(JSON.parse(savedDraft));
       }
     } catch {
@@ -474,8 +476,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sendMessage = (
     conversationId: string,
     text: string,
-    attachedProduct?: any,
-    attachedService?: any
+    attachedProduct?: Message['attachedProduct'],
+    attachedService?: Message['attachedService']
   ) => {
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -509,8 +511,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     businessId: string,
     options?: {
       initialMessage?: string;
-      attachedProduct?: any;
-      attachedService?: any;
+      attachedProduct?: Message['attachedProduct'];
+      attachedService?: Message['attachedService'];
     }
   ) => {
     // 1. Check if conversation already exists

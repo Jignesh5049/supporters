@@ -15,12 +15,6 @@ export default function MessagesPage() {
   const activeConversation =
     conversations.find((c) => c.id === activeConversationId) || conversations[0];
 
-  React.useEffect(() => {
-    if (activeConversationId) {
-      setMobileShowChat(true);
-    }
-  }, [activeConversationId]);
-
   const handleSelectConversation = (id: string) => {
     setActiveConversationId(id);
     setMobileShowChat(true);
