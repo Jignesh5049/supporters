@@ -11,6 +11,7 @@ allowBuilds:
 
 auditConfig:
   ignoreGhsas:
-    # zod inside @expo/cli (Expo SDK 57 build tooling, not shipped in the app).
-    # Remove when apps/mobile moves to Expo SDK 58.
+    # zod 3 inside @expo/cli (Expo build tooling, not shipped in the app). The fix
+    # is only in zod 4.6.6+, and @expo/cli 58.1.x still depends on zod ^3.25.76.
+    # Remove when @expo/cli moves to a patched zod.
     - GHSA-mrhx-c7xc-m3w5
