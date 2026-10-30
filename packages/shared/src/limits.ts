@@ -44,6 +44,20 @@ export const LISTING_LIMITS = {
   relatedListings: 8,
 } as const;
 
+/** Business page fields (product spec, "Business page"). */
+export const BUSINESS_LIMITS = {
+  name: { min: 2, max: 120 },
+  slug: { min: 3, max: 60 },
+  about: { max: 2_000 },
+  tagsMax: 10,
+  tag: { max: 30 },
+  address: { max: 300 },
+  url: { max: 300 },
+  /** Two slots per day, so split shifts fit. */
+  openingHoursMax: 14,
+  establishedYearMin: 1800,
+} as const;
+
 export const PLAN_LIMITS = {
   free: { publishedListings: 25, postsPer7Days: 10, analyticsDays: 7 },
   premium: { publishedListings: Infinity, postsPer7Days: Infinity, analyticsDays: 90 },
