@@ -8,7 +8,7 @@ module.exports = {
     pattern.replace('(?!(.pnpm|', '(?!(.pnpm|@rn-primitives|'),
   ),
   // Loads the JS (web) builds of Reanimated and worklets, which run without native code.
-  resolver: 'react-native-reanimated/jest/resolver',
+  resolver: '<rootDir>/jest.resolver.js',
   moduleNameMapper: {
     '^@supporters/ui-native/(.*)$': '<rootDir>/src/$1',
     // The "react-native" export condition points at an .mjs build Jest can't load.
