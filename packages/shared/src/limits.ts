@@ -42,6 +42,16 @@ export const LISTING_LIMITS = {
   specsMaxKeys: 30,
   serviceFeaturesMax: 15,
   relatedListings: 8,
+  specKey: { max: 60 },
+  specValue: { max: 200 },
+  serviceFeature: { max: 120 },
+  /** Delivery time (products) and turnaround (services), e.g. "3 to 5 days". */
+  leadTime: { max: 60 },
+  /** ₹1,000 crore. Far below 2^53, so JSON numbers stay exact. */
+  maxPricePaise: 100_000_000_000_000,
+  maxMoq: 10_000_000,
+  areaStatesMax: 36,
+  areaCitiesMax: 50,
 } as const;
 
 /** Business page fields (product spec, "Business page"). */

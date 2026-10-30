@@ -25,8 +25,13 @@ import {
 import { SessionService } from './modules/auth/session.service';
 import { ConsoleSmsSender, type SmsSender } from './modules/auth/sms';
 import { healthRoutes } from './modules/health/health.routes';
+import { ListingWriter } from './modules/listings/listings.service';
 import { placesRoutes } from './modules/places/places.routes';
 import { PlacesService } from './modules/places/places.service';
+import { productsRoutes } from './modules/products/products.routes';
+import { ProductsService } from './modules/products/products.service';
+import { servicesRoutes } from './modules/services/services.routes';
+import { ServicesService } from './modules/services/services.service';
 import { usersRoutes } from './modules/users/users.routes';
 import { UsersService } from './modules/users/users.service';
 import { authPlugin } from './plugins/auth';
@@ -133,6 +138,7 @@ export async function buildApp(options: BuildAppOptions) {
   const categories = new CategoriesService(app.prisma);
   const places = new PlacesService(app.prisma);
   const businesses = new BusinessesService(app.prisma, categories, places);
+  const listingWriter = new ListingWriter(app.prisma, businesses);
   app.decorate('services', {
     sessions,
     auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
@@ -140,6 +146,8 @@ export async function buildApp(options: BuildAppOptions) {
     categories,
     places,
     businesses,
+    products: new ProductsService(app.prisma, businesses, categories, places, listingWriter),
+    services: new ServicesService(app.prisma, businesses, categories, places, listingWriter),
   });
 
   await app.register(healthRoutes);
@@ -150,6 +158,8 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(categoriesRoutes);
       await v1.register(placesRoutes);
       await v1.register(businessesRoutes);
+      await v1.register(productsRoutes);
+      await v1.register(servicesRoutes);
     },
     { prefix: '/v1' },
   );

@@ -190,6 +190,9 @@ export const myBusinessSchema = businessSchema.extend({
   premiumUntil: z.iso.datetime().nullable(),
   /** 0 to 100; nudges the owner to fill in optional fields (product spec, Signup step 6). */
   profileCompletion: z.number().int().min(0).max(100),
+  /** Published products plus services, against the plan limit. */
+  publishedListings: z.number().int(),
+  publishedListingsLimit: z.number().int().nullable(),
   updatedAt: z.iso.datetime(),
 });
 export type MyBusiness = z.infer<typeof myBusinessSchema>;

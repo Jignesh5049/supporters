@@ -22,8 +22,10 @@ export const ErrorCode = {
   PolicyVersionOutdated: 'POLICY_VERSION_OUTDATED',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
   BusinessExists: 'BUSINESS_EXISTS',
+  BusinessRequired: 'BUSINESS_REQUIRED',
   SlugTaken: 'SLUG_TAKEN',
   SlugLocked: 'SLUG_LOCKED',
+  ListingLimitReached: 'LISTING_LIMIT_REACHED',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   InternalError: 'INTERNAL_ERROR',
 } as const;

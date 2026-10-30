@@ -5,6 +5,8 @@ generator client {
   provider        = "prisma-client"
   output          = "../src/generated/prisma"
   moduleFormat    = "esm"
+  // For the partial indexes on published listings (backend spec, Data model).
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -187,8 +189,29 @@ enum VerificationStatus {
   @@map("verification_status")
 }
 
+enum ListingStatus {
+  draft
+  published
+  archived
 
+  @@map("listing_status")
+}
 
+enum ProductAvailability {
+  in_stock
+  made_to_order
+  bulk
+
+  @@map("product_availability")
+}
+
+enum ServiceAvailability {
+  immediate
+  within_24_hours
+  by_appointment
+
+  @@map("service_availability")
+}
 
 /// States and union territories. Reference data loaded by prisma/seed.ts.
 model State {
@@ -236,6 +259,8 @@ model Category {
   interests             UserInterest[]
   businesses            Business[]     @relation("BusinessCategory")
   subcategoryBusinesses Business[]     @relation("BusinessSubcategory")
+  products              Product[]
+  services              Service[]
 
   @@index([parentId, position], map: "idx_categories_parent_id_position")
   @@map("categories")
@@ -281,10 +306,74 @@ model Business {
   subcategory Category? @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
   city        City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
   state       State     @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  products    Product[]
+  services    Service[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
   @@index([subcategoryId], map: "idx_businesses_subcategory_id")
   @@index([cityId], map: "idx_businesses_city_id")
   @@index([stateId], map: "idx_businesses_state_id")
   @@map("businesses")
+}
+
+model Product {
+  id                 String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId         String              @map("business_id") @db.Uuid
+  categoryId         String              @map("category_id") @db.Uuid
+  title              String
+  description        String
+  /// Null means "Ask for price".
+  pricePaise         BigInt?             @map("price_paise")
+  originalPricePaise BigInt?             @map("original_price_paise")
+  unit               String?
+  moq                Int?
+  availability       ProductAvailability @default(in_stock)
+  deliveryTime       String?             @map("delivery_time")
+  isAllIndia         Boolean             @default(true) @map("is_all_india")
+  areaStateIds       String[]            @default([]) @map("area_state_ids") @db.Uuid
+  /// Ordered [{ key, value }], up to 30.
+  specs              Json                @default("[]")
+  status             ListingStatus       @default(draft)
+  publishedAt        DateTime?           @map("published_at") @db.Timestamptz(6)
+  deletedAt          DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  /// UUIDv7 ids sort by creation time, so pages order by id.
+  @@index([businessId, status, id], map: "idx_products_business_id_status_id")
+  @@index([categoryId, id], map: "idx_products_published_category_id_id", where: raw("status = 'published' AND deleted_at IS NULL"))
+  @@map("products")
+}
+
+model Service {
+  id           String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId   String              @map("business_id") @db.Uuid
+  categoryId   String              @map("category_id") @db.Uuid
+  title        String
+  description  String
+  /// Starting price. Null means "Ask for price".
+  pricePaise   BigInt?             @map("price_paise")
+  priceUnit    String?             @map("price_unit")
+  turnaround   String?
+  availability ServiceAvailability @default(by_appointment)
+  isAllIndia   Boolean             @default(true) @map("is_all_india")
+  areaStateIds String[]            @default([]) @map("area_state_ids") @db.Uuid
+  areaCityIds  String[]            @default([]) @map("area_city_ids") @db.Uuid
+  features     String[]            @default([])
+  status       ListingStatus       @default(draft)
+  publishedAt  DateTime?           @map("published_at") @db.Timestamptz(6)
+  deletedAt    DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  /// UUIDv7 ids sort by creation time, so pages order by id.
+  @@index([businessId, status, id], map: "idx_services_business_id_status_id")
+  @@index([categoryId, id], map: "idx_services_published_category_id_id", where: raw("status = 'published' AND deleted_at IS NULL"))
+  @@map("services")
 }

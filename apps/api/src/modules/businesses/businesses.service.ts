@@ -5,6 +5,7 @@ import {
   type CreateBusinessInput,
   type MyBusiness,
   type OpeningHours,
+  PLAN_LIMITS,
   type Socials,
   type UpdateBusinessInput,
   openingHoursSchema,
@@ -33,9 +34,15 @@ const businessExists = () =>
 const slugTaken = () => new AppError(409, ErrorCode.SlugTaken, 'That link is taken');
 const slugLocked = () =>
   new AppError(409, ErrorCode.SlugLocked, 'The link of a verified business cannot change');
+export const businessRequired = () =>
+  new AppError(403, ErrorCode.BusinessRequired, 'Create your business first');
 
 export const isPremium = (business: { premiumUntil: Date | null }, now = new Date()) =>
   business.premiumUntil !== null && business.premiumUntil > now;
+
+/** Published products plus services allowed for this business; null means no limit. */
+export const publishedListingsLimit = (business: { premiumUntil: Date | null }) =>
+  isPremium(business) ? null : PLAN_LIMITS.free.publishedListings;
 
 /** A URL-safe slug from the name; non-Latin names fall back to `business`. */
 export function slugify(name: string): string {
@@ -156,6 +163,16 @@ export class BusinessesService {
     private readonly places: PlacesService,
   ) {}
 
+  /** The signed-in user's business id and plan, for listing writes. */
+  async requireOwned(userId: string) {
+    const business = await this.prisma.business.findUnique({
+      where: { ownerUserId: userId },
+      select: { id: true, premiumUntil: true },
+    });
+    if (!business) throw businessRequired();
+    return business;
+  }
+
   async getPublic(slug: string): Promise<Business> {
     const row = await this.prisma.business.findFirst({
       where: { slug, ...PUBLIC_OWNER },
@@ -163,6 +180,16 @@ export class BusinessesService {
     });
     if (!row) throw notFound();
     return toPublicBusiness(row);
+  }
+
+  /** The id of a public business, for its listing tabs. */
+  async requirePublicId(id: string): Promise<string> {
+    const row = await this.prisma.business.findFirst({
+      where: { id, ...PUBLIC_OWNER },
+      select: { id: true },
+    });
+    if (!row) throw notFound();
+    return row.id;
   }
 
   async getMine(userId: string): Promise<MyBusiness> {
@@ -219,7 +246,7 @@ export class BusinessesService {
           },
           include: businessInclude,
         });
-        return this.toMyBusiness(row);
+        return await this.toMyBusiness(row);
       } catch (error) {
         if (!isUniqueViolation(error)) throw error;
         if (await this.prisma.business.findUnique({ where: { ownerUserId: userId } })) {
@@ -282,18 +309,29 @@ export class BusinessesService {
         data,
         include: businessInclude,
       });
-      return this.toMyBusiness(row);
+      return await this.toMyBusiness(row);
     } catch (error) {
       if (isUniqueViolation(error)) throw slugTaken();
       throw error;
     }
   }
 
+  /** Published products and services, the count the free plan limits. */
+  async countPublishedListings(
+    businessId: string,
+    db: Pick<PrismaClient, 'product' | 'service'> = this.prisma,
+  ) {
+    // Sequential: inside a transaction both counts share one connection.
+    const where = { businessId, status: 'published', deletedAt: null } as const;
+    const products = await db.product.count({ where });
+    return products + (await db.service.count({ where }));
+  }
+
   private suffixed(name: string) {
     return `${slugify(name).slice(0, 44)}-${randomBytes(4).readUInt32BE().toString(36).slice(0, 5)}`;
   }
 
-  private toMyBusiness(row: BusinessRow): MyBusiness {
+  private async toMyBusiness(row: BusinessRow): Promise<MyBusiness> {
     return {
       ...toPublicBusiness(row),
       contactPhone: row.contactPhone,
@@ -302,6 +340,8 @@ export class BusinessesService {
       verificationStatus: row.verificationStatus,
       premiumUntil: row.premiumUntil?.toISOString() ?? null,
       profileCompletion: row.profileCompletion,
+      publishedListings: await this.countPublishedListings(row.id),
+      publishedListingsLimit: publishedListingsLimit(row),
       updatedAt: row.updatedAt.toISOString(),
     };
   }
