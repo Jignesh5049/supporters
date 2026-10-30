@@ -1,4 +1,4 @@
-import { colors, fontFamily, fontWeight, radius, spacing, typeScale } from './tokens.ts';
+import { colors, fontFamily, fontWeight, radius, spacing, typeScale } from './tokens';
 
 const kebab = (name: string) => name.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
 

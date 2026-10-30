@@ -61,9 +61,12 @@ jobs:
           - name: Web (lint, types, tests, build)
             package: '@supporters/web'
             scripts: lint typecheck test build
-          - name: Mobile (types, config, tests)
+          - name: Mobile (types, config, tests, Android bundle)
             package: '@supporters/mobile'
-            scripts: typecheck config:check test
+            scripts: typecheck config:check test bundle:check
+          - name: UI native (types)
+            package: '@supporters/ui-native'
+            scripts: typecheck
           - name: Shared (types, tests)
             package: '@supporters/shared'
             scripts: typecheck test

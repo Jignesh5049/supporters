@@ -5,6 +5,8 @@ packages:
 # pnpm blocks dependency install scripts unless they are listed here.
 # Approve new entries with `pnpm approve-builds <pkg>` and review them in the PR.
 allowBuilds:
+  # Denied on purpose: tsx runs esbuild from its @esbuild/<platform> package without the script.
+  esbuild: false
   unrs-resolver: true
 
 auditConfig:

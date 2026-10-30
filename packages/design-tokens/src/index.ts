@@ -1,3 +1,3 @@
-export * from './tokens.ts';
-export { contrastRatio, relativeLuminance } from './contrast.ts';
-export { nativewindPreset } from './tailwind-preset.ts';
+export * from './tokens';
+export { contrastRatio, relativeLuminance } from './contrast';
+export { nativewindPreset } from './tailwind-preset';

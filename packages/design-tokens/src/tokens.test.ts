@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { contrastRatio } from './contrast.ts';
-import { generatedFiles } from './css.ts';
-import { nativewindPreset } from './tailwind-preset.ts';
-import { colors, minTouchTarget, radius, spacing } from './tokens.ts';
+import { contrastRatio } from './contrast';
+import { generatedFiles } from './css';
+import { nativewindPreset } from './tailwind-preset';
+import { colors, minTouchTarget, radius, spacing } from './tokens';
 
 const AA_TEXT = 4.5;
 
