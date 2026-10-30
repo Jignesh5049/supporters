@@ -5,6 +5,7 @@ import {
   gstinSchema,
   updateBusinessSchema,
 } from './business';
+import { createProductSchema, createServiceSchema } from './listings';
 
 const uuid = '0199f4a0-0000-7000-8000-000000000001';
 
@@ -42,5 +43,48 @@ describe('business schemas', () => {
   it('lets optional fields be cleared, but not required ones', () => {
     expect(updateBusinessSchema.safeParse({ about: null }).success).toBe(true);
     expect(updateBusinessSchema.safeParse({ name: null }).success).toBe(false);
+  });
+});
+
+describe('listing schemas', () => {
+  const product = { title: 'Steel bolts', categoryId: uuid, description: 'M8 bolts' };
+
+  it('defaults to a draft that ships All India, with no price', () => {
+    const parsed = createProductSchema.parse(product);
+    expect(parsed.status).toBe('draft');
+    expect(parsed.shippingArea).toEqual({ allIndia: true, stateIds: [], cityIds: [] });
+    expect(parsed.price).toBeUndefined();
+  });
+
+  it('requires the original price to be above the price', () => {
+    const result = createProductSchema.safeParse({
+      ...product,
+      price: { amountPaise: 1000 },
+      originalPrice: { amountPaise: 900 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('keeps products to states and rejects mixed All India areas', () => {
+    expect(
+      createProductSchema.safeParse({
+        ...product,
+        shippingArea: { allIndia: false, cityIds: [uuid] },
+      }).success,
+    ).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        ...product,
+        serviceArea: { allIndia: true, stateIds: [uuid] },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects duplicate specification keys', () => {
+    const specs = [
+      { key: 'Size', value: 'M8' },
+      { key: 'size', value: 'M10' },
+    ];
+    expect(createProductSchema.safeParse({ ...product, specs }).success).toBe(false);
   });
 });
