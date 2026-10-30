@@ -2,6 +2,7 @@ import './global.css';
 import React from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { PortalHost } from '@rn-primitives/portal';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -12,6 +13,7 @@ import { CreateModal } from './src/components/CreateModal';
 import { EnquiryModal } from './src/components/EnquiryModal';
 import { ShareModal } from './src/components/ShareModal';
 import { Toast } from './src/components/Toast';
+import { queryClient } from './src/lib/query-client';
 
 // Auth Screens
 import { SignInScreen } from './src/screens/SignInScreen';
@@ -150,13 +152,15 @@ function MainApp() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AppProvider>
-        <MainApp />
-      </AppProvider>
-      {/* Dialogs and other overlays from @supporters/ui-native render here. */}
-      <PortalHost />
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <AppProvider>
+          <MainApp />
+        </AppProvider>
+        {/* Dialogs and other overlays from @supporters/ui-native render here. */}
+        <PortalHost />
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 
