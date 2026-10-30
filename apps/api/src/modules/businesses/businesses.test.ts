@@ -85,6 +85,8 @@ describe('POST /v1/me/business', () => {
       verificationStatus: 'none',
       isVerified: false,
       isPremium: false,
+      publishedListings: 0,
+      publishedListingsLimit: 25,
     });
     expect(response.json().profileCompletion).toBeGreaterThan(0);
   });

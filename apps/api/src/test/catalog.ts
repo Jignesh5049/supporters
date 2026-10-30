@@ -59,3 +59,17 @@ export async function signUpOwner(ctx: TestContext, refs: ReferenceData, overrid
   if (response.statusCode !== 201) throw new Error(`create business failed: ${response.body}`);
   return { session, business: response.json<{ id: string; slug: string }>() };
 }
+
+export const productBody = (refs: ReferenceData, overrides: object = {}) => ({
+  title: 'M8 steel bolts',
+  categoryId: refs.subcategory.id,
+  description: 'Zinc-plated, grade 8.8.',
+  ...overrides,
+});
+
+export const serviceBody = (refs: ReferenceData, overrides: object = {}) => ({
+  title: 'CNC machining',
+  categoryId: refs.otherCategory.id,
+  description: 'Short runs, 3-axis.',
+  ...overrides,
+});
