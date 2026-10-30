@@ -3,6 +3,9 @@ import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
 import type { AuthService } from '../modules/auth/auth.service';
+import type { BusinessesService } from '../modules/businesses/businesses.service';
+import type { CategoriesService } from '../modules/categories/categories.service';
+import type { PlacesService } from '../modules/places/places.service';
 import type { SessionService } from '../modules/auth/session.service';
 import type { UsersService } from '../modules/users/users.service';
 import type { AccessClaims, AuthContext } from '../plugins/auth';
@@ -21,6 +24,9 @@ declare module 'fastify' {
       auth: AuthService;
       sessions: SessionService;
       users: UsersService;
+      categories: CategoriesService;
+      places: PlacesService;
+      businesses: BusinessesService;
     };
   }
 

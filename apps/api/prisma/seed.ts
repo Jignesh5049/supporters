@@ -2,10 +2,11 @@ import argon2 from 'argon2';
 import { CURRENT_POLICY_VERSION } from '@supporters/shared';
 import { createPrisma } from '../src/plugins/data';
 import { ARGON2_OPTIONS } from '../src/modules/auth/auth.constants';
+import { seedReferenceData } from './reference-data';
 
 /**
- * Local and staging seed. Categories, states and cities join when their tables
- * land. Refuses to run against production.
+ * Local and staging seed: states, cities and the placeholder categories, then
+ * demo users. Refuses to run against production.
  */
 if (process.env.NODE_ENV === 'production') {
   throw new Error('Refusing to seed a production database');
@@ -14,6 +15,7 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is not set');
 
 const prisma = createPrisma(databaseUrl);
+await seedReferenceData(prisma);
 
 // Fake staging users. The password is shared and local-only, and is printed so
 // developers can sign in; it is not a secret.
