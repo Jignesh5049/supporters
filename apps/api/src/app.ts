@@ -31,6 +31,10 @@ import { PlacesService } from './modules/places/places.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ProductsService } from './modules/products/products.service';
 import { servicesRoutes } from './modules/services/services.routes';
+import { type MediaProcessor, PassthroughMediaProcessor } from './modules/uploads/media-processor';
+import { type ObjectStorage, S3Storage, createS3Client } from './modules/uploads/storage';
+import { uploadsRoutes } from './modules/uploads/uploads.routes';
+import { UploadsService } from './modules/uploads/uploads.service';
 import { ServicesService } from './modules/services/services.service';
 import { usersRoutes } from './modules/users/users.routes';
 import { UsersService } from './modules/users/users.service';
@@ -48,6 +52,8 @@ export interface BuildAppOptions {
   valkey?: Redis;
   sms?: SmsSender;
   breachChecker?: BreachedPasswordChecker;
+  storage?: ObjectStorage;
+  mediaProcessor?: MediaProcessor;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -80,6 +86,11 @@ export const REDACT_PATHS = [
 
 export async function buildApp(options: BuildAppOptions) {
   const { env } = options;
+  const mediaProcessor = options.mediaProcessor ?? new PassthroughMediaProcessor();
+  if (env.NODE_ENV === 'production' && mediaProcessor instanceof PassthroughMediaProcessor) {
+    // Images would be served with their EXIF and GPS metadata.
+    throw new Error('Refusing to start in production without a real media processor');
+  }
   const app = Fastify({
     logger: options.logger ?? {
       level: env.LOG_LEVEL,
@@ -137,14 +148,23 @@ export async function buildApp(options: BuildAppOptions) {
       : new DisabledPasswordChecker());
   const categories = new CategoriesService(app.prisma);
   const places = new PlacesService(app.prisma);
-  const businesses = new BusinessesService(app.prisma, categories, places);
-  const listingWriter = new ListingWriter(app.prisma, businesses);
+  const uploads = new UploadsService(
+    app.prisma,
+    app.limiter,
+    options.storage ?? new S3Storage(createS3Client(env), env.S3_BUCKET),
+    mediaProcessor,
+    env.MEDIA_PUBLIC_URL,
+    app.log,
+  );
+  const businesses = new BusinessesService(app.prisma, categories, places, uploads);
+  const listingWriter = new ListingWriter(app.prisma, businesses, uploads);
   app.decorate('services', {
     sessions,
     auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
     users: new UsersService(app.prisma),
     categories,
     places,
+    uploads,
     businesses,
     products: new ProductsService(app.prisma, businesses, categories, places, listingWriter),
     services: new ServicesService(app.prisma, businesses, categories, places, listingWriter),
@@ -160,6 +180,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(businessesRoutes);
       await v1.register(productsRoutes);
       await v1.register(servicesRoutes);
+      await v1.register(uploadsRoutes);
     },
     { prefix: '/v1' },
   );

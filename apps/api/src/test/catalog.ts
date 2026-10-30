@@ -73,3 +73,21 @@ export const serviceBody = (refs: ReferenceData, overrides: object = {}) => ({
   description: 'Short runs, 3-axis.',
   ...overrides,
 });
+
+/** A ready upload row, inserted directly, for tests that only need something to attach. */
+export async function readyUpload(
+  userId: string,
+  purpose: 'listing' | 'avatar' | 'cover' = 'listing',
+) {
+  const upload = await prisma.upload.create({
+    data: {
+      userId,
+      purpose,
+      key: `public/${purpose}/${crypto.randomUUID()}`,
+      contentType: 'image/jpeg',
+      sizeBytes: 1_024,
+      status: 'ready',
+    },
+  });
+  return upload.id;
+}

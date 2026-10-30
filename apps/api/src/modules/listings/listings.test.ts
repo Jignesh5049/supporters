@@ -4,6 +4,7 @@ import {
   type ReferenceData,
   call,
   productBody,
+  readyUpload,
   referenceData,
   serviceBody,
   signUpOwner,
@@ -143,7 +144,7 @@ describe('products: lifecycle', () => {
 
     const published = await call(ctx, 'PATCH', `/v1/me/business/products/${product.id}`, {
       as: session,
-      body: { status: 'published', price: null },
+      body: { status: 'published', price: null, mediaIds: [await readyUpload(session.user.id)] },
     });
     expect(published.json()).toMatchObject({ status: 'published', price: null });
     expect(published.json().publishedAt).not.toBeNull();
@@ -232,6 +233,7 @@ describe('services: lifecycle', () => {
       as: session,
       body: serviceBody(refs, {
         status: 'published',
+        mediaIds: [await readyUpload(session.user.id)],
         price: { amountPaise: 150_000 },
         priceUnit: 'per_job',
         serviceArea: { allIndia: false, cityIds: [refs.pune.id], stateIds: [refs.gujarat.id] },
@@ -261,13 +263,19 @@ describe('free plan publish limit', () => {
 
     const last = await call(ctx, 'POST', '/v1/me/business/services', {
       as: session,
-      body: serviceBody(refs, { status: 'published' }),
+      body: serviceBody(refs, {
+        status: 'published',
+        mediaIds: [await readyUpload(session.user.id)],
+      }),
     });
     expect(last.statusCode).toBe(201);
 
     const overCreate = await call(ctx, 'POST', '/v1/me/business/products', {
       as: session,
-      body: productBody(refs, { status: 'published' }),
+      body: productBody(refs, {
+        status: 'published',
+        mediaIds: [await readyUpload(session.user.id)],
+      }),
     });
     expect(overCreate.statusCode).toBe(409);
     expect(problemCode(overCreate)).toBe('LISTING_LIMIT_REACHED');
@@ -280,7 +288,7 @@ describe('free plan publish limit', () => {
     expect(draft.statusCode).toBe(201);
     const publish = await call(ctx, 'PATCH', `/v1/me/business/products/${draft.json().id}`, {
       as: session,
-      body: { status: 'published' },
+      body: { status: 'published', mediaIds: [await readyUpload(session.user.id)] },
     });
     expect(problemCode(publish)).toBe('LISTING_LIMIT_REACHED');
 
@@ -291,7 +299,7 @@ describe('free plan publish limit', () => {
     });
     const retry = await call(ctx, 'PATCH', `/v1/me/business/products/${draft.json().id}`, {
       as: session,
-      body: { status: 'published' },
+      body: { status: 'published', mediaIds: [await readyUpload(session.user.id)] },
     });
     expect(retry.statusCode).toBe(200);
 
@@ -305,11 +313,17 @@ describe('free plan publish limit', () => {
     const responses = await Promise.all([
       call(ctx, 'POST', '/v1/me/business/products', {
         as: session,
-        body: productBody(refs, { status: 'published' }),
+        body: productBody(refs, {
+          status: 'published',
+          mediaIds: [await readyUpload(session.user.id)],
+        }),
       }),
       call(ctx, 'POST', '/v1/me/business/services', {
         as: session,
-        body: serviceBody(refs, { status: 'published' }),
+        body: serviceBody(refs, {
+          status: 'published',
+          mediaIds: [await readyUpload(session.user.id)],
+        }),
       }),
     ]);
     expect(responses.map((response) => response.statusCode).sort()).toEqual([201, 409]);
@@ -324,7 +338,10 @@ describe('free plan publish limit', () => {
     await seedPublished(business.id, limit);
     const response = await call(ctx, 'POST', '/v1/me/business/products', {
       as: session,
-      body: productBody(refs, { status: 'published' }),
+      body: productBody(refs, {
+        status: 'published',
+        mediaIds: [await readyUpload(session.user.id)],
+      }),
     });
     expect(response.statusCode).toBe(201);
     const me = await call(ctx, 'GET', '/v1/me/business', { as: session });

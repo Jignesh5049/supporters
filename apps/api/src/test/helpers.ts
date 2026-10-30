@@ -7,6 +7,7 @@ import { type Env, loadEnv } from '../config/env';
 import type { BreachedPasswordChecker } from '../modules/auth/passwords';
 import type { SmsSender } from '../modules/auth/sms';
 import { createPrisma, createValkey } from '../plugins/data';
+import { MINIO_CREDENTIALS, TEST_BUCKET } from './minio';
 
 export const APP_ORIGIN = 'https://supporters.test';
 export const PASSWORD = 'correct horse battery staple';
@@ -24,6 +25,12 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     JWT_PRIVATE_KEY: newSigningKey(),
     JWT_KEY_ID: 'test-key',
     OTP_HMAC_KEY: randomBytes(32).toString('base64'),
+    S3_BUCKET: TEST_BUCKET,
+    S3_ENDPOINT: inject('s3Endpoint'),
+    S3_FORCE_PATH_STYLE: 'true',
+    S3_ACCESS_KEY_ID: MINIO_CREDENTIALS.accessKeyId,
+    S3_SECRET_ACCESS_KEY: MINIO_CREDENTIALS.secretAccessKey,
+    MEDIA_PUBLIC_URL: 'https://media.supporters.test',
     ...overrides,
   });
 }
@@ -81,7 +88,7 @@ export async function createTestApp(
 /** Tests share one database: empty it (keeping reference data), and Valkey, before each test. */
 export async function resetState() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services CASCADE',
+    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media CASCADE',
   );
   await valkey.flushdb();
 }

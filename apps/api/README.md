@@ -9,15 +9,18 @@ Needs Node 24 and Docker.
 ```bash
 pnpm install
 cd apps/api
-docker compose up -d            # PostgreSQL 18 + Valkey 9
+docker compose up -d            # PostgreSQL 18, Valkey 9, MinIO (S3)
 cp .env.example .env
 pnpm --silent keys:generate >> .env   # JWT signing key and OTP HMAC key
 pnpm db:deploy                  # apply migrations
+pnpm storage:init               # media bucket in MinIO
 pnpm db:seed                    # states, cities, placeholder categories, two demo users
 pnpm dev                        # http://127.0.0.1:3001
 ```
 
-If ports 5432 or 6379 are taken, start compose with `POSTGRES_PORT=55432 VALKEY_PORT=56379` and change the URLs in `.env` to match.
+If ports 5432, 6379 or 9000 are taken, start compose with `POSTGRES_PORT=55432 VALKEY_PORT=56379 MINIO_PORT=59000` and change the URLs in `.env` to match.
+
+Uploads go straight from the client to S3 (MinIO locally): `POST /v1/uploads/presign` returns a 5-minute PUT URL locked to the declared type and size, then `POST /v1/uploads/:id/complete` checks the stored file's size and magic bytes. Image re-encoding (sharp, EXIF stripping) is still a stub, `PassthroughMediaProcessor`, and the API refuses to start in production with it. On a phone, `localhost:9000` is not reachable; point `S3_ENDPOINT` and `MEDIA_PUBLIC_URL` at your machine's LAN address.
 
 OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and production.
 
@@ -26,9 +29,10 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 | Script                 | What it does                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------- |
 | `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                       |
-| `test`                 | Vitest. Starts PostgreSQL and Valkey in Testcontainers, so Docker must be running |
+| `test`                 | Vitest. Starts PostgreSQL, Valkey and MinIO in Testcontainers, so Docker must be running |
 | `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                           |
 | `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)        |
+| `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable |
 | `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users |
 
 ## Layout

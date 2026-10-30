@@ -79,7 +79,15 @@ export class ProductsService {
     await this.places.assertArea(input.shippingArea, 'body.shippingArea');
 
     const isPublishing = input.status === 'published';
-    const row = await this.writer.write(business, isPublishing, (db) =>
+    const options = {
+      userId,
+      kind: 'product',
+      isPublishing,
+      willBePublished: isPublishing,
+      mediaIds: input.mediaIds,
+      currentImageCount: 0,
+    } as const;
+    const row = await this.writer.write(business, options, this.read, (db) =>
       db.product.create({
         data: {
           businessId: business.id,
@@ -98,7 +106,7 @@ export class ProductsService {
           status: input.status,
           publishedAt: isPublishing ? new Date() : null,
         },
-        include: listingInclude,
+        select: { id: true },
       }),
     );
     return this.one(row);
@@ -140,11 +148,23 @@ export class ProductsService {
     if (input.status !== undefined) data.status = input.status;
     if (isPublishing) data.publishedAt = new Date();
 
-    const row = await this.writer.write(business, isPublishing, (db) =>
+    const willBePublished = (input.status ?? current.status) === 'published';
+    const options = {
+      userId,
+      kind: 'product',
+      isPublishing,
+      willBePublished,
+      mediaIds: input.mediaIds,
+      currentImageCount:
+        willBePublished && input.mediaIds === undefined
+          ? await this.prisma.listingMedia.count({ where: { productId: id } })
+          : 0,
+    } as const;
+    const row = await this.writer.write(business, options, this.read, (db) =>
       db.product.update({
         where: { id, businessId: business.id, deletedAt: null },
         data,
-        include: listingInclude,
+        select: { id: true },
       }),
     );
     return this.one(row);
@@ -160,6 +180,9 @@ export class ProductsService {
     if (count === 0) throw notFound();
   }
 
+  private readonly read = (db: Prisma.TransactionClient, id: string) =>
+    db.product.findUniqueOrThrow({ where: { id }, include: listingInclude });
+
   private async one(row: ProductRow): Promise<Product> {
     const [product] = await this.toProducts([row]);
     if (!product) throw notFound();
@@ -174,7 +197,7 @@ export class ProductsService {
   private async toProducts(rows: ProductRow[]): Promise<Product[]> {
     const areas = await this.places.describeAreas(rows);
     return rows.map((row, index) => ({
-      ...listingBase(row),
+      ...listingBase(row, this.businesses.mediaUrl),
       originalPrice: toMoney(row.originalPricePaise),
       unit: productUnitSchema.nullable().catch(null).parse(row.unit),
       moq: row.moq,
