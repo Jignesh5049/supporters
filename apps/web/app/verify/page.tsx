@@ -1,47 +1,52 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useApp } from '@/context/AppContext';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CURRENT_POLICY_VERSION, OtpPurpose, RATE_LIMITS } from '@supporters/shared';
+import { Button } from '@supporters/ui-web/components/button';
 import { ShieldCheck, ArrowRight, RotateCcw, Edit2 } from 'lucide-react';
+import { useRegister, useSendOtp } from '@/features/auth/auth-api';
+import { otpFormSchema } from '@/features/auth/auth-forms';
+import { FormError, FormField } from '@/features/auth/form-field';
+import { formatPhone, pendingFlow } from '@/features/auth/pending-flow';
+import { errorMessage } from '@/lib/api/errors';
 
 export default function VerifyOtpPage() {
-  const router = useRouter();
-  const { showToast } = useApp();
+  const [signup] = useState(pendingFlow.getSignup);
+  const register = useRegister('/onboarding');
+  const resend = useSendOtp();
+  const [resendIn, setResendIn] = useState<number>(RATE_LIMITS.otpSendCooldownSec);
+  const form = useForm({ resolver: zodResolver(otpFormSchema) });
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((seconds) => seconds - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
 
-  const handleOtpChange = (val: string, index: number) => {
-    if (val.length > 1) val = val[val.length - 1];
-    const newOtp = [...otp];
-    newOtp[index] = val;
-    setOtp(newOtp);
+  const handleVerify = form.handleSubmit(async ({ otp }) => {
+    if (!signup) return;
+    const isRegistered = await register
+      .mutateAsync({ ...signup, otp, policyVersion: CURRENT_POLICY_VERSION })
+      .then(
+        () => true,
+        () => false,
+      );
+    // The password only lives here until the account exists.
+    if (isRegistered) pendingFlow.setSignup(null);
+  });
 
-    // Auto-focus next input
-    if (val && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
+  const handleResend = () => {
+    if (!signup) return;
+    resend.mutate(
+      { purpose: OtpPurpose.Signup, phone: signup.phone },
+      { onSuccess: ({ resendAfter }) => setResendIn(resendAfter) },
+    );
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Contact verified! Welcome to Supporters onboarding.', 'success');
-      router.push('/onboarding');
-    }, 600);
-  };
+  const error = register.error ?? resend.error;
 
   return (
     <div className="w-full min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
@@ -54,53 +59,55 @@ export default function VerifyOtpPage() {
           <div>
             <h1 className="text-xl font-black text-[#111111]">Verify Your Contact</h1>
             <p className="text-xs text-[#667085] mt-1">
-              We sent a 6-digit confirmation code to <strong>+91 98795 23410</strong>
+              {signup ? (
+                <>
+                  We sent a 6-digit confirmation code to{' '}
+                  <strong>{formatPhone(signup.phone)}</strong>
+                </>
+              ) : (
+                'Your sign-up details were cleared. Start again to get a new code.'
+              )}
             </p>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="flex justify-center gap-2">
-              {otp.map((digit, idx) => (
-                <input
-                  key={idx}
-                  id={`otp-${idx}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(e.target.value, idx)}
-                  onKeyDown={(e) => handleKeyDown(e, idx)}
-                  className="w-11 h-12 text-center text-lg font-bold border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192] focus:ring-2 focus:ring-[#2E3192]/20"
-                  required
-                />
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors disabled:opacity-50"
-            >
-              {loading ? <span>Verifying OTP...</span> : <span>Confirm & Proceed</span>}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+          {signup && (
+            <form onSubmit={handleVerify} noValidate className="space-y-6 text-left">
+              <FormField
+                label="Confirmation code"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                autoFocus
+                className="h-12 text-center text-lg font-bold tracking-widest"
+                error={form.formState.errors.otp?.message}
+                {...form.register('otp')}
+              />
+              <FormError message={error ? errorMessage(error) : null} />
+              <Button type="submit" size="lg" className="w-full" disabled={register.isPending}>
+                {register.isPending ? 'Verifying...' : 'Confirm & Proceed'}
+                <ArrowRight />
+              </Button>
+            </form>
+          )}
 
           <div className="pt-2 flex items-center justify-between text-xs text-[#667085] border-t border-[#E5E7EB]">
-            <button
-              onClick={() => showToast('New OTP sent to your phone.', 'info')}
-              className="flex items-center gap-1 font-semibold text-[#00AEEF] hover:underline"
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={handleResend}
+              disabled={!signup || resendIn > 0 || resend.isPending}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Resend Code</span>
-            </button>
+              <RotateCcw />
+              {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend Code'}
+            </Button>
 
             <Link
               href="/register"
               className="flex items-center gap-1 font-semibold hover:text-[#111111]"
             >
               <Edit2 className="w-3.5 h-3.5" />
-              <span>Change Number</span>
+              <span>{signup ? 'Change Number' : 'Start again'}</span>
             </Link>
           </div>
         </div>
