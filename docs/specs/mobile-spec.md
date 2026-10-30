@@ -11,7 +11,7 @@ We upgrade the prototype from Expo SDK 57 / React Native 0.86 to **Expo SDK 58 /
 | Layer | Choice | Version | Notes |
 | --- | --- | --- | --- |
 | SDK | Expo (managed workflow, Continuous Native Generation) | 58.0.x | No ejected native folders in git |
-| Runtime | React Native (New Architecture, Hermes) / React | 0.88.0 / 19.3.0 | Pinned by SDK 58 |
+| Runtime | React Native (New Architecture, Hermes) / React | 0.88.1 / 19.3.0 | Pinned by SDK 58 |
 | Language | TypeScript, strict | 6.0.x | Expo's tested version. Moves to TS 7 when Expo supports it |
 | Navigation | Expo Router (file-based, typed routes) | \~58.0.27 | Replaces today's hand-rolled screen switching in `App.tsx` |
 | Server state | TanStack Query | 5.105.x | Caching, retries, infinite lists, optimistic likes |
