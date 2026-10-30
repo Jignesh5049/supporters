@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
-import { Header } from '@/components/layout/Header';
+import { HeaderWithSession } from '@/components/layout/header-with-session';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import { MobileCreateModal } from '@/components/layout/MobileCreateModal';
 import { ToastContainer } from '@/components/common/Toast';
@@ -53,23 +54,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="min-h-full antialiased bg-[#F7F8FC]">
       <body className="min-h-full flex flex-col text-[#111111]">
-        <AppProvider>
-          <Suspense fallback={<div className="h-16 bg-white border-b border-[#E5E7EB]" />}>
-            <Header />
-          </Suspense>
-          <div className="flex-1 flex flex-col">
-            <Suspense fallback={null}>
-              <AppShell>{children}</AppShell>
+        <QueryProvider>
+          <AppProvider>
+            <Suspense fallback={<div className="h-16 bg-white border-b border-[#E5E7EB]" />}>
+              <HeaderWithSession />
             </Suspense>
-          </div>
-          <Suspense fallback={null}>
-            <MobileNavigation />
-          </Suspense>
-          <MobileCreateModal />
-          <ToastContainer />
-          <ConfirmationDialog />
-          <EnquiryModal />
-        </AppProvider>
+            <div className="flex-1 flex flex-col">
+              <Suspense fallback={null}>
+                <AppShell>{children}</AppShell>
+              </Suspense>
+            </div>
+            <Suspense fallback={null}>
+              <MobileNavigation />
+            </Suspense>
+            <MobileCreateModal />
+            <ToastContainer />
+            <ConfirmationDialog />
+            <EnquiryModal />
+          </AppProvider>
+        </QueryProvider>
       </body>
     </html>
   );
