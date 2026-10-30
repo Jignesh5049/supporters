@@ -2,6 +2,9 @@ import type { Redis } from 'ioredis';
 import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
+import type { AuthService } from '../modules/auth/auth.service';
+import type { SessionService } from '../modules/auth/session.service';
+import type { UsersService } from '../modules/users/users.service';
 import type { AccessClaims, AuthContext } from '../plugins/auth';
 
 declare module 'fastify' {
@@ -13,6 +16,11 @@ declare module 'fastify' {
     accessTokens: {
       sign(claims: Pick<AccessClaims, 'sub' | 'sid' | 'role'>): string;
       verify(token: string): AccessClaims | null;
+    };
+    services: {
+      auth: AuthService;
+      sessions: SessionService;
+      users: UsersService;
     };
   }
 

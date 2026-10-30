@@ -10,7 +10,19 @@ import {
 import type { Redis } from 'ioredis';
 import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
+import { authRoutes } from './modules/auth/auth.routes';
+import { AuthService } from './modules/auth/auth.service';
+import { OtpService } from './modules/auth/otp.service';
+import {
+  type BreachedPasswordChecker,
+  DisabledPasswordChecker,
+  HibpPasswordChecker,
+} from './modules/auth/passwords';
+import { SessionService } from './modules/auth/session.service';
+import { ConsoleSmsSender, type SmsSender } from './modules/auth/sms';
 import { healthRoutes } from './modules/health/health.routes';
+import { usersRoutes } from './modules/users/users.routes';
+import { UsersService } from './modules/users/users.service';
 import { authPlugin } from './plugins/auth';
 import { csrfPlugin } from './plugins/csrf';
 import { prismaPlugin, valkeyPlugin } from './plugins/data';
@@ -23,6 +35,8 @@ export interface BuildAppOptions {
   /** Injected in tests; created from the env otherwise. */
   prisma?: PrismaClient;
   valkey?: Redis;
+  sms?: SmsSender;
+  breachChecker?: BreachedPasswordChecker;
   logger?: FastifyServerOptions['logger'];
 }
 
@@ -96,8 +110,34 @@ export async function buildApp(options: BuildAppOptions) {
   await app.register(rateLimitPlugin);
   await app.register(csrfPlugin);
 
+  const sessions = new SessionService(app.prisma, app.valkey, app.log);
+  const otp = new OtpService(
+    app.prisma,
+    app.valkey,
+    app.limiter,
+    options.sms ?? new ConsoleSmsSender(),
+    env.OTP_HMAC_KEY,
+    app.log,
+  );
+  const breachChecker =
+    options.breachChecker ??
+    (env.BREACHED_PASSWORD_CHECK
+      ? new HibpPasswordChecker(app.log)
+      : new DisabledPasswordChecker());
+  app.decorate('services', {
+    sessions,
+    auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
+    users: new UsersService(app.prisma),
+  });
+
   await app.register(healthRoutes);
-  // Feature modules register under /v1 as they land.
+  await app.register(
+    async (v1) => {
+      await v1.register(authRoutes);
+      await v1.register(usersRoutes);
+    },
+    { prefix: '/v1' },
+  );
 
   return app;
 }
