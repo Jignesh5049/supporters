@@ -34,4 +34,4 @@ Then pin any new `@rn-primitives/*` dependency to an exact version in `package.j
 
 - Colours come from `nativewindPreset` in `@supporters/design-tokens`, as raw values, because React Native has no CSS variables at runtime. Opacity modifiers like `bg-primary/90` work.
 - v1 is light theme only: `darkMode: 'class'`, and no `.dark` class is ever set.
-- No component tests yet. CI type-checks this package and bundles the mobile app. Jest with React Native Testing Library comes with the Expo SDK 58 upgrade.
+- Component tests run on Jest (`jest-expo`) with React Native Testing Library: `pnpm --filter @supporters/ui-native test`. Jest uses this package's `babel.config.js`, which leaves out NativeWind so tests can assert on `className`.
