@@ -75,7 +75,7 @@ export function BusinessCard({ business }: BusinessCardProps) {
         </div>
 
         {/* Name and details */}
-        <Link href={`/business/${business.id}`}>
+        <Link href={`/business/${business.slug}`}>
           <h3 className="text-sm font-bold text-[#111111] group-hover:text-[#2E3192] transition-colors truncate">
             {business.name}
           </h3>
@@ -114,7 +114,7 @@ export function BusinessCard({ business }: BusinessCardProps) {
         {/* Profile Link */}
         <div className="mt-3 pt-2">
           <Link
-            href={`/business/${business.id}`}
+            href={`/business/${business.slug}`}
             className="w-full flex items-center justify-center gap-1.5 py-2 text-center text-xs font-semibold text-[#2E3192] bg-[#F7F8FC] hover:bg-blue-50/70 border border-[#E5E7EB] rounded-xl transition-colors"
           >
             <span>View Business Profile</span>

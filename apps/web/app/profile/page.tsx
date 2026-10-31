@@ -203,7 +203,7 @@ export default function ProfilePage() {
 
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/business/${myBusiness.id}`}
+                  href={`/business/${myBusiness.slug}`}
                   className="px-3 py-1.5 text-xs font-semibold text-[#2E3192] bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
                 >
                   Public Profile

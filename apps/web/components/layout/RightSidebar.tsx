@@ -71,7 +71,7 @@ export function RightSidebar() {
               return (
                 <div key={biz.id} className="flex items-start justify-between gap-3">
                   <Link
-                    href={`/business/${biz.id}`}
+                    href={`/business/${biz.slug}`}
                     className="flex items-start gap-2.5 min-w-0 group"
                   >
                     <Avatar src={biz.avatar} name={biz.name} size="sm" verified={biz.verified} />
