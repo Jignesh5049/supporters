@@ -72,7 +72,7 @@ async function ServiceDetail({ params }: { params: Promise<{ id: string }> }) {
             <h1 className="text-title-lg font-black text-foreground">{service.title}</h1>
           </div>
 
-          <div className="rounded-2xl border border-border bg-subtle p-4">
+          <div className="rounded-2xl border border-border bg-muted p-4">
             {service.price ? (
               <p className="flex flex-wrap items-baseline gap-2">
                 <span className="text-caption text-muted-foreground">Starting from</span>

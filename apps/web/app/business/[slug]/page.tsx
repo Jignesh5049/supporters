@@ -100,7 +100,7 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-title-lg font-black text-foreground">{business.name}</h1>
                     {business.isVerified && (
-                      <Badge className="bg-highlight-soft text-highlight-foreground">
+                      <Badge className="bg-highlight-soft text-highlight">
                         <BadgeCheck aria-hidden />
                         Verified supplier
                       </Badge>
@@ -155,7 +155,7 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
             )}
           </div>
 
-          <div className="no-scrollbar overflow-x-auto border-t border-border bg-subtle px-6 sm:px-8">
+          <div className="no-scrollbar overflow-x-auto border-t border-border bg-muted px-6 sm:px-8">
             <TabsList variant="line" aria-label="Business sections" className="h-auto">
               <TabsTrigger value="overview" className="py-3">
                 Overview
@@ -308,7 +308,7 @@ function Overview({ business, products }: { business: Business; products: Produc
               href={directions}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="mt-1.5 inline-flex items-center gap-1 rounded-lg border border-border bg-subtle px-2.5 py-1 text-caption font-bold text-primary hover:bg-muted"
+              className="mt-1.5 inline-flex items-center gap-1 rounded-lg border border-border bg-muted px-2.5 py-1 text-caption font-bold text-primary hover:bg-muted"
             >
               Get directions ↗
             </a>

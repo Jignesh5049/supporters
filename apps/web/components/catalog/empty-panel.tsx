@@ -12,7 +12,7 @@ interface EmptyPanelProps {
 export function EmptyPanel({ icon: Icon, title, description, action }: EmptyPanelProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-8 text-center sm:p-12">
-      <span className="flex size-14 items-center justify-center rounded-2xl border border-border bg-subtle text-primary">
+      <span className="flex size-14 items-center justify-center rounded-2xl border border-border bg-muted text-primary">
         <Icon className="size-7" aria-hidden />
       </span>
       <h3 className="text-title-sm font-bold text-foreground">{title}</h3>

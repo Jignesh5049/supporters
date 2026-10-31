@@ -73,7 +73,7 @@ async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
             <h1 className="text-title-lg font-black text-foreground">{product.title}</h1>
           </div>
 
-          <div className="rounded-2xl border border-border bg-subtle p-4">
+          <div className="rounded-2xl border border-border bg-muted p-4">
             {product.price ? (
               <p className="flex flex-wrap items-baseline gap-2">
                 <span className="text-title-lg font-black text-primary">

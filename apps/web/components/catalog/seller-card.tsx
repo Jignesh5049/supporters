@@ -10,7 +10,7 @@ export function SellerCard({ business }: { business: BusinessSummary }) {
   return (
     <section
       aria-label="Supplier"
-      className="space-y-3 rounded-2xl border border-border bg-subtle p-4"
+      className="space-y-3 rounded-2xl border border-border bg-muted p-4"
     >
       <p className="text-caption font-bold tracking-wider text-muted-foreground uppercase">
         Supplier
