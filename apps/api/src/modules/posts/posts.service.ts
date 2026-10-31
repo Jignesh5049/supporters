@@ -40,6 +40,8 @@ export type PostRow = Prisma.PostGetPayload<{ include: typeof postInclude }>;
 
 /** Public reads: published, not deleted, and the business owner's account is active. */
 export const PUBLIC_POST = {
+  // Lets the planner use idx_posts_published_published_at_id (see its comment).
+  publishedAt: { not: null },
   status: 'published',
   deletedAt: null,
   business: { owner: { status: 'active' } },

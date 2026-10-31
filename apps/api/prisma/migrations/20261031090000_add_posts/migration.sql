@@ -45,7 +45,7 @@ CREATE INDEX "idx_posts_business_id_status_id" ON "posts"("business_id", "status
 CREATE INDEX "idx_posts_business_id_published_at_id" ON "posts"("business_id", "published_at", "id");
 
 -- CreateIndex
-CREATE INDEX "idx_posts_published_published_at_id" ON "posts"("published_at", "id") WHERE (status = 'published' AND deleted_at IS NULL);
+CREATE INDEX "idx_posts_published_published_at_id" ON "posts"("published_at", "id") WHERE (published_at IS NOT NULL AND deleted_at IS NULL);
 
 -- CreateIndex
 CREATE INDEX "idx_posts_product_id" ON "posts"("product_id") WHERE (product_id IS NOT NULL);

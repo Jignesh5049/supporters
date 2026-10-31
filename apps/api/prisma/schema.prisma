@@ -503,8 +503,9 @@ model Post {
   @@index([businessId, status, id], map: "idx_posts_business_id_status_id")
   /// A business's public tab, and the free plan's publishes-per-7-days count.
   @@index([businessId, publishedAt, id], map: "idx_posts_business_id_published_at_id")
-  /// The feed: every live post, newest first.
-  @@index([publishedAt, id], map: "idx_posts_published_published_at_id", where: raw("status = 'published' AND deleted_at IS NULL"))
+  /// The feed: every live post, newest first. The predicate avoids enum literals: Prisma
+  /// binds enums as CAST($n::text AS post_status), which the planner cannot match to one.
+  @@index([publishedAt, id], map: "idx_posts_published_published_at_id", where: raw("published_at IS NOT NULL AND deleted_at IS NULL"))
   @@index([productId], map: "idx_posts_product_id", where: raw("product_id IS NOT NULL"))
   @@index([serviceId], map: "idx_posts_service_id", where: raw("service_id IS NOT NULL"))
   @@map("posts")
