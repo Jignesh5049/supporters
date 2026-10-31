@@ -4,4 +4,6 @@ export * from './ProductSpecsTable';
 export * from './ProductSupplierCard';
 export * from './ProductRelatedList';
 export * from './ProductBottomBar';
-
+export * from './ServiceBottomBar';
+export * from './ServiceVendorCard';
+export * from './ServiceMediaGallery';

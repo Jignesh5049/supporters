@@ -198,4 +198,3 @@ const styles = StyleSheet.create({
     color: '#15803D',
   },
 });
-
