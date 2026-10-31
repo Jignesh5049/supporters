@@ -185,6 +185,7 @@ export const businessSchema = z.object({
   openingHours: openingHoursSchema,
   isVerified: z.boolean(),
   isPremium: z.boolean(),
+  followerCount: z.number().int(),
   createdAt: z.iso.datetime(),
 });
 export type Business = z.infer<typeof businessSchema>;
