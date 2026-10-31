@@ -8,6 +8,8 @@ const MB = 1024 * 1024;
 
 export const TEXT_LIMITS = {
   postBody: { max: 2_200 },
+  /** The badge on an offer post, e.g. "20% off". */
+  offerTag: { max: 40 },
   comment: { max: 1_000 },
   message: { max: 4_000 },
   review: { min: 20, max: 1_000 },
@@ -29,6 +31,8 @@ export const MEDIA_LIMITS = {
   imageTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
   imagesPerListing: { min: 1, max: 10 },
   imagesPerPost: { min: 1, max: 10 },
+  /** A post has 1 to 10 images or exactly one video, never both. */
+  videosPerPost: { max: 1 },
   imagesPerMessage: { max: 5 },
   imagesPerRequirement: { max: 3 },
   videoMaxBytes: 100 * MB,
