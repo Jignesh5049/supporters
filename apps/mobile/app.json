@@ -8,7 +8,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.supporters.app",
+      "associatedDomains": ["applinks:supporters.in"],
+      "infoPlist": {
+        "NSCameraUsageDescription": "Supporters needs access to your camera to capture product and workshop photos.",
+        "NSPhotoLibraryUsageDescription": "Supporters needs access to your photo library to select catalog images and verification documents.",
+        "NSFaceIDUsageDescription": "Allow Supporters to use Face ID for secure payout authorization.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.supporters.app",
@@ -18,7 +26,30 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "supporters.in"
+            },
+            {
+              "scheme": "supporters"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +59,22 @@
         "projectId": "c22125f1-cdea-411e-894e-49a50e37257a"
       }
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share product images."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Supporters to use Face ID for secure payout authorization."
+        }
+      ]
+    ]
   }
 }
