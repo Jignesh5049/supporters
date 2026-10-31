@@ -1,18 +1,5 @@
-import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { API_LOG } from '../playwright.config';
-
-/** Polls the API log for the OTP sent to a number ending in `lastFour`. */
-async function readOtp(lastFour: string): Promise<string> {
-  const pattern = new RegExp(String.raw`\[dev sms\] OTP for \+91\*+${lastFour}: (\d{6})`, 'g');
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const matches = [...(await readFile(API_LOG, 'utf8')).matchAll(pattern)];
-    const code = matches.at(-1)?.[1];
-    if (code) return code;
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  }
-  throw new Error('No OTP in the API log');
-}
+import { readOtp } from './helpers';
 
 test('register, verify the OTP, then signed in', async ({ page, context }) => {
   const phone = `98${String(Date.now()).slice(-8)}`;

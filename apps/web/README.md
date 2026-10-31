@@ -22,3 +22,6 @@ Copy `.env.example` to `.env.local` only if the API runs somewhere else.
 
 - `pnpm --filter @supporters/web test`: Vitest unit tests.
 - `pnpm --filter @supporters/web e2e`: Playwright, local only for now. It needs Docker running `apps/api/docker-compose.yml`, a prepared `apps/api/.env` with migrations applied, and nothing on port 3001. It starts its own API (to read the dev OTPs it prints) and reuses a running `next dev`. Run `pnpm --filter @supporters/web exec playwright install chromium` once.
+  - `e2e/auth.spec.ts`: register, OTP, signed in.
+  - `e2e/business-catalog.spec.ts`: create a business with a logo, add a product with a photo (presign, direct PUT to MinIO, complete), then view the public product and business pages, including their JSON-LD. It also needs MinIO from the same compose file, `pnpm storage:init` and `pnpm db:seed` (states, cities and categories) in `apps/api`. Each run registers a new account and business.
+  - If ports 5432, 6379 or 9000 are taken, start compose with `POSTGRES_PORT`, `VALKEY_PORT` and `MINIO_PORT` and change the URLs in `apps/api/.env` to match (see `apps/api/README.md`).
