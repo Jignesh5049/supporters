@@ -13,6 +13,7 @@ import { useApp } from '../context/AppContext';
 import { colors, spacing } from '../styles/theme';
 import { REFERRAL_REWARD_CONFIG } from '../services/referralService';
 import { useScreenSecurity } from '../hooks/useScreenSecurity';
+import { authenticateBiometric } from '../lib/auth/biometrics';
 import { WithdrawalForm } from '../features/wallet/components/WithdrawalForm';
 import { WithdrawalReviewCard } from '../features/wallet/components/WithdrawalReviewCard';
 import { WithdrawalSuccessCard } from '../features/wallet/components/WithdrawalSuccessCard';
@@ -76,7 +77,20 @@ export function WithdrawalScreen() {
     setStep('review');
   };
 
-  const handleConfirmWithdrawal = () => {
+  const handleConfirmWithdrawal = async () => {
+    // Biometric confirmation per OWASP MASVS L2 & mobile spec line 151
+    const bioResult = await authenticateBiometric(
+      `Authorize ₹${numAmount.toLocaleString('en-IN')} payout to ${method}`,
+    );
+
+    if (!bioResult.success) {
+      Alert.alert(
+        'Authentication Required',
+        bioResult.error || 'Biometric identity verification cancelled.',
+      );
+      return;
+    }
+
     const res = requestWithdrawal({
       amount: numAmount,
       method,
