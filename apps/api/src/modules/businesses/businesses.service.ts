@@ -27,6 +27,12 @@ const businessInclude = {
 } satisfies Prisma.BusinessInclude;
 type BusinessRow = Prisma.BusinessGetPayload<{ include: typeof businessInclude }>;
 
+/** What a seller card (`BusinessSummary`) needs. */
+export const summaryInclude = {
+  logo: true,
+  city: { include: { state: true } },
+} satisfies Prisma.BusinessInclude;
+
 /** Only businesses whose owner is active are public. */
 export const PUBLIC_OWNER = { owner: { status: 'active' } } satisfies Prisma.BusinessWhereInput;
 
@@ -155,6 +161,7 @@ function toPublicBusiness(row: BusinessRow, mediaUrl: MediaUrl): Business {
     pincode: row.pincode,
     mapUrl: row.mapUrl,
     ...readJson(row),
+    followerCount: row.followerCount,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -350,6 +357,30 @@ export class BusinessesService {
       if (isUniqueViolation(error)) throw slugTaken();
       throw error;
     }
+  }
+
+  /** Seller cards of public businesses, in the order given; missing ones are left out. */
+  async getSummaries(ids: string[]): Promise<BusinessSummary[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.business.findMany({
+      where: { id: { in: ids }, ...PUBLIC_OWNER },
+      include: summaryInclude,
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [toBusinessSummary(row, this.mediaUrl)] : [];
+    });
+  }
+
+  /** Adds `delta` to the follower count, inside the follow's transaction; returns the new count. */
+  async adjustFollowerCount(tx: Prisma.TransactionClient, businessId: string, delta: number) {
+    const row = await tx.business.update({
+      where: { id: businessId },
+      data: { followerCount: { increment: delta } },
+      select: { followerCount: true },
+    });
+    return row.followerCount;
   }
 
   /** Published products and services, the count the free plan limits. */

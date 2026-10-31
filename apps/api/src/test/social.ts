@@ -1,5 +1,6 @@
 import type { LightMyRequestResponse } from 'fastify';
-import { prisma } from './helpers';
+import { type ReferenceData, call, signUpOwner } from './catalog';
+import { type TestContext, prisma } from './helpers';
 
 /** A ready `post` upload row, inserted directly: a JPEG image or an MP4 video. */
 export async function postUpload(userId: string, kind: 'image' | 'video' = 'image') {
@@ -50,3 +51,14 @@ export async function seedPosts(businessId: string, count: number, startMinutesA
 /** The ids of a `{ data, nextCursor }` page, in order. */
 export const pageIds = (response: LightMyRequestResponse) =>
   response.json<{ data: { id: string }[] }>().data.map((row) => row.id);
+
+/** A business owner and one published post of theirs, created through the API. */
+export async function ownerWithPost(ctx: TestContext, refs: ReferenceData, overrides: object = {}) {
+  const owner = await signUpOwner(ctx, refs, overrides);
+  const response = await call(ctx, 'POST', '/v1/me/business/posts', {
+    as: owner.session,
+    body: await publishedPostBody(owner.session.user.id),
+  });
+  if (response.statusCode !== 201) throw new Error(`create post failed: ${response.body}`);
+  return { ...owner, postId: response.json<{ id: string }>().id };
+}

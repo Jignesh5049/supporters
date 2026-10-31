@@ -5,9 +5,13 @@ import type { SlidingWindowLimiter } from '../lib/sliding-window';
 import type { AuthService } from '../modules/auth/auth.service';
 import type { BusinessesService } from '../modules/businesses/businesses.service';
 import type { CategoriesService } from '../modules/categories/categories.service';
+import type { CommentsService } from '../modules/comments/comments.service';
+import type { FeedService } from '../modules/feed/feed.service';
+import type { FollowsService } from '../modules/follows/follows.service';
 import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
+import type { SavesService } from '../modules/saves/saves.service';
 import type { ServicesService } from '../modules/services/services.service';
 import type { UploadsService } from '../modules/uploads/uploads.service';
 import type { SessionService } from '../modules/auth/session.service';
@@ -35,6 +39,10 @@ declare module 'fastify' {
       services: ServicesService;
       uploads: UploadsService;
       posts: PostsService;
+      comments: CommentsService;
+      saves: SavesService;
+      follows: FollowsService;
+      feed: FeedService;
     };
   }
 
