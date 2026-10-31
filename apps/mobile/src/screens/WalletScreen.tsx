@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { ArrowLeft, Clock, Info, Inbox } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
+import { useScreenSecurity } from '../hooks/useScreenSecurity';
+import {
+  WalletBalanceCard,
+  WalletSummaryCards,
+  WalletTransactionItem,
+} from '../features/wallet/components';
 
 export function WalletScreen() {
+  useScreenSecurity();
   const { walletData, navigate } = useApp();
   const [filterType, setFilterType] = useState<'All' | 'Credits' | 'Withdrawals'>('All');
 
@@ -18,8 +25,12 @@ export function WalletScreen() {
     <View style={styles.screenWrapper}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigate('home')} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+        <TouchableOpacity
+          onPress={() => navigate('home')}
+          style={styles.backBtn}
+          accessibilityLabel="Go back"
+        >
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>App Wallet</Text>
         <TouchableOpacity
@@ -27,80 +38,26 @@ export function WalletScreen() {
           style={styles.historyBtn}
           activeOpacity={0.8}
         >
-          <Feather name="clock" size={15} color={colors.primary} />
+          <Clock size={15} color={colors.primary} />
           <Text style={styles.historyBtnText}>Requests</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Main Balance Card */}
-        <View style={styles.balanceCard}>
-          <View style={styles.balanceHeader}>
-            <View style={styles.walletIconCircle}>
-              <Ionicons name="wallet" size={20} color="#FFFFFF" />
-            </View>
-            <View style={styles.verifiedWalletBadge}>
-              <Ionicons name="shield-checkmark" size={11} color="#FFFFFF" />
-              <Text style={styles.verifiedWalletText}>Verified Wallet</Text>
-            </View>
-          </View>
+        <WalletBalanceCard
+          availableBalance={walletData.availableBalance}
+          onWithdraw={() => navigate('withdrawal')}
+        />
 
-          <Text style={styles.balanceLabel}>AVAILABLE BALANCE FOR WITHDRAWAL</Text>
-          <Text style={styles.balanceAmount}>
-            ₹{walletData.availableBalance.toLocaleString('en-IN')}
-          </Text>
-
-          {/* Quick Action Button */}
-          <TouchableOpacity
-            style={[
-              styles.withdrawBtn,
-              walletData.availableBalance <= 0 && styles.withdrawBtnDisabled,
-            ]}
-            onPress={() => navigate('withdrawal')}
-            disabled={walletData.availableBalance <= 0}
-            activeOpacity={0.85}
-          >
-            <Feather name="arrow-up-right" size={16} color="#FFFFFF" />
-            <Text style={styles.withdrawBtnText}>Withdraw Money to Bank / UPI</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 3-Column Summary Cards */}
-        <View style={styles.summaryGrid}>
-          <View style={styles.summaryCard}>
-            <View style={[styles.summaryIconDot, { backgroundColor: '#EEF2FF' }]}>
-              <Feather name="gift" size={13} color={colors.primary} />
-            </View>
-            <Text style={styles.summaryLabel}>Total Referral</Text>
-            <Text style={[styles.summaryValue, { color: colors.primary }]}>
-              ₹{walletData.totalReferralEarnings.toLocaleString('en-IN')}
-            </Text>
-          </View>
-
-          <View style={styles.summaryCard}>
-            <View style={[styles.summaryIconDot, { backgroundColor: '#FEF3C7' }]}>
-              <Feather name="clock" size={13} color="#D97706" />
-            </View>
-            <Text style={styles.summaryLabel}>Pending</Text>
-            <Text style={[styles.summaryValue, { color: '#D97706' }]}>
-              ₹{walletData.pendingWithdrawals.toLocaleString('en-IN')}
-            </Text>
-          </View>
-
-          <View style={styles.summaryCard}>
-            <View style={[styles.summaryIconDot, { backgroundColor: '#DCFCE7' }]}>
-              <Feather name="check-circle" size={13} color="#16A34A" />
-            </View>
-            <Text style={styles.summaryLabel}>Withdrawn</Text>
-            <Text style={[styles.summaryValue, { color: '#16A34A' }]}>
-              ₹{walletData.totalWithdrawn.toLocaleString('en-IN')}
-            </Text>
-          </View>
-        </View>
+        <WalletSummaryCards
+          totalReferralEarnings={walletData.totalReferralEarnings}
+          pendingWithdrawals={walletData.pendingWithdrawals}
+          totalWithdrawn={walletData.totalWithdrawn}
+        />
 
         {/* Informative Notice */}
         <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+          <Info size={16} color={colors.primary} />
           <Text style={styles.infoBoxText}>
             Referral earnings are credited as app wallet money. Withdrawals are processed directly
             to your verified bank account or UPI ID. Minimum withdrawal is ₹100.
@@ -137,7 +94,7 @@ export function WalletScreen() {
           {/* Transactions List */}
           {filteredTransactions.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Feather name="inbox" size={30} color="#94A3B8" />
+              <Inbox size={30} color="#94A3B8" />
               <Text style={styles.emptyTitle}>No transactions found</Text>
               <Text style={styles.emptySub}>
                 Referral bonuses and withdrawal activities will appear here.
@@ -145,109 +102,12 @@ export function WalletScreen() {
             </View>
           ) : (
             <View style={styles.transactionsList}>
-              {filteredTransactions.map((tx) => {
-                const isCredit = tx.amount > 0;
-                const isPending = tx.status === 'Pending';
-                const isCompleted = tx.status === 'Completed';
-                const isFailed = tx.status === 'Failed';
-                const isReversed = tx.status === 'Reversed';
-
-                return (
-                  <View key={tx.id} style={styles.txCard}>
-                    <View
-                      style={[
-                        styles.txIconCircle,
-                        isCredit && { backgroundColor: '#DCFCE7' },
-                        !isCredit && isPending && { backgroundColor: '#FEF3C7' },
-                        !isCredit && !isPending && { backgroundColor: '#F1F5F9' },
-                      ]}
-                    >
-                      <Feather
-                        name={isCredit ? 'arrow-down-left' : 'arrow-up-right'}
-                        size={16}
-                        color={isCredit ? '#16A34A' : isPending ? '#D97706' : '#64748B'}
-                      />
-                    </View>
-
-                    <View style={styles.txDetailsCol}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 6,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Text style={styles.txTitle}>
-                          {tx.title.replace(
-                            /^(1st|2nd|3rd|\d+(?:st|nd|rd|th))\s+Referral\s+Reward\s+—\s*/i,
-                            '',
-                          )}
-                        </Text>
-                        {tx.type === 'referral_reward' && (
-                          <View
-                            style={{
-                              backgroundColor: '#F3E8FF',
-                              paddingHorizontal: 6,
-                              paddingVertical: 1,
-                              borderRadius: 4,
-                            }}
-                          >
-                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#A3238E' }}>
-                              Referral
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.txMeta}>
-                        {tx.createdAt} · Ref: {tx.referenceId}
-                      </Text>
-                      {tx.payoutDetails && (
-                        <Text style={styles.txPayoutDetails}>{tx.payoutDetails}</Text>
-                      )}
-                    </View>
-
-                    <View style={styles.txAmountCol}>
-                      <Text
-                        style={[
-                          styles.txAmount,
-                          isCredit ? { color: '#16A34A' } : { color: colors.textPrimary },
-                        ]}
-                      >
-                        {isCredit
-                          ? `+₹${tx.amount.toLocaleString('en-IN')}`
-                          : `-₹${Math.abs(tx.amount).toLocaleString('en-IN')}`}
-                      </Text>
-                      <View
-                        style={[
-                          styles.statusTag,
-                          isCompleted && styles.statusTagCompleted,
-                          isPending && styles.statusTagPending,
-                          isFailed && styles.statusTagFailed,
-                          isReversed && styles.statusTagReversed,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusTagText,
-                            isCompleted && styles.statusTagTextCompleted,
-                            isPending && styles.statusTagTextPending,
-                            isFailed && styles.statusTagTextFailed,
-                            isReversed && styles.statusTagTextReversed,
-                          ]}
-                        >
-                          {tx.status}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
+              {filteredTransactions.map((tx) => (
+                <WalletTransactionItem key={tx.id} tx={tx} />
+              ))}
             </View>
           )}
         </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
@@ -262,28 +122,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backBtn: {
-    padding: 4,
+    padding: 6,
   },
   topBarTitle: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   historyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: '#EEF0FA',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: colors.primaryLight,
   },
   historyBtnText: {
     fontSize: 12,
@@ -292,138 +152,26 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 14,
-  },
-  balanceCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  balanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  walletIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  verifiedWalletBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  verifiedWalletText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  balanceLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#94A3B8',
-    letterSpacing: 0.6,
-  },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    marginVertical: 6,
-    letterSpacing: -0.5,
-  },
-  withdrawBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  withdrawBtnDisabled: {
-    opacity: 0.5,
-  },
-  withdrawBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 10,
-    alignItems: 'center',
-  },
-  summaryIconDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  summaryLabel: {
-    fontSize: 9.5,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '900',
-    marginTop: 2,
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: colors.primaryLight,
+    alignItems: 'flex-start',
+    backgroundColor: '#EEF0FA',
+    marginHorizontal: 12,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     gap: 8,
     marginBottom: 14,
-    alignItems: 'center',
   },
   infoBoxText: {
     flex: 1,
     fontSize: 11,
-    color: colors.primary,
+    color: '#3730A3',
     lineHeight: 16,
   },
   historySection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
+    paddingHorizontal: 12,
+    paddingBottom: 24,
   },
   historyHeader: {
     flexDirection: 'row',
@@ -433,131 +181,65 @@ const styles = StyleSheet.create({
   },
   historyTitle: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   payoutHistoryLink: {
     fontSize: 12,
-    fontWeight: '700',
     color: colors.primary,
+    fontWeight: '600',
   },
   filterRow: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 12,
+    gap: 8,
+    marginBottom: 10,
   },
   filterPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   filterPillActive: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterPillText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
   filterPillTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   emptyBox: {
-    paddingVertical: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 28,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   emptyTitle: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginTop: 8,
+    marginBottom: 2,
   },
   emptySub: {
     fontSize: 11,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 2,
   },
   transactionsList: {
-    gap: 10,
-  },
-  txCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-  },
-  txIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  txDetailsCol: {
-    flex: 1,
-  },
-  txTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  txMeta: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  txPayoutDetails: {
-    fontSize: 9.5,
-    color: '#64748B',
-    marginTop: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  txAmountCol: {
-    alignItems: 'flex-end',
-    marginLeft: 8,
-  },
-  txAmount: {
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  statusTag: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 3,
-  },
-  statusTagCompleted: {
-    backgroundColor: '#DCFCE7',
-  },
-  statusTagPending: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusTagFailed: {
-    backgroundColor: '#FEE2E2',
-  },
-  statusTagReversed: {
-    backgroundColor: '#F3E8FF',
-  },
-  statusTagText: {
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  statusTagTextCompleted: {
-    color: '#16A34A',
-  },
-  statusTagTextPending: {
-    color: '#D97706',
-  },
-  statusTagTextFailed: {
-    color: '#DC2626',
-  },
-  statusTagTextReversed: {
-    color: '#7E22CE',
+    overflow: 'hidden',
   },
 });

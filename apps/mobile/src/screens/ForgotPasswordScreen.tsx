@@ -9,16 +9,16 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
-  TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Lock, Phone, Eye, EyeOff, ArrowLeft, AlertCircle, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 import { ACCOUNT_LIMITS, OtpPurpose, passwordSchema } from '@supporters/shared';
 import { toE164Phone } from '../services/authService';
 import { ApiErrorCode } from '../lib/api';
+import { PasswordResetSuccess } from '../features/auth/components/PasswordResetSuccess';
 
 export function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
@@ -36,7 +36,6 @@ export function ForgotPasswordScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  // "Request a new code" returns to step 1 on this same screen: start it clean.
   useEffect(() => {
     setValue('');
     setFieldError(null);
@@ -103,7 +102,7 @@ export function ForgotPasswordScreen() {
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -111,7 +110,7 @@ export function ForgotPasswordScreen() {
           {/* Header Lock Icon */}
           <View style={styles.brandingHeader}>
             <View style={styles.iconCircle}>
-              <Ionicons name="lock-closed" size={26} color={colors.primary} />
+              <Lock size={26} color={colors.primary} />
             </View>
             <Text style={styles.heading}>Reset Password</Text>
             <Text style={styles.subtitle}>
@@ -125,29 +124,13 @@ export function ForgotPasswordScreen() {
           <View style={styles.card}>
             {errorMessage && (
               <View style={styles.errorBanner}>
-                <Feather name="alert-circle" size={16} color={colors.danger} />
+                <AlertCircle size={16} color={colors.danger} />
                 <Text style={styles.errorBannerText}>{errorMessage}</Text>
               </View>
             )}
 
             {submitted ? (
-              <View style={styles.successContainer}>
-                <View style={styles.successIconCircle}>
-                  <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
-                </View>
-                <Text style={styles.successTitle}>Password Updated</Text>
-                <Text style={styles.successMessage}>
-                  Your password has been changed and other devices were signed out. Sign in with
-                  your new password.
-                </Text>
-
-                <TouchableOpacity
-                  style={[styles.primaryButton, { marginTop: 16 }]}
-                  onPress={() => navigate('sign_in')}
-                >
-                  <Text style={styles.primaryButtonText}>Return to Sign In</Text>
-                </TouchableOpacity>
-              </View>
+              <PasswordResetSuccess onReturnToSignIn={() => navigate('sign_in')} />
             ) : (
               <>
                 <View style={styles.fieldGroup}>
@@ -155,12 +138,11 @@ export function ForgotPasswordScreen() {
                     {isPasswordStep ? 'New Password' : 'Mobile Number (+91)'}
                   </Text>
                   <View style={[styles.inputWrapper, fieldError ? styles.inputWrapperError : null]}>
-                    <Feather
-                      name={isPasswordStep ? 'lock' : 'phone'}
-                      size={16}
-                      color={fieldError ? colors.danger : '#667085'}
-                      style={styles.inputIcon}
-                    />
+                    {isPasswordStep ? (
+                      <Lock size={16} color={fieldError ? colors.danger : '#667085'} />
+                    ) : (
+                      <Phone size={16} color={fieldError ? colors.danger : '#667085'} />
+                    )}
                     <TextInput
                       style={styles.textInput}
                       value={value}
@@ -182,11 +164,11 @@ export function ForgotPasswordScreen() {
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        <Feather
-                          name={showPassword ? 'eye-off' : 'eye'}
-                          size={18}
-                          color="#667085"
-                        />
+                        {showPassword ? (
+                          <EyeOff size={18} color="#667085" />
+                        ) : (
+                          <Eye size={18} color="#667085" />
+                        )}
                       </TouchableOpacity>
                     )}
                   </View>
@@ -219,7 +201,7 @@ export function ForgotPasswordScreen() {
                       <Text style={styles.primaryButtonText}>
                         {isPasswordStep ? 'Save Password' : 'Send Code'}
                       </Text>
-                      <Feather name="arrow-right" size={16} color="#FFFFFF" />
+                      <ArrowRight size={16} color="#FFFFFF" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -227,13 +209,15 @@ export function ForgotPasswordScreen() {
             )}
           </View>
 
-          {/* Footer Back Button */}
-          <View style={styles.footerRow}>
-            <TouchableOpacity onPress={() => navigate('sign_in')} style={styles.backToSignInBtn}>
-              <Feather name="arrow-left" size={16} color={colors.textSecondary} />
-              <Text style={styles.footerText}>Back to Sign In</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Back to Sign In Link */}
+          <TouchableOpacity
+            style={styles.backLink}
+            onPress={() => navigate('sign_in')}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={16} color={colors.primary} />
+            <Text style={styles.backLinkText}>Back to Sign In</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -243,82 +227,72 @@ export function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
   },
   scrollView: {
     flex: 1,
-    width: '100%',
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   innerContainer: {
     width: '100%',
-    maxWidth: 440,
+    maxWidth: 420,
+    alignSelf: 'center',
   },
   brandingHeader: {
     alignItems: 'center',
     marginBottom: 24,
   },
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primaryLight,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EEF0FA',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   heading: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.textPrimary,
-    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 13,
     color: colors.textSecondary,
-    marginTop: 6,
     textAlign: 'center',
     lineHeight: 18,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 20,
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dangerLight,
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
+    padding: 10,
+    marginBottom: 14,
     gap: 8,
   },
   errorBannerText: {
     fontSize: 12,
     color: colors.danger,
-    fontWeight: '600',
     flex: 1,
   },
   fieldGroup: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 12,
@@ -329,24 +303,21 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    height: 48,
+    backgroundColor: '#FFFFFF',
+    height: 46,
+    gap: 8,
   },
   inputWrapperError: {
     borderColor: colors.danger,
-  },
-  inputIcon: {
-    marginRight: 8,
   },
   textInput: {
     flex: 1,
     fontSize: 14,
     color: colors.textPrimary,
-    paddingVertical: 0,
   },
   fieldErrorText: {
     fontSize: 11,
@@ -356,18 +327,13 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    height: 48,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
   },
   buttonDisabled: {
-    opacity: 0.65,
+    opacity: 0.6,
   },
   buttonContentRow: {
     flexDirection: 'row',
@@ -380,51 +346,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryButtonText: {
-    fontSize: 14,
-    fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  successContainer: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  successIconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  successTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  successMessage: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 22,
-  },
-  backToSignInBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  footerText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.textSecondary,
+  },
+  backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  backLinkText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
