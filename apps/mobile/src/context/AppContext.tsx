@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { BackHandler } from 'react-native';
+import { router, usePathname } from 'expo-router';
 import {
   FeedPost,
   Product,
@@ -33,6 +33,16 @@ import {
 } from '../services/authService';
 import { restoreSession } from '../lib/auth/session';
 import { SessionStatus, useSessionStore } from '../stores/session-store';
+import { useAuthFlowStore } from '../stores/auth-flow-store';
+import {
+  AUTH_ROUTES,
+  GuardOutcome,
+  type RouteParams,
+  type ScreenRoute,
+  guardRoute,
+  isTabRoute,
+  routeHref,
+} from '../lib/navigation/routes';
 
 export interface ToastMessage {
   id: string;
@@ -53,39 +63,10 @@ export interface ShareTarget {
   url: string;
 }
 
-export type ScreenRoute =
-  | 'home'
-  | 'discover'
-  | 'messages'
-  | 'chat'
-  | 'profile'
-  | 'create'
-  | 'notifications'
-  | 'saved'
-  | 'referral'
-  | 'subscription'
-  | 'settings'
-  | 'business_detail'
-  | 'product_detail'
-  | 'wallet'
-  | 'withdrawal'
-  | 'withdrawal_history'
-  | 'business_hub'
-  | 'business_edit'
-  | 'business_posts'
-  | 'business_settings'
-  | 'sign_in'
-  | 'sign_up'
-  | 'verify_otp'
-  | 'forgot_password';
-
 interface AppContextType {
   // Navigation
-  currentRoute: ScreenRoute;
-  routeHistory: ScreenRoute[];
-  navigate: (route: ScreenRoute, params?: any) => void;
+  navigate: (route: ScreenRoute, params?: RouteParams) => void;
   goBack: () => boolean;
-  routeParams: any;
 
   // Authentication
   isAuthenticated: boolean;
@@ -206,16 +187,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AUTH_ROUTES: ScreenRoute[] = ['sign_in', 'sign_up', 'verify_otp', 'forgot_password'];
-
-/** Screens a guest (no session) can browse; the rest ask them to sign in. */
-const GUEST_ROUTES: ScreenRoute[] = ['home', 'discover', 'business_detail', 'product_detail'];
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // Navigation & History
-  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('home');
-  const [routeHistory, setRouteHistory] = useState<ScreenRoute[]>([]);
-  const [routeParams, setRouteParams] = useState<any>({});
+  const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Authentication state lives in the session store; tokens stay in SecureStore.
@@ -276,91 +250,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [sessionUser]);
 
-  // Signed out (or the session expired) while on a protected screen: back to browsing.
-  useEffect(() => {
-    if (sessionStatus !== SessionStatus.Guest) return;
-    if (AUTH_ROUTES.includes(currentRoute) || GUEST_ROUTES.includes(currentRoute)) return;
-    setRouteHistory([]);
-    setCurrentRoute('home');
-    // Only a session change should trigger this, not every navigation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionStatus]);
-
-  // Guarded Navigation
+  // Guarded navigation. Deep links are guarded by Stack.Protected in the root layout.
   const navigate = useCallback(
-    (targetRoute: ScreenRoute, params: any = {}) => {
-      const isAuthTarget = AUTH_ROUTES.includes(targetRoute);
-      let route = targetRoute;
-
-      if (!isAuthenticated && !isAuthTarget && !GUEST_ROUTES.includes(targetRoute)) {
+    (targetRoute: ScreenRoute, params: RouteParams = {}) => {
+      setDrawerOpen(false);
+      const outcome = guardRoute(targetRoute, isAuthenticated);
+      if (outcome === GuardOutcome.SignInRequired) {
         // Guests browse freely; anything personal asks them to sign in first.
         showToast('Sign in to continue', 'info');
-        route = 'sign_in';
-        params = {};
-      } else if (isAuthenticated && isAuthTarget) {
-        route = 'home';
-        params = {};
+        router.push('/sign-in');
+        return;
       }
-
-      if (route !== currentRoute) {
-        setRouteHistory((prev) => [...prev, currentRoute]);
+      if (outcome === GuardOutcome.AlreadySignedIn) {
+        router.navigate('/');
+        return;
       }
-      setCurrentRoute(route);
-      setRouteParams(params);
-      setDrawerOpen(false);
+      const href = routeHref(targetRoute, params);
+      const isInAuthFlow = AUTH_ROUTES.some((route) => routeHref(route) === pathname);
+      if (isInAuthFlow && AUTH_ROUTES.includes(targetRoute)) {
+        // Moving between auth screens returns to one already open instead of stacking copies.
+        router.dismissTo(href);
+      } else if (isTabRoute(targetRoute)) {
+        router.navigate(href);
+      } else {
+        router.push(href);
+      }
     },
-    [isAuthenticated, currentRoute, showToast],
+    [isAuthenticated, pathname, showToast],
   );
 
-  // Hardware and In-App Back Navigation
+  // In-app back buttons. Android's hardware back is handled by the native stack.
   const goBack = useCallback((): boolean => {
-    // Signed in: never step back into auth screens. Guest: never into protected ones.
-    const canReturnTo = (route: ScreenRoute) =>
-      isAuthenticated
-        ? !AUTH_ROUTES.includes(route)
-        : AUTH_ROUTES.includes(route) || GUEST_ROUTES.includes(route);
-    const newHistory = [...routeHistory];
-    let previous = newHistory.pop();
-    while (previous && !canReturnTo(previous)) {
-      previous = newHistory.pop();
-    }
-    if (previous) {
-      setRouteHistory(newHistory);
-      setCurrentRoute(previous);
+    if (router.canGoBack()) {
+      router.back();
       return true;
     }
-
-    if (currentRoute !== 'home') {
-      setCurrentRoute('home');
-      setRouteHistory([]);
+    if (pathname !== '/') {
+      router.replace('/');
       return true;
     }
-
-    // On home screen, let Android exit app
     return false;
-  }, [isAuthenticated, currentRoute, routeHistory]);
-
-  // Android Hardware Back Button listener
-  useEffect(() => {
-    const handleHardwareBackPress = () => {
-      return goBack();
-    };
-
-    const backSubscription = BackHandler.addEventListener(
-      'hardwareBackPress',
-      handleHardwareBackPress,
-    );
-
-    return () => {
-      backSubscription.remove();
-    };
-  }, [goBack]);
+  }, [pathname]);
 
   // Authentication Handlers
+  // Signing in or out lands on Home. Leaving the auth group is done by its Stack.Protected guard.
   const enterApp = () => {
-    setRouteHistory([]);
-    setRouteParams({});
-    setCurrentRoute('home');
+    useAuthFlowStore.getState().clear();
   };
 
   const signIn = async (credentials: SignInCredentials): Promise<AuthResult> => {
@@ -376,8 +311,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async (): Promise<void> => {
-    await authService.signOut();
     setDrawerOpen(false);
+    // Go home first, so leaving a protected screen isn't treated as an expired session.
+    if (router.canDismiss()) router.dismissAll();
+    router.navigate('/');
+    await authService.signOut();
     enterApp();
     showToast('Signed out of Supporters', 'info');
   };
@@ -781,10 +719,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        currentRoute,
         navigate,
         goBack,
-        routeParams,
         isAuthenticated,
         isLoadingAuth,
         signIn,
@@ -820,7 +756,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sendMessage,
         openConversationWithBusiness,
         unreadMessagesCount,
-        routeHistory,
         notifications,
         markNotificationAsRead,
         markAllNotificationsAsRead,

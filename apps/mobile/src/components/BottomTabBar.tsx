@@ -2,24 +2,28 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePathname } from 'expo-router';
 import { useApp } from '../context/AppContext';
+import type { ScreenRoute } from '../lib/navigation/routes';
 import { colors } from '../styles/theme';
 
 export function BottomTabBar() {
   const insets = useSafeAreaInsets();
-  const { currentRoute, navigate, unreadMessagesCount, setCreateModalOpen } = useApp();
+  const { navigate, unreadMessagesCount, setCreateModalOpen } = useApp();
+  const pathname = usePathname();
 
   const tabs = [
-    { key: 'home', label: 'Home', icon: 'home' as const },
-    { key: 'discover', label: 'Discover', icon: 'compass' as const },
-    { key: 'create', label: 'Create', icon: 'plus' as const, isAction: true },
+    { key: 'home', path: '/', label: 'Home', icon: 'home' as const },
+    { key: 'discover', path: '/discover', label: 'Discover', icon: 'compass' as const },
+    { key: 'create', path: '/create', label: 'Create', icon: 'plus' as const, isAction: true },
     {
       key: 'messages',
+      path: '/messages',
       label: 'Messages',
       icon: 'message-square' as const,
       badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
     },
-    { key: 'profile', label: 'Profile', icon: 'user' as const },
+    { key: 'profile', path: '/profile', label: 'Profile', icon: 'user' as const },
   ];
 
   return (
@@ -42,12 +46,12 @@ export function BottomTabBar() {
             );
           }
 
-          const isActive = currentRoute === tab.key;
+          const isActive = pathname === tab.path;
 
           return (
             <TouchableOpacity
               key={tab.key}
-              onPress={() => navigate(tab.key as any)}
+              onPress={() => navigate(tab.key as ScreenRoute)}
               style={styles.tabButton}
               activeOpacity={0.7}
             >

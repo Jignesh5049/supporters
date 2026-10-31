@@ -30,6 +30,17 @@ When you are ready to connect to your real backend (REST API, GraphQL, Supabase,
 
 ---
 
+## 🧭 Navigation (Expo Router)
+
+Routes live in `src/app/` (file-based, typed routes); screen UI lives in `src/features/<feature>/`.
+
+- `src/app/_layout.tsx` holds the providers (Query, SafeArea, AppContext) and `<PortalHost />`. `src/features/navigation/app-shell.tsx` adds the 426 gate, the session-restore spinner and the overlays.
+- **Guests** can open Home, Discover, `business/[slug]` and `product/[id]`. Every other screen sits under `Stack.Protected` / `Tabs.Protected` (`src/features/navigation`): a deep link to one opens sign-in, and in-app taps show "Sign in to continue". The guard lists are in `src/lib/navigation/routes.ts`.
+- **Deep links:** `supporters://business/<slug>`, `supporters://product/<id>`, `supporters://messages/<id>`, and so on. Route params are validated with Zod (`src/lib/navigation/params.ts`). Android App Links and iOS Universal Links are added by `app.config.ts` when `APP_LINK_DOMAIN` is set (TODO: set it once the domain exists).
+- Try a link on a running Android dev build: `adb shell am start -a android.intent.action.VIEW -d supporters://product/p-1`.
+
+---
+
 ## 🚀 Running the App Locally
 
 ### 1. Start the Expo Dev Server

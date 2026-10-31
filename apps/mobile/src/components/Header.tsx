@@ -1,21 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { usePathname } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function Header() {
-  const {
-    unreadNotificationsCount,
-    currentUser,
-    setDrawerOpen,
-    navigate,
-    isHeaderVisible,
-    currentRoute,
-  } = useApp();
+  const { unreadNotificationsCount, currentUser, setDrawerOpen, navigate, isHeaderVisible } =
+    useApp();
+  const pathname = usePathname();
 
   const anim = useRef(new Animated.Value(1)).current;
-  const shouldShow = currentRoute !== 'home' || isHeaderVisible;
+  const shouldShow = pathname !== '/' || isHeaderVisible;
 
   useEffect(() => {
     Animated.timing(anim, {
@@ -75,7 +71,7 @@ export function Header() {
 
       {/* Right: Notifications */}
       <View style={styles.rightSection}>
-        {currentRoute !== 'notifications' && (
+        {pathname !== '/notifications' && (
           <TouchableOpacity
             onPress={() => navigate('notifications')}
             style={styles.iconButton}
