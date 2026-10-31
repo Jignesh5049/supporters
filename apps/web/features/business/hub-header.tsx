@@ -36,7 +36,7 @@ export function HubHeader({ business }: { business: HubBusiness }) {
             <div className="flex items-center gap-2">
               <p className="text-body font-bold text-foreground">{business.name}</p>
               {business.isVerified && (
-                <Badge className="bg-highlight-soft text-highlight-foreground">
+                <Badge className="bg-highlight-soft text-highlight">
                   <BadgeCheck aria-hidden />
                   Verified
                 </Badge>
@@ -70,7 +70,7 @@ export function HubHeader({ business }: { business: HubBusiness }) {
                     'flex items-center gap-2 rounded-xl px-3 py-1.5 text-caption font-bold whitespace-nowrap transition-colors',
                     isActive
                       ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-subtle hover:text-foreground',
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
                   <Icon className="size-3.5" aria-hidden />

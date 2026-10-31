@@ -76,7 +76,7 @@ export function ListingTable({ kind, rows }: { kind: ListingKind; rows: ListingR
         </thead>
         <tbody className="divide-y divide-border">
           {rows.map((row) => (
-            <tr key={row.id} className="hover:bg-subtle">
+            <tr key={row.id} className="hover:bg-muted">
               <td className="py-3.5 font-bold text-foreground">
                 <div className="flex items-center gap-3">
                   <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted text-muted-foreground">

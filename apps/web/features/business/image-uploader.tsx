@@ -141,7 +141,7 @@ export function ImageUploader({
             <label
               htmlFor={inputId}
               className={cn(
-                'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-subtle text-caption font-semibold text-muted-foreground hover:border-primary hover:text-primary focus-within:ring-[3px] focus-within:ring-ring/50',
+                'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-muted text-caption font-semibold text-muted-foreground hover:border-primary hover:text-primary focus-within:ring-[3px] focus-within:ring-ring/50',
                 aspect === 'wide' ? 'h-24 w-48' : 'size-24',
               )}
             >
