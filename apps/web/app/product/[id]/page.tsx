@@ -3,8 +3,10 @@ import { Layers, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ContactActions } from '@/components/catalog/contact-actions';
 import { JsonLd } from '@/components/catalog/json-ld';
+import { PageSkeleton } from '@/components/catalog/page-skeleton';
 import { ListingCard } from '@/components/catalog/listing-card';
 import { ListingGallery } from '@/components/catalog/listing-gallery';
 import { SellerCard } from '@/components/catalog/seller-card';
@@ -30,7 +32,15 @@ export async function generateMetadata({ params }: PageProps<'/product/[id]'>): 
   return product ? listingMetadata(product, serverEnv.APP_ORIGIN) : NOT_FOUND_METADATA;
 }
 
-export default async function ProductDetailPage({ params }: PageProps<'/product/[id]'>) {
+export default function ProductDetailPage({ params }: PageProps<'/product/[id]'>) {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <ProductDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const product = await getPublicProduct((await params).id);
   if (!product) notFound();
 

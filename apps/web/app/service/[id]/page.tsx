@@ -3,8 +3,10 @@ import { CheckCircle2, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ContactActions } from '@/components/catalog/contact-actions';
 import { JsonLd } from '@/components/catalog/json-ld';
+import { PageSkeleton } from '@/components/catalog/page-skeleton';
 import { ListingCard } from '@/components/catalog/listing-card';
 import { ListingGallery } from '@/components/catalog/listing-gallery';
 import { SellerCard } from '@/components/catalog/seller-card';
@@ -30,7 +32,15 @@ export async function generateMetadata({ params }: PageProps<'/service/[id]'>): 
   return service ? listingMetadata(service, serverEnv.APP_ORIGIN) : NOT_FOUND_METADATA;
 }
 
-export default async function ServiceDetailPage({ params }: PageProps<'/service/[id]'>) {
+export default function ServiceDetailPage({ params }: PageProps<'/service/[id]'>) {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <ServiceDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function ServiceDetail({ params }: { params: Promise<{ id: string }> }) {
   const service = await getPublicService((await params).id);
   if (!service) notFound();
 

@@ -19,11 +19,12 @@ import {
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { BusinessLogo } from '@/components/catalog/business-logo';
 import { ContactActions } from '@/components/catalog/contact-actions';
 import { EmptyPanel } from '@/components/catalog/empty-panel';
 import { JsonLd } from '@/components/catalog/json-ld';
+import { PageSkeleton } from '@/components/catalog/page-skeleton';
 import { ListingCard } from '@/components/catalog/listing-card';
 import { getPublicBusiness, listBusinessProducts, listBusinessServices } from '@/dal/catalog';
 import { serverEnv } from '@/dal/config';
@@ -47,7 +48,15 @@ function tabCount(page: { data: unknown[]; nextCursor: string | null }) {
   return page.nextCursor ? `${page.data.length}+` : String(page.data.length);
 }
 
-export default async function BusinessProfilePage({ params }: PageProps<'/business/[slug]'>) {
+export default function BusinessProfilePage({ params }: PageProps<'/business/[slug]'>) {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <BusinessProfile params={params} />
+    </Suspense>
+  );
+}
+
+async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }) {
   const business = await getPublicBusiness((await params).slug);
   if (!business) notFound();
 
