@@ -150,7 +150,23 @@ export function onSocketReadReceipt(callback: (payload: ReadReceiptPayload) => v
 }
 
 /**
- * Disconnects socket on logout.
+ * Emits auth:renew event with a rotated access token per mobile spec line 125.
+ */
+export function renewSocketAuth(token: string) {
+  if (socket?.connected) {
+    socket.emit('auth:renew', { token: `Bearer ${token}` });
+  }
+}
+
+/**
+ * Checks whether the realtime socket is currently connected.
+ */
+export function isSocketConnected(): boolean {
+  return !!socket?.connected;
+}
+
+/**
+ * Disconnects socket on logout or background transition.
  */
 export function disconnectSocket() {
   if (socket) {
