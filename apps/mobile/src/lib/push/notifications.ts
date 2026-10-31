@@ -24,20 +24,34 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Default',
-      importance: Notifications.AndroidImportance.MAX,
+      importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#2E3192',
     });
 
-    await Notifications.setNotificationChannelAsync('chat_messages', {
-      name: 'Chat & Enquiries',
+    // Android channels per docs/specs/mobile-spec.md line 131
+    await Notifications.setNotificationChannelAsync('messages', {
+      name: 'Messages',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
-      vibrationPattern: [0, 200, 100, 200],
+      vibrationPattern: [0, 250, 250, 250],
     });
 
-    await Notifications.setNotificationChannelAsync('wallet_payouts', {
-      name: 'Wallet & Referrals',
+    await Notifications.setNotificationChannelAsync('enquiries', {
+      name: 'Enquiries',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
+    });
+
+    await Notifications.setNotificationChannelAsync('activity', {
+      name: 'Activity',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: 'default',
+    });
+
+    await Notifications.setNotificationChannelAsync('account', {
+      name: 'Account',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
     });
