@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Bookmark, Package, Wrench, Briefcase } from 'lucide-react-native';
+import { EmptyState } from '@supporters/ui-native/patterns';
 import { useApp } from '../context/AppContext';
 import { FeedPostCard } from '../components/FeedPostCard';
 import { colors } from '../styles/theme';
@@ -66,10 +67,14 @@ export function SavedScreen() {
         {activeTab === 'posts' && (
           <View>
             {savedPosts.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Bookmark size={32} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No saved posts yet</Text>
-              </View>
+              <EmptyState
+                icon={<Bookmark size={32} color="#9CA3AF" />}
+                title="No saved posts yet"
+                description="Tap the bookmark icon on any trade post to save it for quick reference."
+                actionLabel="Explore Feed"
+                onAction={() => navigate('home')}
+                className="my-6"
+              />
             ) : (
               savedPosts.map((post) => <FeedPostCard key={post.id} post={post} />)
             )}
@@ -79,10 +84,14 @@ export function SavedScreen() {
         {activeTab === 'products' && (
           <View style={styles.itemsList}>
             {savedProducts.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Package size={32} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No saved products yet</Text>
-              </View>
+              <EmptyState
+                icon={<Package size={32} color="#9CA3AF" />}
+                title="No saved products yet"
+                description="Browse products in the marketplace and save items to review later."
+                actionLabel="Discover Products"
+                onAction={() => navigate('discover')}
+                className="my-6"
+              />
             ) : (
               savedProducts.map((p) => (
                 <View key={p.id} style={styles.itemCard}>
@@ -136,10 +145,14 @@ export function SavedScreen() {
         {activeTab === 'services' && (
           <View style={styles.itemsList}>
             {savedServices.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Wrench size={32} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No saved services yet</Text>
-              </View>
+              <EmptyState
+                icon={<Wrench size={32} color="#9CA3AF" />}
+                title="No saved services yet"
+                description="Bookmark professional trade and industrial services."
+                actionLabel="Browse Services"
+                onAction={() => navigate('discover')}
+                className="my-6"
+              />
             ) : (
               savedServices.map((s) => (
                 <View key={s.id} style={styles.itemCard}>
@@ -181,10 +194,14 @@ export function SavedScreen() {
         {activeTab === 'businesses' && (
           <View style={styles.itemsList}>
             {savedBusinesses.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Briefcase size={32} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No saved sellers yet</Text>
-              </View>
+              <EmptyState
+                icon={<Briefcase size={32} color="#9CA3AF" />}
+                title="No saved sellers yet"
+                description="Follow verified manufacturers and suppliers across India."
+                actionLabel="Find Suppliers"
+                onAction={() => navigate('discover')}
+                className="my-6"
+              />
             ) : (
               savedBusinesses.map((b) => (
                 <View key={b.id} style={styles.itemCard}>
