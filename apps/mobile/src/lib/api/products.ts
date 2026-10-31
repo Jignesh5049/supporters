@@ -45,7 +45,7 @@ export function createProductsApi(client: ApiClient): ProductsApi {
         {
           schema: pageSchema(productSchema),
           auth: false,
-        },
+        }
       );
     },
     listMine: (query) => {

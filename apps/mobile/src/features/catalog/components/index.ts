@@ -4,3 +4,4 @@ export * from './ProductSpecsTable';
 export * from './ProductSupplierCard';
 export * from './ProductRelatedList';
 export * from './ProductBottomBar';
+

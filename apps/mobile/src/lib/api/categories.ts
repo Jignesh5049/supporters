@@ -1,4 +1,6 @@
-import { categoriesResponseSchema } from '@supporters/shared';
+import {
+  categoriesResponseSchema,
+} from '@supporters/shared';
 import type { z } from 'zod';
 import type { ApiClient } from './client';
 
