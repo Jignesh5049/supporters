@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, Wrench, Trash2 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { Service } from '../../mock';
@@ -9,6 +10,7 @@ import { AddServiceModal } from '../features/hub/components/AddServiceModal';
 
 export function HubServicesScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { services, currentUser, showToast } = useApp();
 
   const myBusinessId = currentUser?.businessId || 'b-1';
@@ -27,11 +29,11 @@ export function HubServicesScreen() {
     const newSvc: Service = {
       id: `s-${Date.now()}`,
       businessId: myBusinessId,
-      businessName: currentUser.name || 'My Business',
-      businessCity: currentUser.city || 'Ahmedabad',
+      businessName: currentUser?.name || 'My Business',
+      businessCity: currentUser?.city || 'Ahmedabad',
       businessVerified: true,
       businessAvatar:
-        currentUser.avatar ||
+        currentUser?.avatar ||
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
       title: data.title,
       slug: data.title.toLowerCase().replace(/\s+/g, '-'),
@@ -75,7 +77,7 @@ export function HubServicesScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={20} color={colors.textPrimary} />
@@ -108,8 +110,20 @@ export function HubServicesScreen() {
           </View>
         ) : (
           serviceList.map((s) => (
-            <View key={s.id} style={styles.serviceCard}>
-              <Image source={{ uri: s.images[0] }} style={styles.serviceImage} />
+            <TouchableOpacity
+              key={s.id}
+              style={styles.serviceCard}
+              onPress={() => router.push(`/service/${s.id}` as any)}
+              activeOpacity={0.85}
+            >
+              <Image
+                source={{
+                  uri:
+                    s.images?.[0] ||
+                    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
+                }}
+                style={styles.serviceImage}
+              />
               <View style={styles.serviceDetails}>
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryBadgeText}>{s.category}</Text>
@@ -125,13 +139,16 @@ export function HubServicesScreen() {
                   <Text style={styles.availabilityText}>{s.availability}</Text>
                   <TouchableOpacity
                     style={styles.deleteBtn}
-                    onPress={() => handleDeleteService(s.id)}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeleteService(s.id);
+                    }}
                   >
                     <Trash2 size={15} color="#DC2626" />
                   </TouchableOpacity>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>

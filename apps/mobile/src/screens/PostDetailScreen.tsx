@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
   Heart,
@@ -19,6 +20,8 @@ import {
   Bookmark,
   Send,
   ShieldCheck,
+  Tag,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -26,6 +29,7 @@ import { PostCommentItem } from '../features/feed/components';
 
 export function PostDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
     posts,
@@ -39,8 +43,6 @@ export function PostDetailScreen() {
   } = useApp();
 
   const post = posts.find((p) => p.id === id) || posts[0];
-  const isLiked = likedPostIds.includes(post.id);
-  const isSaved = savedPostIds.includes(post.id);
 
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([
@@ -62,13 +64,41 @@ export function PostDetailScreen() {
     },
   ]);
 
+  if (!post) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityLabel="Back"
+            accessibilityRole="button"
+          >
+            <ArrowLeft size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Post</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>Post not found</Text>
+          <Text style={styles.emptySub}>
+            This trade update may have been removed or is no longer available.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const isLiked = likedPostIds.includes(post.id);
+  const isSaved = savedPostIds.includes(post.id);
+
   const handleSendComment = () => {
     if (!commentText.trim()) return;
     const newComment = {
       id: `c-${Date.now()}`,
-      authorName: currentUser.name || 'You',
+      authorName: currentUser?.name || 'You',
       authorAvatar:
-        currentUser.avatar ||
+        currentUser?.avatar ||
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
       text: commentText.trim(),
       timeAgo: 'Just now',
@@ -84,7 +114,7 @@ export function PostDetailScreen() {
       style={styles.container}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
@@ -121,25 +151,94 @@ export function PostDetailScreen() {
                 <Text style={styles.businessName}>{post.businessName}</Text>
                 {post.businessVerified && <ShieldCheck size={14} color="#16A34A" />}
               </View>
-              <Text style={styles.postTime}>{post.createdAt} • Ahmedabad, GJ</Text>
+              <Text style={styles.postTime}>
+                {post.createdAt} • {post.location || 'Ahmedabad, GJ'}
+              </Text>
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.postBody}>{post.content}</Text>
-
-          {Boolean(post.images && post.images.length > 0) && (
-            <Image source={{ uri: post.images![0] }} style={styles.postImage} resizeMode="cover" />
+          {/* Offer Tag */}
+          {Boolean(post.offerTag) && (
+            <View style={styles.offerBadge}>
+              <Tag size={12} color="#4338CA" style={{ marginRight: 4 }} />
+              <Text style={styles.offerBadgeText}>{post.offerTag}</Text>
+            </View>
           )}
 
-          {/* Engagement Counts Bar */}
+          <Text style={styles.postBody}>{post.content}</Text>
+
+          {/* Images */}
+          {Boolean(post.images && post.images.length > 0) && (
+            <View style={styles.imagesContainer}>
+              {post.images!.map((img, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri: img }}
+                  style={post.images!.length > 1 ? styles.postImageMulti : styles.postImage}
+                  resizeMode="cover"
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Attached Product or Service */}
+          {(Boolean(post.attachedProduct) || Boolean(post.attachedService)) && (
+            <TouchableOpacity
+              style={styles.attachedCard}
+              onPress={() => {
+                if (post.attachedProduct?.id) {
+                  router.push(`/product/${post.attachedProduct.id}` as any);
+                } else if (post.attachedService?.id) {
+                  router.push(`/service/${post.attachedService.id}` as any);
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Image
+                source={{
+                  uri:
+                    post.attachedProduct?.image ||
+                    post.attachedService?.image ||
+                    'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+                }}
+                style={styles.attachedImage}
+              />
+              <View style={styles.attachedDetails}>
+                <Text style={styles.attachedTitle} numberOfLines={1}>
+                  {post.attachedProduct?.title || post.attachedService?.title}
+                </Text>
+                <Text style={styles.attachedPrice}>
+                  ₹
+                  {(
+                    post.attachedProduct?.price ||
+                    post.attachedService?.startingPrice ||
+                    0
+                  ).toLocaleString('en-IN')}
+                  {post.attachedProduct?.unit ? ` / ${post.attachedProduct.unit}` : ''}
+                  {post.attachedService?.unit ? ` ${post.attachedService.unit}` : ''}
+                </Text>
+                {Boolean(post.attachedProduct?.moq) && (
+                  <Text style={styles.attachedMoq}>
+                    MOQ: {post.attachedProduct?.moq} units
+                  </Text>
+                )}
+              </View>
+              <ChevronRight size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+
+          {/* Engagement Counts Bar (Likes count is already updated in AppContext) */}
           <View style={styles.statsRow}>
-            <Text style={styles.statsText}>{post.likesCount + (isLiked ? 1 : 0)} Likes</Text>
+            <Text style={styles.statsText}>{post.likesCount || 0} Likes</Text>
             <Text style={styles.statsText}>{comments.length} Comments</Text>
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleLikePost(post.id)}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => toggleLikePost(post.id)}
+            >
               <Heart
                 size={18}
                 color={isLiked ? '#DC2626' : colors.textSecondary}
@@ -153,7 +252,10 @@ export function PostDetailScreen() {
               <Text style={styles.actionText}>Comment</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleSavePost(post.id)}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => toggleSavePost(post.id)}
+            >
               <Bookmark
                 size={18}
                 color={isSaved ? colors.primary : colors.textSecondary}
@@ -204,7 +306,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -216,6 +318,23 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 6,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  emptySub: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   scrollContent: {
     paddingBottom: 24,
@@ -256,17 +375,76 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  offerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  offerBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4338CA',
+  },
   postBody: {
     fontSize: 14,
     color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: 12,
   },
+  imagesContainer: {
+    marginBottom: 12,
+    gap: 8,
+  },
   postImage: {
     width: '100%',
     height: 220,
     borderRadius: 12,
+  },
+  postImageMulti: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+  },
+  attachedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
     marginBottom: 12,
+  },
+  attachedImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#E2E8F0',
+    marginRight: 10,
+  },
+  attachedDetails: {
+    flex: 1,
+  },
+  attachedTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  attachedPrice: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primary,
+    marginTop: 2,
+  },
+  attachedMoq: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   statsRow: {
     flexDirection: 'row',

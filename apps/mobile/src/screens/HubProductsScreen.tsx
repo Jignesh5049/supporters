@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, Package, Trash2, Eye, EyeOff } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { Product } from '../../mock';
@@ -9,6 +10,7 @@ import { AddProductModal } from '../features/hub/components/AddProductModal';
 
 export function HubProductsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { products, currentUser, showToast } = useApp();
 
   const myBusinessId = currentUser?.businessId || 'b-1';
@@ -28,11 +30,11 @@ export function HubProductsScreen() {
     const newProd: Product = {
       id: `p-${Date.now()}`,
       businessId: myBusinessId,
-      businessName: currentUser.name || 'My Business',
-      businessCity: currentUser.city || 'Ahmedabad',
+      businessName: currentUser?.name || 'My Business',
+      businessCity: currentUser?.city || 'Ahmedabad',
       businessVerified: true,
       businessAvatar:
-        currentUser.avatar ||
+        currentUser?.avatar ||
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
       title: data.title,
       slug: data.title.toLowerCase().replace(/\s+/g, '-'),
@@ -75,22 +77,26 @@ export function HubProductsScreen() {
   };
 
   const handleToggleStock = (id: string) => {
+    let nextStatus = '';
     setProductList((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              availability: p.availability === 'In Stock' ? 'Made to Order' : 'In Stock',
-            }
-          : p,
-      ),
+      prev.map((p) => {
+        if (p.id === id) {
+          nextStatus = p.availability === 'In Stock' ? 'Made to Order' : 'In Stock';
+          return {
+            ...p,
+            availability: nextStatus as any,
+          };
+        }
+        return p;
+      }),
     );
+    showToast(`Product set to ${nextStatus}`, 'success');
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={20} color={colors.textPrimary} />
@@ -124,8 +130,20 @@ export function HubProductsScreen() {
           productList.map((p) => {
             const inStock = p.availability === 'In Stock';
             return (
-              <View key={p.id} style={styles.productCard}>
-                <Image source={{ uri: p.images[0] }} style={styles.productImage} />
+              <TouchableOpacity
+                key={p.id}
+                style={styles.productCard}
+                onPress={() => router.push(`/product/${p.id}` as any)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{
+                    uri:
+                      p.images?.[0] ||
+                      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+                  }}
+                  style={styles.productImage}
+                />
                 <View style={styles.productDetails}>
                   <View style={styles.categoryBadge}>
                     <Text style={styles.categoryBadgeText}>{p.category}</Text>
@@ -141,7 +159,10 @@ export function HubProductsScreen() {
                   <View style={styles.actionRow}>
                     <TouchableOpacity
                       style={[styles.stockToggle, inStock ? styles.stockIn : styles.stockOut]}
-                      onPress={() => handleToggleStock(p.id)}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleToggleStock(p.id);
+                      }}
                     >
                       {inStock ? (
                         <Eye size={12} color="#16A34A" />
@@ -157,13 +178,16 @@ export function HubProductsScreen() {
 
                     <TouchableOpacity
                       style={styles.deleteBtn}
-                      onPress={() => handleDeleteProduct(p.id)}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProduct(p.id);
+                      }}
                     >
                       <Trash2 size={15} color="#DC2626" />
                     </TouchableOpacity>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
