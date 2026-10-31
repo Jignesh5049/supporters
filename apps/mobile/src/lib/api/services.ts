@@ -45,7 +45,7 @@ export function createServicesApi(client: ApiClient): ServicesApi {
         {
           schema: pageSchema(serviceSchema),
           auth: false,
-        }
+        },
       );
     },
     listMine: (query) => {

@@ -84,7 +84,7 @@ export function BusinessHubScreen() {
 
         <HubPageControls
           draftPostsCount={draftPostsCount}
-          onNavigate={(route) => navigate(route as any)}
+          onNavigate={(route: string) => navigate(route as any)}
         />
 
         <HubStorefrontHighlights business={userBusiness} />

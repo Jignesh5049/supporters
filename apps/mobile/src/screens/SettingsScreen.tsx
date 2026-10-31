@@ -274,7 +274,9 @@ export function SettingsScreen() {
           <TouchableOpacity style={styles.deleteRow} onPress={handleDeleteAccount}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.deleteTitle}>Delete Account</Text>
-              <Text style={styles.rowSub}>Permanently delete account, business profile, and catalog data</Text>
+              <Text style={styles.rowSub}>
+                Permanently delete account, business profile, and catalog data
+              </Text>
             </View>
             <Trash2 size={16} color={colors.danger} />
           </TouchableOpacity>
