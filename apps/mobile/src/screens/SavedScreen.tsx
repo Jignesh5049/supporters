@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import { Bookmark, Package, Wrench, Briefcase } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { FeedPostCard } from '../components/FeedPostCard';
 import { colors } from '../styles/theme';
@@ -66,7 +67,7 @@ export function SavedScreen() {
           <View>
             {savedPosts.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Feather name="bookmark" size={32} color="#9CA3AF" />
+                <Bookmark size={32} color="#9CA3AF" />
                 <Text style={styles.emptyText}>No saved posts yet</Text>
               </View>
             ) : (
@@ -79,7 +80,7 @@ export function SavedScreen() {
           <View style={styles.itemsList}>
             {savedProducts.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Feather name="box" size={32} color="#9CA3AF" />
+                <Package size={32} color="#9CA3AF" />
                 <Text style={styles.emptyText}>No saved products yet</Text>
               </View>
             ) : (
@@ -136,7 +137,7 @@ export function SavedScreen() {
           <View style={styles.itemsList}>
             {savedServices.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Feather name="tool" size={32} color="#9CA3AF" />
+                <Wrench size={32} color="#9CA3AF" />
                 <Text style={styles.emptyText}>No saved services yet</Text>
               </View>
             ) : (
@@ -181,7 +182,7 @@ export function SavedScreen() {
           <View style={styles.itemsList}>
             {savedBusinesses.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Feather name="briefcase" size={32} color="#9CA3AF" />
+                <Briefcase size={32} color="#9CA3AF" />
                 <Text style={styles.emptyText}>No saved sellers yet</Text>
               </View>
             ) : (

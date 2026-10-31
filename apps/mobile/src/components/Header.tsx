@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Menu, Bell, ShieldCheck } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -55,7 +55,7 @@ export function Header() {
           activeOpacity={0.7}
           accessibilityLabel="Open Navigation Menu"
         >
-          <Feather name="menu" size={22} color="#475467" />
+          <Menu size={22} color="#475467" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -66,7 +66,7 @@ export function Header() {
           {/* Supporters Monogram Emblem */}
           <View style={styles.brandIcon}>
             <View style={styles.brandIconInner}>
-              <Ionicons name="shield-checkmark" size={16} color={colors.accentCyan} />
+              <ShieldCheck size={16} color={colors.accentCyan} />
             </View>
           </View>
           <Text style={styles.brandText}>Supporters</Text>
@@ -82,7 +82,7 @@ export function Header() {
             activeOpacity={0.7}
             accessibilityLabel="Notifications"
           >
-            <Feather name="bell" size={20} color="#475467" />
+            <Bell size={20} color="#475467" />
             {unreadNotificationsCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
@@ -98,32 +98,22 @@ export function Header() {
 const styles = StyleSheet.create({
   headerContainer: {
     height: 56,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    zIndex: 20,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#F0F2F5',
+    elevation: 2,
+    shadowColor: '#101828',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    gap: 12,
   },
   brandContainer: {
     flexDirection: 'row',
@@ -133,25 +123,48 @@ const styles = StyleSheet.create({
   brandIcon: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: colors.primary,
+    padding: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   brandIconInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   brandText: {
     fontSize: 19,
-    fontWeight: '900',
+    fontWeight: '800',
     color: colors.primary,
     letterSpacing: -0.5,
   },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FC',
+  },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 6,
+    right: 6,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -166,28 +179,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: '#FFFFFF',
-  },
-  avatarButton: {
-    marginLeft: 4,
-    position: 'relative',
-  },
-  avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.border,
-  },
-  verifiedDot: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 13,
-    height: 13,
-    borderRadius: 6.5,
-    backgroundColor: colors.accentCyan,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    lineHeight: 11,
   },
 });

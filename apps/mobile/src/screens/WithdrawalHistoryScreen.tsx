@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Plus, Clock } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -12,11 +12,11 @@ export function WithdrawalHistoryScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigate('wallet')} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Withdrawal Requests</Text>
         <TouchableOpacity onPress={() => navigate('withdrawal')} style={styles.newBtn}>
-          <Feather name="plus" size={16} color={colors.primary} />
+          <Plus size={16} color={colors.primary} />
           <Text style={styles.newBtnText}>New</Text>
         </TouchableOpacity>
       </View>
@@ -25,7 +25,7 @@ export function WithdrawalHistoryScreen() {
         {walletData.withdrawalRequests.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
-              <Feather name="clock" size={28} color="#94A3B8" />
+              <Clock size={28} color="#94A3B8" />
             </View>
             <Text style={styles.emptyTitle}>No withdrawal requests yet</Text>
             <Text style={styles.emptySubtitle}>
@@ -111,7 +111,7 @@ export function WithdrawalHistoryScreen() {
 
                   {req.estimatedDate && (
                     <View style={styles.etaBox}>
-                      <Ionicons name="time-outline" size={13} color="#64748B" />
+                      <Clock size={13} color="#64748B" />
                       <Text style={styles.etaText}>Estimated: {req.estimatedDate}</Text>
                     </View>
                   )}

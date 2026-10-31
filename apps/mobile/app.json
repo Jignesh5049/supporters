@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "package": "com.supporters.app",
@@ -28,6 +28,6 @@
         "projectId": "c22125f1-cdea-411e-894e-49a50e37257a"
       }
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"]
   }
 }

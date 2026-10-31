@@ -4,15 +4,25 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Modal,
-  Platform,
   Alert,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
+import {
+  Search,
+  XCircle,
+  FilePlus,
+  PlusCircle,
+  Inbox,
+  X,
+  Camera,
+  CheckCircle2,
+  Trash2,
+  Send,
+} from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../context/AppContext';
 import { SuggestedBusinessesWidget } from '../components/SuggestedBusinessesWidget';
@@ -23,7 +33,7 @@ export function HomeScreen() {
   const { posts, addPost, showToast, routeParams, setHeaderVisible } = useApp();
   const [feedSearch, setFeedSearch] = useState('');
 
-  // Requirement Modal states - just message description
+  // Requirement Modal states
   const [reqModalOpen, setReqModalOpen] = useState(false);
   const [reqDescription, setReqDescription] = useState('');
   const [reqImageUri, setReqImageUri] = useState<string | null>(null);
@@ -51,10 +61,10 @@ export function HomeScreen() {
     if (currentY <= 15) {
       setHeaderVisible(true);
     } else if (diff > 8 && currentY > 35) {
-      // Scrolling down feed (finger swiping up) -> hide header
+      // Scrolling down feed -> hide header
       setHeaderVisible(false);
     } else if (diff < -8) {
-      // Scrolling back up (finger swiping down) -> show header
+      // Scrolling back up -> show header
       setHeaderVisible(true);
     }
 
@@ -85,7 +95,7 @@ export function HomeScreen() {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         setReqImageUri(res.assets[0].uri);
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   };
@@ -117,7 +127,6 @@ export function HomeScreen() {
       images: reqImageUri ? [reqImageUri] : undefined,
     });
 
-    // Reset & close
     setReqDescription('');
     setReqImageUri(null);
     setReqModalOpen(false);
@@ -129,7 +138,7 @@ export function HomeScreen() {
     <View style={styles.headerContainer}>
       {/* Feed Quick Search Bar */}
       <View style={styles.searchBar}>
-        <Feather name="search" size={15} color="#667085" />
+        <Search size={15} color="#667085" />
         <TextInput
           style={styles.searchInput}
           value={feedSearch}
@@ -142,7 +151,7 @@ export function HomeScreen() {
             onPress={() => setFeedSearch('')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Feather name="x-circle" size={15} color="#667085" />
+            <XCircle size={15} color="#667085" />
           </TouchableOpacity>
         )}
       </View>
@@ -155,12 +164,12 @@ export function HomeScreen() {
       >
         <View style={styles.reqBannerLeft}>
           <View style={styles.reqIconBox}>
-            <Feather name="file-plus" size={15} color="#FFFFFF" />
+            <FilePlus size={15} color="#FFFFFF" />
           </View>
           <Text style={styles.reqBannerTitle}>Looking to Buy?</Text>
         </View>
         <View style={styles.reqBannerBtn}>
-          <Feather name="plus-circle" size={12} color="#FFFFFF" />
+          <PlusCircle size={12} color="#FFFFFF" />
           <Text style={styles.reqBannerBtnText}>Post Requirement</Text>
         </View>
       </TouchableOpacity>
@@ -172,7 +181,7 @@ export function HomeScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Feather name="inbox" size={36} color="#9CA3AF" />
+      <Inbox size={36} color="#9CA3AF" />
       <Text style={styles.emptyTitle}>No posts found</Text>
       <Text style={styles.emptySubtitle}>
         Try adjusting your search term to see more business updates.
@@ -185,7 +194,7 @@ export function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlashList
         data={filteredPosts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <FeedPostCard post={item} />}
@@ -197,7 +206,7 @@ export function HomeScreen() {
         scrollEventThrottle={16}
       />
 
-      {/* Post a Requirement Modal - Message Description Only */}
+      {/* Post a Requirement Modal */}
       <Modal
         visible={reqModalOpen}
         animationType="slide"
@@ -215,7 +224,7 @@ export function HomeScreen() {
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setReqModalOpen(false)} style={styles.closeModalBtn}>
-                <Feather name="x" size={20} color="#667085" />
+                <X size={20} color="#667085" />
               </TouchableOpacity>
             </View>
 
@@ -238,11 +247,11 @@ export function HomeScreen() {
                 onPress={handlePickReqImage}
                 activeOpacity={0.8}
               >
-                <Feather
-                  name={reqImageUri ? 'check-circle' : 'camera'}
-                  size={16}
-                  color={reqImageUri ? '#059669' : colors.primary}
-                />
+                {reqImageUri ? (
+                  <CheckCircle2 size={16} color="#059669" />
+                ) : (
+                  <Camera size={16} color={colors.primary} />
+                )}
                 <Text style={styles.uploadBoxText}>
                   {reqImageUri
                     ? 'Photo Attached (Tap to Change)'
@@ -254,7 +263,7 @@ export function HomeScreen() {
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     style={{ marginLeft: 6 }}
                   >
-                    <Feather name="trash-2" size={14} color="#EF4444" />
+                    <Trash2 size={14} color="#EF4444" />
                   </TouchableOpacity>
                 )}
               </TouchableOpacity>
@@ -270,7 +279,7 @@ export function HomeScreen() {
                 onPress={handlePublishRequirement}
                 activeOpacity={0.85}
               >
-                <Feather name="send" size={13} color="#FFFFFF" />
+                <Send size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
                 <Text style={styles.submitReqBtnText}>Post Requirement</Text>
               </TouchableOpacity>
             </View>
@@ -298,214 +307,211 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
+    borderColor: '#EAECF0',
+    borderRadius: 12,
     paddingHorizontal: 12,
     height: 42,
-    marginBottom: 10,
     gap: 8,
+    marginBottom: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 12,
     color: colors.textPrimary,
+    height: '100%',
   },
   reqBanner: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#1E293B',
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
   },
   reqBannerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    flex: 1,
+    gap: 10,
   },
   reqIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   reqBannerTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
   reqBannerBtn: {
-    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 20,
   },
   reqBannerBtnText: {
-    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 24,
-    alignItems: 'center',
     marginVertical: 12,
   },
   emptyTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 10,
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptySubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 16,
+    lineHeight: 18,
+    marginBottom: 16,
   },
   resetButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    marginTop: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.primaryLight,
+    borderRadius: 8,
   },
   resetButtonText: {
-    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+    color: colors.primary,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    padding: 20,
     maxHeight: '90%',
-    paddingBottom: 24,
   },
   modalTopBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
   modalTitle: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   modalSub: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
+    maxWidth: 280,
   },
   closeModalBtn: {
     padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FC',
   },
   modalBody: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  formGroup: {
-    marginBottom: 12,
-  },
-  formRow: {
-    flexDirection: 'row',
-    gap: 10,
+    marginBottom: 16,
   },
   formLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   formInput: {
-    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#D0D5DD',
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 12,
+    paddingVertical: 10,
+    fontSize: 13,
     color: colors.textPrimary,
+    backgroundColor: '#FFFFFF',
   },
   formTextArea: {
-    height: 130,
-    paddingTop: 12,
+    height: 120,
     textAlignVertical: 'top',
-    fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18,
   },
   uploadBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F8F9FC',
     borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderStyle: 'dashed',
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 12,
-    justifyContent: 'center',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+    gap: 8,
   },
   uploadBoxText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.textSecondary,
+    flex: 1,
   },
   modalFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: '#F1F5F9',
   },
   cancelBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
   },
   cancelBtnText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: '#64748B',
   },
   submitReqBtn: {
-    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 12,
   },
   submitReqBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, ChevronRight, ExternalLink, LogOut } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -72,7 +72,7 @@ export function SettingsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigate('profile')} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings & Preferences</Text>
       </View>
@@ -86,7 +86,7 @@ export function SettingsScreen() {
               <Text style={styles.rowTitle}>Registered Name</Text>
               <Text style={styles.rowSub}>{currentUser.name}</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color="#9CA3AF" />
           </View>
 
           <View style={styles.rowDivider} />
@@ -96,7 +96,7 @@ export function SettingsScreen() {
               <Text style={styles.rowTitle}>Business Email</Text>
               <Text style={styles.rowSub}>{currentUser.email}</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color="#9CA3AF" />
           </View>
 
           <View style={styles.rowDivider} />
@@ -106,7 +106,7 @@ export function SettingsScreen() {
               <Text style={styles.rowTitle}>Phone & WhatsApp</Text>
               <Text style={styles.rowSub}>{currentUser.phone}</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#9CA3AF" />
+            <ChevronRight size={18} color="#9CA3AF" />
           </View>
         </View>
 
@@ -215,7 +215,7 @@ export function SettingsScreen() {
             onPress={() => showToast('Help & documentation opened', 'info')}
           >
             <Text style={styles.rowTitle}>Help & Support Desk</Text>
-            <Feather name="external-link" size={16} color="#667085" />
+            <ExternalLink size={16} color="#667085" />
           </TouchableOpacity>
 
           <View style={styles.rowDivider} />
@@ -225,7 +225,7 @@ export function SettingsScreen() {
             onPress={() => showToast('Terms of Service v2.4', 'info')}
           >
             <Text style={styles.rowTitle}>Terms of Service & Privacy Policy</Text>
-            <Feather name="external-link" size={16} color="#667085" />
+            <ExternalLink size={16} color="#667085" />
           </TouchableOpacity>
 
           <View style={styles.rowDivider} />
@@ -238,7 +238,7 @@ export function SettingsScreen() {
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Feather name="log-out" size={16} color={colors.danger} />
+          <LogOut size={16} color={colors.danger} />
           <Text style={styles.logoutText}>Sign Out of Supporters</Text>
         </TouchableOpacity>
       </View>

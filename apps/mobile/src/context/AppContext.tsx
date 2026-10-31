@@ -67,6 +67,7 @@ export type ScreenRoute =
   | 'settings'
   | 'business_detail'
   | 'product_detail'
+  | 'service_detail'
   | 'wallet'
   | 'withdrawal'
   | 'withdrawal_history'
