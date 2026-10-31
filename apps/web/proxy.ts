@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveLegacyBusinessSlug } from '@/dal/legacy-business';
 import { type RefreshOutcome, refreshSession } from '@/dal/refresh-session';
 import { SESSION_COOKIE, loginUrlFor } from '@/lib/auth/session-cookies';
 
@@ -98,8 +99,28 @@ export async function withSession(
   return response;
 }
 
-export function proxy(request: NextRequest) {
-  return withSession(request);
+/** `/business/<uuid>`, the old id-based business URL. */
+const LEGACY_BUSINESS_PATH =
+  /^\/business\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i;
+
+/**
+ * Old id-based business URLs redirect permanently (308) to the slug URL. This
+ * runs here, before the page streams, so crawlers get a real redirect status.
+ */
+export async function legacyBusinessRedirect(
+  request: NextRequest,
+  resolve: typeof resolveLegacyBusinessSlug = resolveLegacyBusinessSlug,
+): Promise<NextResponse | null> {
+  const match = LEGACY_BUSINESS_PATH.exec(request.nextUrl.pathname);
+  if (!match?.[1]) return null;
+  const slug = await resolve(match[1].toLowerCase());
+  if (!slug) return null;
+  const target = new URL(`/business/${slug}${request.nextUrl.search}`, request.url);
+  return NextResponse.redirect(target, 308);
+}
+
+export async function proxy(request: NextRequest) {
+  return (await legacyBusinessRedirect(request)) ?? withSession(request);
 }
 
 export const config = {
