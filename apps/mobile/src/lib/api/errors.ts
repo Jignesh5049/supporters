@@ -1,8 +1,9 @@
+import { MEDIA_LIMITS } from '@supporters/shared';
 import { z } from 'zod';
 
 /**
  * Problem-details codes the app reacts to. Server codes mirror `apps/api/src/lib/errors.ts`;
- * the last three are raised by the client itself.
+ * the last four are raised by the client itself.
  */
 export const ApiErrorCode = {
   ValidationFailed: 'VALIDATION_FAILED',
@@ -19,9 +20,17 @@ export const ApiErrorCode = {
   PolicyVersionOutdated: 'POLICY_VERSION_OUTDATED',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  BusinessExists: 'BUSINESS_EXISTS',
+  BusinessRequired: 'BUSINESS_REQUIRED',
+  SlugTaken: 'SLUG_TAKEN',
+  SlugLocked: 'SLUG_LOCKED',
+  ListingLimitReached: 'LISTING_LIMIT_REACHED',
+  UploadIncomplete: 'UPLOAD_INCOMPLETE',
+  UploadRejected: 'UPLOAD_REJECTED',
   NetworkError: 'NETWORK_ERROR',
   InvalidResponse: 'INVALID_RESPONSE',
   UpgradeRequired: 'UPGRADE_REQUIRED',
+  UploadNotAllowed: 'UPLOAD_NOT_ALLOWED',
 } as const;
 
 /** RFC 9457 problem details as the API sends them (backend spec, Errors). */
@@ -105,6 +114,15 @@ const MESSAGES: Record<string, string> = {
     'This password has appeared in a data breach. Choose a different one.',
   [ApiErrorCode.PolicyVersionOutdated]: 'Our terms have changed. Update the app to continue.',
   [ApiErrorCode.ServiceUnavailable]: 'Supporters is busy right now. Try again shortly.',
+  [ApiErrorCode.BusinessExists]: 'You already have a business on Supporters.',
+  [ApiErrorCode.BusinessRequired]: 'Create your business first.',
+  [ApiErrorCode.SlugTaken]: 'That page address is taken. Try another one.',
+  [ApiErrorCode.SlugLocked]: "A verified business's page address can't change.",
+  [ApiErrorCode.ListingLimitReached]:
+    'You have reached the free plan limit of published listings. Save this one as a draft, or archive another listing first.',
+  [ApiErrorCode.UploadIncomplete]: "The image didn't finish uploading. Try again.",
+  [ApiErrorCode.UploadRejected]: "That image couldn't be used. Try a different one.",
+  [ApiErrorCode.UploadNotAllowed]: `Use a JPEG, PNG, WebP or HEIC image up to ${MEDIA_LIMITS.imageMaxBytes / 1024 / 1024} MB.`,
   [ApiErrorCode.NetworkError]: 'No connection. Check your internet and try again.',
   [ApiErrorCode.UpgradeRequired]: 'Update the app to keep using Supporters.',
 };
