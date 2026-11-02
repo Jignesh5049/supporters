@@ -45,6 +45,8 @@ function renderApp(initialUrl: string) {
       '(auth)/sign-up': page('Sign up'),
       'business/[slug]': page('Business'),
       'product/[id]': page('Product'),
+      'service/[id]': page('Service'),
+      'create-business': page('Create business'),
       'messages/[conversationId]': page('Chat'),
       notifications: page('Notifications'),
       saved: page('Saved'),
@@ -69,18 +71,24 @@ describe('route guards', () => {
     ['/discover', 'Discover'],
     ['/business/b-1', 'Business'],
     ['/product/p-1', 'Product'],
+    ['/service/6b4f8d7e-9c0a-4b12-8d34-d5e6f7a8b9c0', 'Service'],
   ])('lets a guest open %s', async (url, name) => {
     await renderApp(url);
     expect(screen.getByText(name)).toBeVisible();
   });
 
-  it.each(['/wallet', '/hub', '/settings', '/messages/conv-1', '/notifications', '/profile'])(
-    'sends a guest from %s to sign in',
-    async (url) => {
-      await renderApp(url);
-      expect(screen).toHavePathname('/sign-in');
-    },
-  );
+  it.each([
+    '/wallet',
+    '/hub',
+    '/settings',
+    '/messages/conv-1',
+    '/notifications',
+    '/profile',
+    '/create-business',
+  ])('sends a guest from %s to sign in', async (url) => {
+    await renderApp(url);
+    expect(screen).toHavePathname('/sign-in');
+  });
 
   it.each([
     ['/wallet', 'Wallet'],
