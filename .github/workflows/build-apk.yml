@@ -19,6 +19,14 @@ jobs:
     timeout-minutes: 45
 
     steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo docker image prune --all --force || true
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -52,7 +60,7 @@ jobs:
         working-directory: apps/mobile/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
 
       - name: Prepare APK for distribution
         run: |
