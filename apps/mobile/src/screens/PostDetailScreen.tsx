@@ -218,9 +218,7 @@ export function PostDetailScreen() {
                   {post.attachedService?.unit ? ` ${post.attachedService.unit}` : ''}
                 </Text>
                 {Boolean(post.attachedProduct?.moq) && (
-                  <Text style={styles.attachedMoq}>
-                    MOQ: {post.attachedProduct?.moq} units
-                  </Text>
+                  <Text style={styles.attachedMoq}>MOQ: {post.attachedProduct?.moq} units</Text>
                 )}
               </View>
               <ChevronRight size={18} color="#9CA3AF" />
@@ -235,10 +233,7 @@ export function PostDetailScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => toggleLikePost(post.id)}
-            >
+            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleLikePost(post.id)}>
               <Heart
                 size={18}
                 color={isLiked ? '#DC2626' : colors.textSecondary}
@@ -252,10 +247,7 @@ export function PostDetailScreen() {
               <Text style={styles.actionText}>Comment</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => toggleSavePost(post.id)}
-            >
+            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleSavePost(post.id)}>
               <Bookmark
                 size={18}
                 color={isSaved ? colors.primary : colors.textSecondary}
