@@ -1,1 +1,1 @@
-export { BusinessHubScreen as default } from '../../features/hub/business-hub-screen';
+export { HubHomeScreen as default } from '../../features/hub/hub-home-screen';

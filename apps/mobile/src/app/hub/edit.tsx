@@ -1,1 +1,1 @@
-export { BusinessEditScreen as default } from '../../features/hub/business-edit-screen';
+export { EditBusinessScreen as default } from '../../features/hub/business-profile-screens';

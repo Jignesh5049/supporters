@@ -138,6 +138,7 @@ export const PROTECTED_STACK_ROUTES = [
   'settings',
   'wallet',
   'hub',
+  'create-business',
 ] as const;
 
 /** Tabs a guest can't open: tapping them opens sign-in. */
