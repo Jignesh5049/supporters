@@ -79,7 +79,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          gh release upload v1.0.0 build-output/supporters.apk --clobber || \
           gh release create v1.0.0 build-output/supporters.apk \
             --title "Supporters Android APK (v1.0.0)" \
-            --notes "Direct installable Android APK for Supporters mobile app. Download \`supporters.apk\` below and install on your Android device." \
-            --clobber
+            --notes "Direct installable Android APK for Supporters mobile app. Download \`supporters.apk\` below and install on your Android device."
