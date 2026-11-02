@@ -12,3 +12,12 @@ export function parseRouteId(value: string | string[] | undefined): string | nul
   const result = routeIdSchema.safeParse(value);
   return result.success ? result.data : null;
 }
+
+/** Parses a route param with a shared schema (a slug, a uuid). Null when it doesn't match. */
+export function parseRouteParam<T>(
+  schema: z.ZodType<T>,
+  value: string | string[] | undefined,
+): T | null {
+  const result = schema.safeParse(value);
+  return result.success ? result.data : null;
+}

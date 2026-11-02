@@ -1,1 +1,1 @@
-export { BusinessDetailScreen as default } from '../../features/catalog/business-detail-screen';
+export { BusinessScreen as default } from '../../features/catalog/business-screen';
