@@ -1,10 +1,14 @@
 import { MetadataRoute } from 'next';
-import { MOCK_PRODUCTS, MOCK_SERVICES, MOCK_BUSINESSES } from '@/lib/mock-data';
 
+/**
+ * Static pages only for now. Business, product and service URLs join once the
+ * API has a paginated public index to build them from (web spec, SEO: sitemap
+ * split by type); listing them from mock data would point crawlers at 404s.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://supporters.in';
 
-  const staticRoutes = [
+  return [
     '',
     '/discover',
     '/saved',
@@ -29,27 +33,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1.0 : 0.8,
   }));
-
-  const productRoutes = MOCK_PRODUCTS.map((p) => ({
-    url: `${baseUrl}/product/${p.id}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.9,
-  }));
-
-  const serviceRoutes = MOCK_SERVICES.map((s) => ({
-    url: `${baseUrl}/service/${s.id}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }));
-
-  const businessRoutes = MOCK_BUSINESSES.map((b) => ({
-    url: `${baseUrl}/business/${b.id}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.9,
-  }));
-
-  return [...staticRoutes, ...productRoutes, ...serviceRoutes, ...businessRoutes];
 }
