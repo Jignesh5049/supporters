@@ -11,24 +11,25 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  X,
+  CheckCircle2,
+  Bookmark,
+  FileText,
+  CreditCard,
+  Gift,
+  Briefcase,
+  Crown,
+  Settings,
+  LogOut,
+} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function DrawerMenu() {
   const insets = useSafeAreaInsets();
-  const {
-    drawerOpen,
-    setDrawerOpen,
-    currentUser,
-    navigate,
-    unreadNotificationsCount,
-    unreadMessagesCount,
-    showToast,
-    signOut,
-    isAuthenticated,
-  } = useApp();
+  const { drawerOpen, setDrawerOpen, currentUser, navigate, signOut } = useApp();
 
   const handleNavigate = (route: any, params?: any) => {
     setDrawerOpen(false);
@@ -81,7 +82,7 @@ export function DrawerMenu() {
           <View style={styles.drawerHeader}>
             <Text style={styles.drawerTitle}>Menu</Text>
             <TouchableOpacity onPress={() => setDrawerOpen(false)} style={styles.closeButton}>
-              <Feather name="x" size={20} color="#667085" />
+              <X size={20} color="#667085" />
             </TouchableOpacity>
           </View>
 
@@ -95,7 +96,7 @@ export function DrawerMenu() {
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.userName}>{currentUser.name}</Text>
-                <Ionicons name="checkmark-circle" size={15} color={colors.accentCyan} />
+                <CheckCircle2 size={15} color={colors.accentCyan} />
               </View>
               <Text style={styles.userHandle}>@{currentUser.username}</Text>
               <View style={styles.verifiedBadge}>
@@ -105,25 +106,32 @@ export function DrawerMenu() {
           </TouchableOpacity>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.menuList}>
-            {/* Main items */}
-            {/* Main items */}
+            {/* Collection */}
             <Text style={styles.sectionHeader}>COLLECTION</Text>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('saved')}>
-              <Feather name="bookmark" size={18} color={colors.primary} />
+              <Bookmark size={18} color={colors.primary} />
               <Text style={styles.menuItemText}>Saved Collection</Text>
             </TouchableOpacity>
 
-            {/* Growth & Business */}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigate('requirements')}
+            >
+              <FileText size={18} color="#0284C7" />
+              <Text style={styles.menuItemText}>Buyer Requirements</Text>
+            </TouchableOpacity>
+
+            {/* Earnings & Business */}
             <Text style={styles.sectionHeader}>EARNINGS & BUSINESS</Text>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('wallet')}>
-              <Feather name="credit-card" size={18} color={colors.primary} />
+              <CreditCard size={18} color={colors.primary} />
               <Text style={styles.menuItemText}>App Wallet</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('referral')}>
-              <Feather name="gift" size={18} color={colors.accentMagenta} />
+              <Gift size={18} color={colors.accentMagenta} />
               <Text style={[styles.menuItemText, { color: colors.accentMagenta }]}>
                 Refer & Earn
               </Text>
@@ -136,7 +144,7 @@ export function DrawerMenu() {
               style={styles.menuItem}
               onPress={() => handleNavigate('business_hub')}
             >
-              <Feather name="briefcase" size={18} color="#0D9488" />
+              <Briefcase size={18} color="#0D9488" />
               <Text style={styles.menuItemText}>Business Hub (Manager)</Text>
             </TouchableOpacity>
 
@@ -144,7 +152,7 @@ export function DrawerMenu() {
               style={styles.menuItem}
               onPress={() => handleNavigate('subscription')}
             >
-              <MaterialCommunityIcons name="crown" size={20} color="#F59E0B" />
+              <Crown size={18} color="#F59E0B" />
               <Text style={styles.menuItemText}>Supporters Pro</Text>
             </TouchableOpacity>
 
@@ -152,21 +160,14 @@ export function DrawerMenu() {
             <Text style={styles.sectionHeader}>ACCOUNT</Text>
 
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('settings')}>
-              <Feather name="settings" size={18} color="#667085" />
+              <Settings size={18} color="#667085" />
               <Text style={styles.menuItemText}>Settings & Preferences</Text>
             </TouchableOpacity>
 
-            {isAuthenticated ? (
-              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-                <Feather name="log-out" size={18} color={colors.danger} />
-                <Text style={[styles.menuItemText, { color: colors.danger }]}>Sign Out</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('sign_in')}>
-                <Feather name="log-in" size={18} color={colors.primary} />
-                <Text style={[styles.menuItemText, { color: colors.primary }]}>Sign In</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+              <LogOut size={18} color={colors.danger} />
+              <Text style={[styles.menuItemText, { color: colors.danger }]}>Sign Out</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
@@ -192,47 +193,53 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     backgroundColor: '#FFFFFF',
     height: '100%',
-    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.15,
-    shadowRadius: 10,
+    shadowRadius: 12,
     elevation: 16,
   },
   drawerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#F0F2F5',
   },
   drawerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#101828',
+    letterSpacing: -0.3,
   },
   closeButton: {
     padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FC',
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: colors.background,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    backgroundColor: '#F8F9FC',
     borderRadius: 14,
-    marginVertical: 14,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#EAECF0',
+    gap: 12,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.border,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
-    marginLeft: 12,
     flex: 1,
   },
   nameRow: {
@@ -242,17 +249,17 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 14,
-    fontWeight: '800',
-    color: colors.textPrimary,
+    fontWeight: '700',
+    color: '#101828',
   },
   userHandle: {
-    fontSize: 11,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: '#667085',
     marginTop: 1,
   },
   verifiedBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(46,49,146,0.08)',
+    backgroundColor: colors.accentCyanLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -265,58 +272,41 @@ const styles = StyleSheet.create({
   },
   menuList: {
     flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   sectionHeader: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#9CA3AF',
+    color: '#98A2B3',
     letterSpacing: 0.8,
     marginTop: 16,
-    marginBottom: 8,
-    paddingHorizontal: 4,
+    marginBottom: 6,
+    paddingHorizontal: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
     borderRadius: 10,
     gap: 12,
   },
   menuItemText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#344054',
     flex: 1,
-  },
-  counterBadgeCyan: {
-    backgroundColor: colors.accentCyan,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 10,
-  },
-  counterBadgePurple: {
-    backgroundColor: colors.accentMagenta,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 10,
-  },
-  counterText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
   },
   rewardTag: {
     backgroundColor: colors.accentMagentaLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(163,35,142,0.2)',
+    borderRadius: 4,
   },
   rewardTagText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.accentMagenta,
   },
 });

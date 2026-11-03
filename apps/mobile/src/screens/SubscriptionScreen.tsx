@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { Crown, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
-import { colors } from '../styles/theme';
+import { colors, spacing, borderRadius } from '../styles/theme';
 
 export function SubscriptionScreen() {
-  const { showToast, navigate } = useApp();
+  const { userBusiness } = useApp();
+  const isVerified = userBusiness?.verified ?? false;
 
   const perks = [
     'Official Blue Shield Verified Vendor Trustmark',
@@ -17,37 +18,39 @@ export function SubscriptionScreen() {
     'Access to premium business analytics and profile visitors',
   ];
 
-  const handleUpgrade = () => {
-    showToast('Selected Annual Plan (₹999/year). Redirecting to secure checkout...', 'success');
-  };
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header Banner */}
       <View style={styles.headerCard}>
         <View style={styles.crownCircle}>
-          <MaterialCommunityIcons name="crown" size={30} color="#FFFFFF" />
+          <Crown size={28} color="#FFFFFF" />
         </View>
 
         <View style={styles.planBadgeContainer}>
-          <Text style={styles.planBadgeText}>ANNUAL MEMBERSHIP</Text>
+          <Text style={styles.planBadgeText}>MEMBERSHIP STATUS</Text>
         </View>
 
-        <Text style={styles.planTitle}>Supporters Pro Membership</Text>
+        <Text style={styles.planTitle}>Supporters Pro Benefits</Text>
         <Text style={styles.planSubtitle}>
-          Accelerate your commercial growth and reach 50,000+ verified trade buyers across India.
+          Commercial growth and verification suite for trade vendors and manufacturers across India.
         </Text>
 
-        {/* Pricing Display */}
-        <View style={styles.priceContainer}>
-          <View style={styles.priceRow}>
-            <Text style={styles.currencySymbol}>₹</Text>
-            <Text style={styles.priceAmount}>999</Text>
-            <Text style={styles.pricePeriod}>/ year</Text>
+        {/* Current Membership Status Display */}
+        <View style={styles.statusContainer}>
+          <View style={styles.statusRow}>
+            <ShieldCheck size={18} color={isVerified ? colors.primary : colors.textSecondary} />
+            <Text style={styles.statusLabel}>Account Status:</Text>
+            <Text style={[styles.statusValue, isVerified && styles.statusValueActive]}>
+              {isVerified ? 'Verified Pro Vendor' : 'Community Member'}
+            </Text>
           </View>
-          <View style={styles.billedBadge}>
-            <Ionicons name="sparkles" size={12} color="#059669" />
-            <Text style={styles.billedText}>Special Annual Trade Offer • All-inclusive</Text>
+          <View style={styles.statusBadge}>
+            <Sparkles size={13} color="#059669" />
+            <Text style={styles.statusBadgeText}>
+              {isVerified
+                ? 'All business features & directory trustmarks active'
+                : 'Compliant with Google Play & App Store policies'}
+            </Text>
           </View>
         </View>
 
@@ -55,21 +58,18 @@ export function SubscriptionScreen() {
         <View style={styles.perksList}>
           {perks.map((perk, idx) => (
             <View key={idx} style={styles.perkItem}>
-              <Ionicons name="checkmark-circle" size={17} color="#10B981" />
+              <CheckCircle2 size={16} color="#10B981" />
               <Text style={styles.perkText}>{perk}</Text>
             </View>
           ))}
         </View>
 
-        {/* Upgrade Action */}
-        <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} activeOpacity={0.85}>
-          <Text style={styles.upgradeBtnText}>Upgrade to Pro for ₹999 / year</Text>
-          <Feather name="arrow-right" size={16} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <Text style={styles.termsNote}>
-          Instant GST invoice provided. 1-year validity from activation date.
-        </Text>
+        <View style={styles.complianceBox}>
+          <Text style={styles.complianceText}>
+            Supporters Pro memberships are managed via official partner onboarding. Subscriptions
+            are not sold inside this application.
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -79,16 +79,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 12,
+    padding: spacing.md,
   },
   headerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 18,
+    padding: spacing.lg,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   crownCircle: {
     width: 56,
@@ -103,20 +103,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
   planBadgeText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#B45309',
     letterSpacing: 0.5,
   },
   planTitle: {
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
   },
@@ -129,90 +129,77 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 8,
   },
-  priceContainer: {
+  statusContainer: {
     alignItems: 'center',
     marginBottom: 20,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.surface,
     width: '100%',
     paddingVertical: 14,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
-  priceRow: {
+  statusRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
+    alignItems: 'center',
+    gap: 6,
   },
-  currencySymbol: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  priceAmount: {
-    fontSize: 38,
-    fontWeight: '900',
-    color: colors.primary,
-  },
-  pricePeriod: {
-    fontSize: 14,
+  statusLabel: {
+    fontSize: 13,
     color: colors.textSecondary,
-    fontWeight: '600',
-    marginLeft: 4,
   },
-  billedBadge: {
+  statusValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  statusValueActive: {
+    color: colors.primary,
+  },
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#ECFDF5',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginTop: 6,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    marginTop: 8,
   },
-  billedText: {
+  statusBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#065F46',
   },
   perksList: {
     width: '100%',
-    gap: 10,
+    gap: 12,
     marginBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    paddingTop: 16,
   },
   perkItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-start',
+    gap: 10,
   },
   perkText: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textPrimary,
+    lineHeight: 18,
     flex: 1,
-    lineHeight: 16,
   },
-  upgradeBtn: {
-    backgroundColor: colors.primary,
+  complianceBox: {
     width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
+    padding: 12,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  upgradeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  termsNote: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginTop: 10,
+  complianceText: {
+    fontSize: 11,
+    color: colors.textMuted,
     textAlign: 'center',
+    lineHeight: 16,
   },
 });

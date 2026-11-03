@@ -37,3 +37,5 @@ export function getReferralMilestoneStatus(successfulCount: number) {
     ),
   };
 }
+
+export type ReferralMilestoneStatus = ReturnType<typeof getReferralMilestoneStatus>;

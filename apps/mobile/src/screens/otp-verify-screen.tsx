@@ -6,6 +6,7 @@ import { Text } from '@supporters/ui-native/components/text';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useApp } from '../context/AppContext';
+import { useScreenSecurity } from '../hooks/useScreenSecurity';
 import type { OtpPurposeValue } from '../services/authService';
 
 /** What the screen before passed in; it stays in memory and is never persisted. */
@@ -20,6 +21,7 @@ const formatPhone = (phone: string) =>
   `${phone.slice(0, 3)} ${phone.slice(3, 8)} ${phone.slice(8)}`;
 
 export function OtpVerifyScreen() {
+  useScreenSecurity('otp-verify-screen');
   const { routeParams, navigate, goBack, signUp, requestOtp, showToast } = useApp();
   const params = routeParams as Partial<OtpVerifyParams>;
   const [code, setCode] = useState('');

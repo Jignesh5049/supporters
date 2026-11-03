@@ -2,12 +2,22 @@ import { useSessionStore } from '../../stores/session-store';
 import { secureTokenStore } from '../auth/token-storage';
 import { queryClient } from '../query-client';
 import { createAuthApi } from './auth';
+import { createBusinessesApi } from './businesses';
+import { createProductsApi } from './products';
+import { createServicesApi } from './services';
+import { createCategoriesApi } from './categories';
+import { createUploadsApi } from './uploads';
 import { createApiClient } from './client';
 import { API_URL, APP_VERSION } from './config';
 
 export { ApiError, ApiErrorCode, messageForError } from './errors';
+export type { BusinessesApi } from './businesses';
+export type { ProductsApi, ListQuery, MyListingsInputQuery } from './products';
+export type { ServicesApi } from './services';
+export type { CategoriesApi, CategoriesResponse } from './categories';
+export type { UploadsApi } from './uploads';
 
-/** The one API client for the app. Screens use Query hooks or `authApi`, never `fetch`. */
+/** The one API client for the app. Screens use Query hooks or specific domain APIs, never raw fetch. */
 export const apiClient = createApiClient({
   baseUrl: API_URL,
   appVersion: APP_VERSION,
@@ -20,3 +30,8 @@ export const apiClient = createApiClient({
 });
 
 export const authApi = createAuthApi(apiClient);
+export const businessesApi = createBusinessesApi(apiClient);
+export const productsApi = createProductsApi(apiClient);
+export const servicesApi = createServicesApi(apiClient);
+export const categoriesApi = createCategoriesApi(apiClient);
+export const uploadsApi = createUploadsApi(apiClient);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Home, Compass, Plus, MessageSquare, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -10,16 +10,16 @@ export function BottomTabBar() {
   const { currentRoute, navigate, unreadMessagesCount, setCreateModalOpen } = useApp();
 
   const tabs = [
-    { key: 'home', label: 'Home', icon: 'home' as const },
-    { key: 'discover', label: 'Discover', icon: 'compass' as const },
-    { key: 'create', label: 'Create', icon: 'plus' as const, isAction: true },
+    { key: 'home', label: 'Home', Icon: Home },
+    { key: 'discover', label: 'Discover', Icon: Compass },
+    { key: 'create', label: 'Create', Icon: Plus, isAction: true },
     {
       key: 'messages',
       label: 'Messages',
-      icon: 'message-square' as const,
+      Icon: MessageSquare,
       badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
     },
-    { key: 'profile', label: 'Profile', icon: 'user' as const },
+    { key: 'profile', label: 'Profile', Icon: User },
   ];
 
   return (
@@ -35,7 +35,7 @@ export function BottomTabBar() {
                 activeOpacity={0.85}
               >
                 <View style={styles.actionIconContainer}>
-                  <Feather name="plus" size={24} color="#FFFFFF" />
+                  <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
                 </View>
                 <Text style={styles.actionLabel}>Create</Text>
               </TouchableOpacity>
@@ -43,6 +43,7 @@ export function BottomTabBar() {
           }
 
           const isActive = currentRoute === tab.key;
+          const TabIcon = tab.Icon;
 
           return (
             <TouchableOpacity
@@ -52,7 +53,11 @@ export function BottomTabBar() {
               activeOpacity={0.7}
             >
               <View style={styles.iconWrapper}>
-                <Feather name={tab.icon} size={20} color={isActive ? colors.primary : '#667085'} />
+                <TabIcon
+                  size={20}
+                  color={isActive ? colors.primary : '#667085'}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
                 {tab.badge && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{tab.badge}</Text>
@@ -97,32 +102,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 8,
+    height: 50,
   },
   tabButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 2,
-    minWidth: 54,
   },
   iconWrapper: {
     position: 'relative',
     height: 24,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 2,
     letterSpacing: -0.2,
   },
   tabLabelActive: {
-    color: colors.primary,
     fontWeight: '700',
+    color: colors.primary,
   },
   tabLabelInactive: {
-    color: '#667085',
     fontWeight: '500',
+    color: '#667085',
   },
   badge: {
     position: 'absolute',
@@ -131,7 +136,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: colors.accentCyan,
+    backgroundColor: colors.accentMagenta,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
@@ -142,8 +147,10 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     color: '#FFFFFF',
+    lineHeight: 11,
   },
   actionTabButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -16,
@@ -155,24 +162,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
   actionLabel: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.primary,
-    marginTop: 1,
+    marginTop: 2,
   },
 });

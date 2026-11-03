@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { User, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from '../components/BrandLogo';
@@ -107,7 +107,7 @@ export function SignInScreen() {
             {/* Error Banner */}
             {errorMessage && (
               <View style={styles.errorBanner}>
-                <Feather name="alert-circle" size={16} color={colors.danger} />
+                <AlertCircle size={16} color={colors.danger} />
                 <Text style={styles.errorBannerText}>{errorMessage}</Text>
               </View>
             )}
@@ -118,8 +118,7 @@ export function SignInScreen() {
               <View
                 style={[styles.inputWrapper, identifierError ? styles.inputWrapperError : null]}
               >
-                <Feather
-                  name="user"
+                <User
                   size={16}
                   color={identifierError ? colors.danger : '#667085'}
                   style={styles.inputIcon}
@@ -155,8 +154,7 @@ export function SignInScreen() {
               </View>
 
               <View style={[styles.inputWrapper, passwordError ? styles.inputWrapperError : null]}>
-                <Feather
-                  name="lock"
+                <Lock
                   size={16}
                   color={passwordError ? colors.danger : '#667085'}
                   style={styles.inputIcon}
@@ -180,7 +178,11 @@ export function SignInScreen() {
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <Feather name={showPassword ? 'eye-off' : 'eye'} size={18} color="#667085" />
+                  {showPassword ? (
+                    <EyeOff size={18} color="#667085" />
+                  ) : (
+                    <Eye size={18} color="#667085" />
+                  )}
                 </TouchableOpacity>
               </View>
               {passwordError && <Text style={styles.fieldErrorText}>{passwordError}</Text>}
@@ -201,7 +203,7 @@ export function SignInScreen() {
               ) : (
                 <View style={styles.buttonContentRow}>
                   <Text style={styles.primaryButtonText}>Sign In</Text>
-                  <Feather name="arrow-right" size={16} color="#FFFFFF" />
+                  <ArrowRight size={16} color="#FFFFFF" />
                 </View>
               )}
             </TouchableOpacity>

@@ -3,14 +3,31 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   StyleSheet,
   Platform,
   Modal,
   TouchableWithoutFeedback,
   Alert,
 } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import {
+  Check,
+  MapPin,
+  Clock,
+  MoreHorizontal,
+  Tag,
+  CheckCircle2,
+  Send,
+  MessageSquare,
+  Heart,
+  Share2,
+  Bookmark,
+  X,
+  Link2,
+  Briefcase,
+  Trash2,
+  Flag,
+} from 'lucide-react-native';
 import { FeedPost } from '../../mock';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -26,7 +43,6 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
     savedPostIds,
     toggleSavePost,
     deletePost,
-    openEnquiryModal,
     openShareModal,
     openConversationWithBusiness,
     navigate,
@@ -74,10 +90,16 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style={styles.businessAvatarLink}
           activeOpacity={0.8}
         >
-          <Image source={{ uri: post.businessAvatar }} style={styles.businessAvatar} />
+          <Image
+            source={{ uri: post.businessAvatar }}
+            style={styles.businessAvatar}
+            contentFit="cover"
+            cachePolicy="disk"
+            transition={150}
+          />
           {post.businessVerified && (
             <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark" size={7} color="#FFFFFF" />
+              <Check size={8} color="#FFFFFF" strokeWidth={3} />
             </View>
           )}
         </TouchableOpacity>
@@ -97,12 +119,12 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
 
           <View style={styles.subMetaRow}>
             <View style={styles.metaItem}>
-              <Feather name="map-pin" size={10} color="#667085" />
+              <MapPin size={10} color="#667085" />
               <Text style={styles.metaText}>{post.location}</Text>
             </View>
             <Text style={styles.dotSeparator}>·</Text>
             <View style={styles.metaItem}>
-              <Feather name="clock" size={10} color="#667085" />
+              <Clock size={10} color="#667085" />
               <Text style={styles.metaText}>{post.createdAt}</Text>
             </View>
           </View>
@@ -113,14 +135,14 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style={styles.moreButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Feather name="more-horizontal" size={18} color="#667085" />
+          <MoreHorizontal size={18} color="#667085" />
         </TouchableOpacity>
       </View>
 
       {/* Offer Tag Badge */}
       {post.offerTag && (
         <View style={styles.offerBadgeContainer}>
-          <Feather name="tag" size={12} color={colors.accentMagenta} />
+          <Tag size={12} color={colors.accentMagenta} />
           <Text style={styles.offerBadgeText}>{post.offerTag}</Text>
         </View>
       )}
@@ -130,12 +152,18 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
         <Text style={styles.contentText}>{post.content}</Text>
       </View>
 
-      {/* Attached Media / Image without ratio badge */}
+      {/* Attached Media / Image */}
       {post.images && post.images.length > 0 && (
         <View
           style={post.aspectRatio === '9:16' ? styles.imageContainer916 : styles.imageContainer169}
         >
-          <Image source={{ uri: post.images[0] }} style={styles.postImage} resizeMode="cover" />
+          <Image
+            source={{ uri: post.images[0] }}
+            style={styles.postImage}
+            contentFit="cover"
+            cachePolicy="disk"
+            transition={200}
+          />
         </View>
       )}
 
@@ -143,7 +171,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
       {(post.offerTag?.includes('REQUIREMENT') || post.content.includes('BUYER REQUIREMENT')) && (
         <View style={styles.requirementBanner}>
           <View style={styles.requirementBadge}>
-            <Feather name="check-circle" size={12} color="#0284C7" />
+            <CheckCircle2 size={13} color="#0284C7" />
             <Text style={styles.requirementBadgeText}>VERIFIED BUYER REQUIREMENT</Text>
           </View>
           <TouchableOpacity
@@ -155,8 +183,8 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
             }
             activeOpacity={0.85}
           >
-            <Feather name="send" size={13} color="#FFFFFF" />
-            <Text style={styles.quoteSellerBtnText}>Send Quote / Contact Buyer</Text>
+            <Send size={12} color="#FFFFFF" />
+            <Text style={styles.quoteSellerBtnText}>Send Quote / Contact</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -171,6 +199,9 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                   uri: (post.attachedProduct?.image || post.attachedService?.image) as string,
                 }}
                 style={styles.attachedImage}
+                contentFit="cover"
+                cachePolicy="disk"
+                transition={150}
               />
             )}
             <View style={styles.attachedTextCol}>
@@ -231,7 +262,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
               style={styles.enquiryBtn}
               activeOpacity={0.85}
             >
-              <Feather name="message-square" size={12} color="#FFFFFF" />
+              <MessageSquare size={12} color="#FFFFFF" />
               <Text style={styles.enquiryBtnText}>Contact Supplier</Text>
             </TouchableOpacity>
           </View>
@@ -242,7 +273,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
       <View style={styles.countersRow}>
         <View style={styles.likeCounter}>
           <View style={[styles.likeHeartCircle, isLiked && styles.likeHeartCircleActive]}>
-            <Ionicons name="heart" size={10} color="#FFFFFF" />
+            <Heart size={9} color="#FFFFFF" fill="#FFFFFF" />
           </View>
           <Text style={styles.counterText}>
             {post.likesCount} {post.likesCount === 1 ? 'like' : 'likes'}
@@ -259,10 +290,10 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style={[styles.actionButton, isLiked && styles.likeButtonActive]}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name={isLiked ? 'heart' : 'heart-outline'}
+          <Heart
             size={18}
             color={isLiked ? '#E11D48' : '#64748B'}
+            fill={isLiked ? '#E11D48' : 'none'}
           />
           <Text style={[styles.actionLabel, isLiked && styles.likeLabelActive]}>
             {isLiked ? 'Liked' : 'Like'}
@@ -279,7 +310,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style={styles.actionButton}
           activeOpacity={0.7}
         >
-          <Feather name="share-2" size={16} color="#667085" />
+          <Share2 size={16} color="#667085" />
           <Text style={styles.actionLabel}>Share</Text>
         </TouchableOpacity>
 
@@ -288,10 +319,10 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
           style={[styles.actionButton, isSaved && styles.actionButtonActive]}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name={isSaved ? 'bookmark' : 'bookmark-outline'}
+          <Bookmark
             size={17}
             color={isSaved ? colors.primary : '#667085'}
+            fill={isSaved ? colors.primary : 'none'}
           />
           <Text style={[styles.actionLabel, isSaved && styles.actionLabelActive]}>
             {isSaved ? 'Saved' : 'Save'}
@@ -315,7 +346,12 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
 
                 {/* Author Info Header */}
                 <View style={styles.menuHeader}>
-                  <Image source={{ uri: post.businessAvatar }} style={styles.menuAvatar} />
+                  <Image
+                    source={{ uri: post.businessAvatar }}
+                    style={styles.menuAvatar}
+                    contentFit="cover"
+                    cachePolicy="disk"
+                  />
                   <View style={styles.menuHeaderInfo}>
                     <Text style={styles.menuAuthorName} numberOfLines={1}>
                       {post.businessName}
@@ -329,7 +365,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     style={styles.menuCloseBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Feather name="x" size={18} color="#667085" />
+                    <X size={18} color="#667085" />
                   </TouchableOpacity>
                 </View>
 
@@ -350,10 +386,10 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                         { backgroundColor: isSaved ? '#EEF2FF' : '#F8FAFC' },
                       ]}
                     >
-                      <Ionicons
-                        name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                      <Bookmark
                         size={18}
                         color={isSaved ? colors.primary : '#475569'}
+                        fill={isSaved ? colors.primary : 'none'}
                       />
                     </View>
                     <View style={styles.menuItemTextCol}>
@@ -376,7 +412,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     activeOpacity={0.7}
                   >
                     <View style={[styles.menuItemIconCircle, { backgroundColor: '#F8FAFC' }]}>
-                      <Feather name="link-2" size={18} color="#475569" />
+                      <Link2 size={18} color="#475569" />
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={styles.menuItemTitle}>Copy Post Link</Text>
@@ -396,7 +432,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     activeOpacity={0.7}
                   >
                     <View style={[styles.menuItemIconCircle, { backgroundColor: '#F8FAFC' }]}>
-                      <Feather name="briefcase" size={18} color="#475569" />
+                      <Briefcase size={18} color="#475569" />
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={styles.menuItemTitle}>View Business Profile</Text>
@@ -416,7 +452,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                         activeOpacity={0.7}
                       >
                         <View style={[styles.menuItemIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                          <Feather name="trash-2" size={18} color="#DC2626" />
+                          <Trash2 size={18} color="#DC2626" />
                         </View>
                         <View style={styles.menuItemTextCol}>
                           <Text
@@ -442,7 +478,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
                     activeOpacity={0.7}
                   >
                     <View style={[styles.menuItemIconCircle, { backgroundColor: '#F8FAFC' }]}>
-                      <Feather name="flag" size={18} color="#94A3B8" />
+                      <Flag size={18} color="#94A3B8" />
                     </View>
                     <View style={styles.menuItemTextCol}>
                       <Text style={[styles.menuItemTitle, { color: '#64748B' }]}>Report Post</Text>

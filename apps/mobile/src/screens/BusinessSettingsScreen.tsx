@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import {
+  ArrowLeft,
+  Edit2,
+  ChevronRight,
+  Instagram,
+  MapPin,
+  Clock,
+  PauseCircle,
+  Trash2,
+} from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -49,7 +58,7 @@ export function BusinessSettingsScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigate('business_hub')} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+          <ArrowLeft size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Business Hub Settings</Text>
         <View style={{ width: 32 }} />
@@ -66,13 +75,13 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.iconCircle}>
-              <Feather name="edit-2" size={16} color={colors.primary} />
+              <Edit2 size={16} color={colors.primary} />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingTitle}>Edit Business Information</Text>
               <Text style={styles.settingSub}>Company name, category, about statement</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <ChevronRight size={18} color="#94A3B8" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -81,13 +90,13 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.iconCircle}>
-              <Feather name="instagram" size={16} color="#A3238E" />
+              <Instagram size={16} color="#A3238E" />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingTitle}>Manage Social Links & Website</Text>
               <Text style={styles.settingSub}>Instagram, official website, Facebook, YouTube</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <ChevronRight size={18} color="#94A3B8" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -96,13 +105,13 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.iconCircle}>
-              <Feather name="map-pin" size={16} color="#16A34A" />
+              <MapPin size={16} color="#16A34A" />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingTitle}>Address & Get Directions Link</Text>
               <Text style={styles.settingSub}>Plot address, industrial area, PIN, Google Maps</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <ChevronRight size={18} color="#94A3B8" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -111,13 +120,13 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.iconCircle}>
-              <Feather name="clock" size={16} color="#D97706" />
+              <Clock size={16} color="#D97706" />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={styles.settingTitle}>Operating Hours & Availability</Text>
               <Text style={styles.settingSub}>Working schedule, dispatch turnaround</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <ChevronRight size={18} color="#94A3B8" />
           </TouchableOpacity>
         </View>
 
@@ -222,7 +231,7 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#FEF2F2' }]}>
-              <Feather name="pause-circle" size={16} color="#D97706" />
+              <PauseCircle size={16} color="#D97706" />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={styles.dangerTitle}>Deactivate Business Profile</Text>
@@ -236,7 +245,7 @@ export function BusinessSettingsScreen() {
             activeOpacity={0.7}
           >
             <View style={[styles.iconCircle, { backgroundColor: '#FEE2E2' }]}>
-              <Feather name="trash-2" size={16} color="#DC2626" />
+              <Trash2 size={16} color="#DC2626" />
             </View>
             <View style={styles.settingTextCol}>
               <Text style={[styles.dangerTitle, { color: '#DC2626' }]}>

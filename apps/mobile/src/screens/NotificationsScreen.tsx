@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import { ArrowLeft, Bell, BellOff } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { NotificationCategory, NotificationItem } from '../../mock';
 import { colors } from '../styles/theme';
@@ -42,7 +43,7 @@ export function NotificationsScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityLabel="Go back"
             >
-              <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+              <ArrowLeft size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.heading}>Notifications</Text>
           </View>
@@ -108,7 +109,7 @@ export function NotificationsScreen() {
                       <Image source={{ uri: item.avatar }} style={styles.avatarImg} />
                     ) : (
                       <View style={styles.iconPlaceholder}>
-                        <Feather name="bell" size={16} color={colors.primary} />
+                        <Bell size={16} color={colors.primary} />
                       </View>
                     )}
                   </View>
@@ -133,7 +134,7 @@ export function NotificationsScreen() {
 
         {filtered.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Feather name="bell-off" size={32} color="#9CA3AF" />
+            <BellOff size={32} color="#9CA3AF" />
             <Text style={styles.emptyText}>No notifications in this category</Text>
           </View>
         )}
