@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { cn } from '../lib/utils';
 import { Button } from './button';
+import { Checkbox } from './checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
 import { Input } from './input';
 import { Label } from './label';
+import { NativeSelect, NativeSelectOption } from './native-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 
 describe('cn', () => {
@@ -103,5 +105,36 @@ describe('Tabs', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Product list');
     await userEvent.click(screen.getByRole('tab', { name: 'Services' }));
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Service list');
+  });
+});
+
+describe('NativeSelect', () => {
+  it('is a labelled native select that reports invalid state', () => {
+    render(
+      <>
+        <Label htmlFor="city">City</Label>
+        <NativeSelect id="city" aria-invalid defaultValue="b">
+          <NativeSelectOption value="a">Ahmedabad</NativeSelectOption>
+          <NativeSelectOption value="b">Surat</NativeSelectOption>
+        </NativeSelect>
+      </>,
+    );
+    const select = screen.getByRole('combobox', { name: 'City' });
+    expect(select).toHaveValue('b');
+    expect(select).toHaveClass('aria-invalid:border-destructive');
+  });
+});
+
+describe('Checkbox', () => {
+  it('toggles with a click and is announced as a checkbox', async () => {
+    const onCheckedChange = vi.fn();
+    render(
+      <>
+        <Checkbox id="public" onCheckedChange={onCheckedChange} />
+        <Label htmlFor="public">Show contact details</Label>
+      </>,
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Show contact details' }));
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
   });
 });

@@ -78,7 +78,25 @@ const MESSAGES: Record<string, string> = {
   PASSWORD_BREACHED: 'This password has appeared in a data breach. Choose another.',
   POLICY_VERSION_OUTDATED: 'Our terms have changed. Reload the page to see the latest version.',
   SERVICE_UNAVAILABLE: 'Supporters is busy right now. Try again shortly.',
+  NOT_FOUND: 'We could not find that. It may have been removed.',
+  BUSINESS_EXISTS: 'You already have a business page. Each account can have one.',
+  BUSINESS_REQUIRED: 'Create your business page first.',
+  SLUG_TAKEN: 'That page link is taken. Try another.',
+  SLUG_LOCKED: 'Your page link is locked while your business is verified.',
+  LISTING_LIMIT_REACHED:
+    'You have reached the free plan limit for published listings. Save this as a draft, unpublish another listing, or upgrade to Premium.',
+  UPLOAD_INCOMPLETE: 'The image did not finish uploading. Try again.',
+  UPLOAD_REJECTED: 'That file is not a supported image. Use a JPEG, PNG or WebP photo.',
+  PAYLOAD_TOO_LARGE: 'That file is too large.',
 };
+
+/** API field paths (`body.price.amountPaise`) to form field names (`price.amountPaise`). */
+export function formFieldErrors(error: unknown): { name: string; message: string }[] {
+  if (!(error instanceof ApiError)) return [];
+  return error.fieldErrors
+    .filter((field) => field.path.startsWith('body.'))
+    .map((field) => ({ name: field.path.slice('body.'.length), message: field.message }));
+}
 
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
