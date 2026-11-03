@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { BackHandler } from 'react-native';
+import { router, usePathname } from 'expo-router';
 import {
   FeedPost,
   Product,
@@ -32,6 +32,7 @@ import {
   ResetPasswordData,
 } from '../services/authService';
 import { restoreSession } from '../lib/auth/session';
+import { TAB_ROUTES, hrefForRoute, routeForPath } from '../lib/navigation/routes';
 import { SessionStatus, useSessionStore } from '../stores/session-store';
 
 export interface ToastMessage {
@@ -213,11 +214,13 @@ export const AUTH_ROUTES: ScreenRoute[] = ['sign_in', 'sign_up', 'verify_otp', '
 const GUEST_ROUTES: ScreenRoute[] = ['home', 'discover', 'business_detail', 'product_detail'];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  // Navigation & History
-  const [currentRoute, setCurrentRoute] = useState<ScreenRoute>('home');
+  // Navigation: Expo Router owns the stack. The prototype screen names map to paths.
+  const pathname = usePathname();
+  const [lastRoute, setLastRoute] = useState<ScreenRoute>('home');
   const [routeHistory, setRouteHistory] = useState<ScreenRoute[]>([]);
   const [routeParams, setRouteParams] = useState<any>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const currentRoute = routeForPath(pathname) ?? lastRoute;
 
   // Authentication state lives in the session store; tokens stay in SecureStore.
   const sessionStatus = useSessionStore((state) => state.status);
@@ -282,7 +285,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (sessionStatus !== SessionStatus.Guest) return;
     if (AUTH_ROUTES.includes(currentRoute) || GUEST_ROUTES.includes(currentRoute)) return;
     setRouteHistory([]);
-    setCurrentRoute('home');
+    setLastRoute('home');
+    router.replace('/');
     // Only a session change should trigger this, not every navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionStatus]);
@@ -306,62 +310,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (route !== currentRoute) {
         setRouteHistory((prev) => [...prev, currentRoute]);
       }
-      setCurrentRoute(route);
+      setLastRoute(route);
       setRouteParams(params);
       setDrawerOpen(false);
+
+      const href = hrefForRoute(route, params);
+      if (!href || href === pathname) return;
+      // Tabs switch in place; every other screen stacks so back returns here.
+      if (TAB_ROUTES.includes(route)) router.navigate(href);
+      else router.push(href);
     },
-    [isAuthenticated, currentRoute, showToast],
+    [isAuthenticated, currentRoute, pathname, showToast],
   );
 
-  // Hardware and In-App Back Navigation
+  // In-app back. The hardware back button is handled by the router itself.
   const goBack = useCallback((): boolean => {
-    // Signed in: never step back into auth screens. Guest: never into protected ones.
-    const canReturnTo = (route: ScreenRoute) =>
-      isAuthenticated
-        ? !AUTH_ROUTES.includes(route)
-        : AUTH_ROUTES.includes(route) || GUEST_ROUTES.includes(route);
-    const newHistory = [...routeHistory];
-    let previous = newHistory.pop();
-    while (previous && !canReturnTo(previous)) {
-      previous = newHistory.pop();
-    }
-    if (previous) {
-      setRouteHistory(newHistory);
-      setCurrentRoute(previous);
+    setRouteHistory((prev) => prev.slice(0, -1));
+    if (router.canGoBack()) {
+      router.back();
       return true;
     }
-
-    if (currentRoute !== 'home') {
-      setCurrentRoute('home');
-      setRouteHistory([]);
+    if (pathname !== '/') {
+      router.replace('/');
       return true;
     }
-
-    // On home screen, let Android exit app
     return false;
-  }, [isAuthenticated, currentRoute, routeHistory]);
-
-  // Android Hardware Back Button listener
-  useEffect(() => {
-    const handleHardwareBackPress = () => {
-      return goBack();
-    };
-
-    const backSubscription = BackHandler.addEventListener(
-      'hardwareBackPress',
-      handleHardwareBackPress,
-    );
-
-    return () => {
-      backSubscription.remove();
-    };
-  }, [goBack]);
+  }, [pathname]);
 
   // Authentication Handlers
   const enterApp = () => {
     setRouteHistory([]);
     setRouteParams({});
-    setCurrentRoute('home');
+    setLastRoute('home');
+    router.replace('/');
   };
 
   const signIn = async (credentials: SignInCredentials): Promise<AuthResult> => {
