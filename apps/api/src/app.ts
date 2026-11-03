@@ -28,6 +28,8 @@ import { healthRoutes } from './modules/health/health.routes';
 import { ListingWriter } from './modules/listings/listings.service';
 import { placesRoutes } from './modules/places/places.routes';
 import { PlacesService } from './modules/places/places.service';
+import { postsRoutes } from './modules/posts/posts.routes';
+import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ProductsService } from './modules/products/products.service';
 import { servicesRoutes } from './modules/services/services.routes';
@@ -168,6 +170,7 @@ export async function buildApp(options: BuildAppOptions) {
     businesses,
     products: new ProductsService(app.prisma, businesses, categories, places, listingWriter),
     services: new ServicesService(app.prisma, businesses, categories, places, listingWriter),
+    posts: new PostsService(app.prisma, businesses, uploads),
   });
 
   await app.register(healthRoutes);
@@ -181,6 +184,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(productsRoutes);
       await v1.register(servicesRoutes);
       await v1.register(uploadsRoutes);
+      await v1.register(postsRoutes);
     },
     { prefix: '/v1' },
   );

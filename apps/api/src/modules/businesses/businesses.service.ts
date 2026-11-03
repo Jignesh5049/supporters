@@ -47,6 +47,10 @@ export const isPremium = (business: { premiumUntil: Date | null }, now = new Dat
 export const publishedListingsLimit = (business: { premiumUntil: Date | null }) =>
   isPremium(business) ? null : PLAN_LIMITS.free.publishedListings;
 
+/** Posts this business may publish in any 7 days; null means no limit. */
+export const postsPer7DaysLimit = (business: { premiumUntil: Date | null }) =>
+  isPremium(business) ? null : PLAN_LIMITS.free.postsPer7Days;
+
 /** A URL-safe slug from the name; non-Latin names fall back to `business`. */
 export function slugify(name: string): string {
   const slug = name

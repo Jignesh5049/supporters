@@ -88,7 +88,7 @@ export async function createTestApp(
 /** Tests share one database: empty it (keeping reference data), and Valkey, before each test. */
 export async function resetState() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media CASCADE',
+    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media CASCADE',
   );
   await valkey.flushdb();
 }
