@@ -47,6 +47,7 @@ jobs:
             infra
             docs
             repo
+            deps
           requireScope: true
           subjectPattern: ^[a-z].*[^.]$
           subjectPatternError: Start the summary with a lower-case letter and don't end it with a period.
