@@ -1,7 +1,7 @@
 import type { LightMyRequestResponse } from 'fastify';
 import { type MobileSession, type TestContext, nextIp, prisma, registerMobile } from './helpers';
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** Calls the API as a guest (no token) or as a mobile session. */
 export function call(

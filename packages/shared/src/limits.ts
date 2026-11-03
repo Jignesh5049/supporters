@@ -130,3 +130,9 @@ export const REQUIREMENT = {
   openDays: 30,
   notifiedBusinessesMax: 50,
 } as const;
+
+/** Home feed (product spec, Feed and social). */
+export const FEED_LIMITS = {
+  /** Post ids per `POST /feed/seen` call, the same as an events batch. */
+  seenBatchMax: 50,
+} as const;

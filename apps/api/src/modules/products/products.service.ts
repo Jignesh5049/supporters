@@ -46,6 +46,17 @@ export class ProductsService {
     return this.one(row);
   }
 
+  /** Public products by id, in the order given; missing or hidden ones are left out. */
+  async getPublicMany(ids: string[]): Promise<Product[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.product.findMany({
+      where: { id: { in: ids }, ...PUBLIC_LISTING },
+      include: listingInclude,
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return this.toProducts(ids.flatMap((id) => byId.get(id) ?? []));
+  }
+
   async listPublic(businessId: string, query: PaginationQuery): Promise<Page<Product>> {
     await this.businesses.requirePublicId(businessId);
     const page = pageArgs(query.cursor, query.limit);

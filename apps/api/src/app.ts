@@ -13,6 +13,8 @@ import type { PrismaClient } from './generated/prisma/client';
 import { authRoutes } from './modules/auth/auth.routes';
 import { businessesRoutes } from './modules/businesses/businesses.routes';
 import { BusinessesService } from './modules/businesses/businesses.service';
+import { commentsRoutes } from './modules/comments/comments.routes';
+import { CommentsService } from './modules/comments/comments.service';
 import { categoriesRoutes } from './modules/categories/categories.routes';
 import { CategoriesService } from './modules/categories/categories.service';
 import { AuthService } from './modules/auth/auth.service';
@@ -24,6 +26,10 @@ import {
 } from './modules/auth/passwords';
 import { SessionService } from './modules/auth/session.service';
 import { ConsoleSmsSender, type SmsSender } from './modules/auth/sms';
+import { feedRoutes } from './modules/feed/feed.routes';
+import { FeedService } from './modules/feed/feed.service';
+import { followsRoutes } from './modules/follows/follows.routes';
+import { FollowsService } from './modules/follows/follows.service';
 import { healthRoutes } from './modules/health/health.routes';
 import { ListingWriter } from './modules/listings/listings.service';
 import { placesRoutes } from './modules/places/places.routes';
@@ -32,6 +38,8 @@ import { postsRoutes } from './modules/posts/posts.routes';
 import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ProductsService } from './modules/products/products.service';
+import { savesRoutes } from './modules/saves/saves.routes';
+import { SaveLookup, SavesService } from './modules/saves/saves.service';
 import { servicesRoutes } from './modules/services/services.routes';
 import { type MediaProcessor, PassthroughMediaProcessor } from './modules/uploads/media-processor';
 import { type ObjectStorage, S3Storage, createS3Client } from './modules/uploads/storage';
@@ -160,6 +168,9 @@ export async function buildApp(options: BuildAppOptions) {
   );
   const businesses = new BusinessesService(app.prisma, categories, places, uploads);
   const listingWriter = new ListingWriter(app.prisma, businesses, uploads);
+  const products = new ProductsService(app.prisma, businesses, categories, places, listingWriter);
+  const services = new ServicesService(app.prisma, businesses, categories, places, listingWriter);
+  const posts = new PostsService(app.prisma, businesses, uploads, new SaveLookup(app.prisma));
   app.decorate('services', {
     sessions,
     auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
@@ -168,9 +179,13 @@ export async function buildApp(options: BuildAppOptions) {
     places,
     uploads,
     businesses,
-    products: new ProductsService(app.prisma, businesses, categories, places, listingWriter),
-    services: new ServicesService(app.prisma, businesses, categories, places, listingWriter),
-    posts: new PostsService(app.prisma, businesses, uploads),
+    products,
+    services,
+    posts,
+    comments: new CommentsService(app.prisma, posts, app.limiter),
+    saves: new SavesService(app.prisma, posts, products, services, businesses),
+    follows: new FollowsService(app.prisma, businesses),
+    feed: new FeedService(app.prisma, posts, places),
   });
 
   await app.register(healthRoutes);
@@ -185,6 +200,10 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(servicesRoutes);
       await v1.register(uploadsRoutes);
       await v1.register(postsRoutes);
+      await v1.register(commentsRoutes);
+      await v1.register(savesRoutes);
+      await v1.register(followsRoutes);
+      await v1.register(feedRoutes);
     },
     { prefix: '/v1' },
   );

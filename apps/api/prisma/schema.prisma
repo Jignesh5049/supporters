@@ -69,6 +69,11 @@ model User {
   interests UserInterest[]
   business  Business?
   uploads   Upload[]
+  comments  Comment[]
+  likes     Like[]
+  saves     Save[]
+  follows   Follow[]
+  feedSeen  FeedSeen[]
 
   @@map("users")
 }
@@ -301,6 +306,8 @@ model Business {
   verifiedAt         DateTime?          @map("verified_at") @db.Timestamptz(6)
   premiumUntil       DateTime?          @map("premium_until") @db.Timestamptz(6)
   profileCompletion  Int                @default(0) @map("profile_completion") @db.SmallInt
+  /// Denormalized; changed in the same transaction as the follow.
+  followerCount      Int                @default(0) @map("follower_count")
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -313,6 +320,7 @@ model Business {
   cover       Upload?   @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
   products    Product[]
   posts       Post[]
+  followers   Follow[]
   services    Service[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
@@ -498,6 +506,9 @@ model Post {
   product  Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
   service  Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   media    PostMedia[]
+  comments Comment[]
+  likes    Like[]
+  seenBy   FeedSeen[]
 
   /// The owner's list (UUIDv7 ids sort by creation time).
   @@index([businessId, status, id], map: "idx_posts_business_id_status_id")
@@ -525,4 +536,105 @@ model PostMedia {
 
   @@index([postId, position], map: "idx_post_media_post_id_position")
   @@map("post_media")
+}
+
+/// One level of replies: a reply's parent must be a top-level comment (checked by the API).
+model Comment {
+  id         String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  postId     String    @map("post_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  parentId   String?   @map("parent_id") @db.Uuid
+  body       String
+  /// Live replies; top-level comments only.
+  replyCount Int       @default(0) @map("reply_count")
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  /// Top-level comments of a post, or replies of a comment, newest first.
+  @@index([postId, parentId, id], map: "idx_comments_post_id_parent_id_id")
+  @@index([parentId, id], map: "idx_comments_parent_id_id", where: raw("parent_id IS NOT NULL"))
+  @@index([userId], map: "idx_comments_user_id")
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId], map: "uq_likes_user_id_post_id")
+  @@index([postId], map: "idx_likes_post_id")
+  @@map("likes")
+}
+
+enum SaveTargetType {
+  post
+  product
+  service
+  business
+
+  @@map("save_target_type")
+}
+
+/// A bookmark. target_id points at a post, product, service or business (no FK: polymorphic).
+model Save {
+  id         String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  targetType SaveTargetType @map("target_type")
+  targetId   String         @map("target_id") @db.Uuid
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId], map: "uq_saves_user_id_target_type_target_id")
+  /// The Saved list, all types or one type tab, newest first.
+  @@index([userId, id], map: "idx_saves_user_id_id")
+  @@index([userId, targetType, id], map: "idx_saves_user_id_target_type_id")
+  @@index([targetType, targetId], map: "idx_saves_target_type_target_id")
+  @@map("saves")
+}
+
+/// Users follow businesses only (product spec, Decisions 2).
+model Follow {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId], map: "uq_follows_user_id_business_id")
+  @@index([userId, id], map: "idx_follows_user_id_id")
+  @@index([businessId, id], map: "idx_follows_business_id_id")
+  @@map("follows")
+}
+
+/// Posts a user has seen, skipped by the feed's city and state fill.
+model FeedSeen {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId], map: "uq_feed_seen_user_id_post_id")
+  @@index([postId], map: "idx_feed_seen_post_id")
+  @@map("feed_seen")
 }

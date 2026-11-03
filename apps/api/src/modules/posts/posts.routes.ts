@@ -1,5 +1,6 @@
 import {
   createPostSchema,
+  likeStateSchema,
   myPostsQuerySchema,
   pageSchema,
   paginationQuerySchema,
@@ -16,7 +17,7 @@ export const postsRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/posts/:id',
     { schema: { params: postIdParamsSchema, response: { 200: postSchema } } },
-    async (request) => posts.getPublic(request.params.id),
+    async (request) => posts.getPublic(request.params.id, request.auth?.userId ?? null),
   );
 
   app.get(
@@ -28,8 +29,23 @@ export const postsRoutes: FastifyPluginAsyncZod = async (app) => {
         response: { 200: pageSchema(postSchema) },
       },
     },
-    async (request) => posts.listPublic(request.params.id, request.query),
+    async (request) =>
+      posts.listPublic(request.params.id, request.query, request.auth?.userId ?? null),
   );
+
+  for (const [method, isLiked] of [
+    ['PUT', true],
+    ['DELETE', false],
+  ] as const) {
+    app.route({
+      method,
+      url: '/posts/:id/like',
+      config: { auth: 'user' },
+      schema: { params: postIdParamsSchema, response: { 200: likeStateSchema } },
+      handler: async (request) =>
+        posts.setLike(signedIn(request.auth).userId, request.params.id, isLiked),
+    });
+  }
 
   app.get(
     '/me/business/posts',

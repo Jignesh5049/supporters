@@ -1,5 +1,6 @@
 import {
   type CreatePostInput,
+  type LikeState,
   type MyPostsQuery,
   type Page,
   type PaginationQuery,
@@ -23,6 +24,7 @@ import {
   toBusinessSummary,
 } from '../businesses/businesses.service';
 import { toMoney } from '../listings/listings.service';
+import type { SaveLookup } from '../saves/saves.service';
 import { type MediaUrl, type UploadsService, toMedia } from '../uploads/uploads.service';
 
 const firstImage = {
@@ -95,19 +97,24 @@ export class PostsService {
     private readonly prisma: PrismaClient,
     private readonly businesses: BusinessesService,
     private readonly uploads: UploadsService,
+    private readonly saved: SaveLookup,
   ) {}
 
-  async getPublic(id: string): Promise<Post> {
+  async getPublic(id: string, viewerId: string | null = null): Promise<Post> {
     const row = await this.prisma.post.findFirst({
       where: { id, ...PUBLIC_POST },
       include: postInclude,
     });
     if (!row) throw notFound();
-    return this.one(row);
+    return this.one(row, viewerId);
   }
 
   /** A business's Posts tab. */
-  async listPublic(businessId: string, query: PaginationQuery): Promise<Page<Post>> {
+  async listPublic(
+    businessId: string,
+    query: PaginationQuery,
+    viewerId: string | null = null,
+  ): Promise<Page<Post>> {
     await this.businesses.requirePublicId(businessId);
     const rows = await this.prisma.post.findMany({
       where: { ...PUBLIC_POST, businessId, ...afterTimeCursor(decodeTimeCursor(query.cursor)) },
@@ -115,7 +122,7 @@ export class PostsService {
       take: query.limit + 1,
       include: postInclude,
     });
-    return this.publishedPage(rows, query.limit);
+    return this.publishedPage(rows, query.limit, viewerId);
   }
 
   async listMine(userId: string, query: MyPostsQuery): Promise<Page<Post>> {
@@ -132,7 +139,7 @@ export class PostsService {
       include: postInclude,
     });
     const split = splitPage(rows, query.limit);
-    return { data: this.toPosts(split.rows), nextCursor: split.nextCursor };
+    return { data: await this.toPosts(split.rows, userId), nextCursor: split.nextCursor };
   }
 
   async create(userId: string, input: CreatePostInput): Promise<Post> {
@@ -250,7 +257,7 @@ export class PostsService {
         if (uploads) await this.replaceMedia(tx, id, uploads);
         return tx.post.findUniqueOrThrow({ where: { id }, include: postInclude });
       });
-      return this.one(row);
+      return await this.one(row, null);
     } catch (error) {
       // Two posts claiming the same upload at once (uq_post_media_upload_id).
       if (isUniqueViolation(error)) throw mediaInUse();
@@ -309,21 +316,87 @@ export class PostsService {
     }
   }
 
-  private one(row: PostRow): Post {
-    const [post] = this.toPosts([row]);
+  /**
+   * Likes are idempotent: PUT twice is one like. The counter moves in the same
+   * transaction as the row, and only when a row was actually added or removed,
+   * so concurrent likes can't drift from the likes table.
+   */
+  async setLike(userId: string, postId: string, isLiked: boolean): Promise<LikeState> {
+    await this.requirePublicId(postId);
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = isLiked
+        ? await tx.like.createMany({ data: [{ userId, postId }], skipDuplicates: true })
+        : await tx.like.deleteMany({ where: { userId, postId } });
+      const likeCount =
+        count > 0
+          ? await this.adjustCounter(tx, postId, 'likeCount', isLiked ? 1 : -1)
+          : (await tx.post.findUniqueOrThrow({ where: { id: postId } })).likeCount;
+      return { isLiked, likeCount };
+    });
+  }
+
+  /** Adds `delta` to one of a post's counters and returns the new value. */
+  async adjustCounter(
+    tx: Prisma.TransactionClient,
+    postId: string,
+    counter: 'likeCount' | 'commentCount' | 'saveCount',
+    delta: number,
+  ): Promise<number> {
+    const row = await tx.post.update({
+      where: { id: postId },
+      data: { [counter]: { increment: delta } },
+      select: { likeCount: true, commentCount: true, saveCount: true },
+    });
+    return row[counter];
+  }
+
+  /** Public posts by id, in the order given; missing or hidden ones are left out. */
+  async getPublicMany(ids: string[], viewerId: string | null): Promise<Post[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.post.findMany({
+      where: { id: { in: ids }, ...PUBLIC_POST },
+      include: postInclude,
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return this.toPosts(
+      ids.flatMap((id) => byId.get(id) ?? []),
+      viewerId,
+    );
+  }
+
+  private async one(row: PostRow, viewerId: string | null): Promise<Post> {
+    const [post] = await this.toPosts([row], viewerId);
     if (!post) throw notFound();
     return post;
   }
 
-  private publishedPage(rows: PostRow[], limit: number): Page<Post> {
+  private async publishedPage(
+    rows: PostRow[],
+    limit: number,
+    viewerId: string | null,
+  ): Promise<Page<Post>> {
     const pageRows = rows.slice(0, limit);
     const last = pageRows.at(-1);
     const nextCursor =
       rows.length > limit && last?.publishedAt ? encodeTimeCursor(last.publishedAt, last.id) : null;
-    return { data: this.toPosts(pageRows), nextCursor };
+    return { data: await this.toPosts(pageRows, viewerId), nextCursor };
   }
 
-  toPosts(rows: PostRow[]): Post[] {
+  /** Maps rows to the response shape, with the viewer's own like and save flags. */
+  async toPosts(rows: PostRow[], viewerId: string | null): Promise<Post[]> {
+    const ids = rows.map((row) => row.id);
+    const [liked, saved] =
+      viewerId && ids.length > 0
+        ? await Promise.all([
+            this.prisma.like
+              .findMany({
+                where: { userId: viewerId, postId: { in: ids } },
+                select: { postId: true },
+              })
+              .then((likes) => new Set(likes.map((like) => like.postId))),
+            this.saved.savedIds(viewerId, 'post', ids),
+          ])
+        : [new Set<string>(), new Set<string>()];
     const mediaUrl = this.businesses.mediaUrl;
     return rows.map((row) => ({
       id: row.id,
@@ -341,6 +414,8 @@ export class PostsService {
       likeCount: row.likeCount,
       commentCount: row.commentCount,
       saveCount: row.saveCount,
+      isLiked: liked.has(row.id),
+      isSaved: saved.has(row.id),
       publishedAt: row.publishedAt?.toISOString() ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

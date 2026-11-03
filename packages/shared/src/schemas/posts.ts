@@ -138,6 +138,9 @@ export const postSchema = z.object({
   likeCount: z.number().int(),
   commentCount: z.number().int(),
   saveCount: z.number().int(),
+  /** The signed-in viewer's own like and save; always false for guests. */
+  isLiked: z.boolean(),
+  isSaved: z.boolean(),
   publishedAt: z.iso.datetime().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
