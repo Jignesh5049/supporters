@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { Avatar } from '@/components/common/Avatar';
 import { CURRENT_USER } from '@/lib/mock-data';
@@ -160,6 +161,12 @@ export default function OnboardingPage() {
           </div>
         </form>
       </div>
+      <p className="text-center text-body-sm text-muted-foreground">
+        Selling to other businesses?{' '}
+        <Link href="/onboarding/business" className="font-semibold text-primary hover:underline">
+          Create your business page
+        </Link>
+      </p>
     </div>
   );
 }

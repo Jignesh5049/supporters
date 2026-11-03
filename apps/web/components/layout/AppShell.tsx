@@ -15,6 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     '/forgot-password',
     '/reset-password',
     '/onboarding',
+    '/onboarding/business',
   ].includes(pathname);
 
   if (isAuthRoute) {
