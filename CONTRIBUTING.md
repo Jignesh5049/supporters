@@ -44,7 +44,7 @@ To add a dependency to one app, run `pnpm --filter @supporters/web add <pkg>`. T
 | Part | Allowed values |
 | --- | --- |
 | `type` | `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`, `ci`, `build` |
-| `scope` | `api`, `web`, `mobile`, `shared`, `tokens`, `ui-web`, `ui-native`, `infra`, `docs`, `repo` |
+| `scope` | `api`, `web`, `mobile`, `shared`, `tokens`, `ui-web`, `ui-native`, `infra`, `docs`, `repo`, `deps` (dependency updates, e.g. Dependabot) |
 | `short-description` | 2 to 5 words, kebab-case |
 
 Examples: `feat/api-otp-login`, `fix/web-feed-pagination`, `chore/repo-pnpm-workspace`, `ci/repo-github-actions`.

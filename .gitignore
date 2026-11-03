@@ -17,6 +17,7 @@ node_modules/
 coverage/
 /out/
 /build
+/build-output/
 .next/
 *.tsbuildinfo
 
