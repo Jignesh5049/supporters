@@ -120,6 +120,7 @@ async function ServiceDetail({ params }: { params: Promise<{ id: string }> }) {
             subject={service.title}
             businessName={service.business.name}
             businessId={service.business.id}
+            listing={{ type: 'service', id: service.id }}
             shareUrl={`${origin}${servicePath(service.id)}`}
           />
         </div>

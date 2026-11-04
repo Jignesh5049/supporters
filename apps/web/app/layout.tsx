@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import { HeaderWithSession } from '@/components/layout/header-with-session';
+import { ChatRealtimeWithSession } from '@/components/layout/chat-realtime-with-session';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
 import { MobileCreateModal } from '@/components/layout/MobileCreateModal';
@@ -56,6 +57,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col text-[#111111]">
         <QueryProvider>
           <AppProvider>
+            <Suspense fallback={null}>
+              <ChatRealtimeWithSession />
+            </Suspense>
             <Suspense fallback={<div className="h-16 bg-white border-b border-[#E5E7EB]" />}>
               <HeaderWithSession />
             </Suspense>

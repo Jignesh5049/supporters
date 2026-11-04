@@ -275,17 +275,7 @@ export function FeedPostCard({ post }: FeedPostCardProps) {
 
               <button
                 type="button"
-                onClick={() =>
-                  openConversationWithBusiness(post.businessId, {
-                    initialMessage: post.attachedProduct
-                      ? `Namaste! I am interested in "${post.attachedProduct.title}" (₹${post.attachedProduct.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`
-                      : post.attachedService
-                        ? `Namaste! I am interested in your service: "${post.attachedService.title}". Please provide more information.`
-                        : `Namaste! I saw your post regarding "${post.businessName}" and would like to inquire about business collaboration.`,
-                    attachedProduct: post.attachedProduct,
-                    attachedService: post.attachedService,
-                  })
-                }
+                onClick={() => openConversationWithBusiness(post.businessId)}
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-lg transition-colors shadow-2xs"
               >
                 <MessageSquare className="w-3.5 h-3.5" />

@@ -2,13 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
+import { chatApi } from '@/features/messaging/chat-api';
+import { errorMessage } from '@/lib/api/errors';
 import {
   FeedPost,
   Product,
   Service,
   Business,
-  Conversation,
-  Message,
   NotificationItem,
   PostType,
   ReferralStat,
@@ -21,7 +22,6 @@ import {
   MOCK_PRODUCTS,
   MOCK_SERVICES,
   MOCK_BUSINESSES,
-  MOCK_CONVERSATIONS,
   MOCK_NOTIFICATIONS,
   MOCK_REFERRAL_DATA,
   MOCK_WALLET_DATA,
@@ -100,25 +100,8 @@ interface AppContextType {
   followedBusinessIds: string[];
   toggleFollowBusiness: (businessId: string) => void;
 
-  // Messaging
-  conversations: Conversation[];
-  activeConversationId: string;
-  setActiveConversationId: (id: string) => void;
-  sendMessage: (
-    conversationId: string,
-    text: string,
-    attachedProduct?: Message['attachedProduct'],
-    attachedService?: Message['attachedService'],
-  ) => void;
-  unreadMessagesCount: number;
-  openConversationWithBusiness: (
-    businessId: string,
-    options?: {
-      initialMessage?: string;
-      attachedProduct?: Message['attachedProduct'];
-      attachedService?: Message['attachedService'];
-    },
-  ) => void;
+  // Messaging: opens (or finds) the real thread with a business, then shows it.
+  openConversationWithBusiness: (businessId: string) => void;
 
   // Notifications
   notifications: NotificationItem[];
@@ -193,9 +176,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [savedServiceIds, setSavedServiceIds] = useState<string[]>(['s-1']);
   const [savedBusinessIds, setSavedBusinessIds] = useState<string[]>(['b-1', 'b-2']);
   const [followedBusinessIds, setFollowedBusinessIds] = useState<string[]>(['b-2']);
-
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
-  const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
   const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
@@ -484,107 +464,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { success: true, message: 'Withdrawal request submitted successfully' };
   };
 
-  const sendMessage = (
-    conversationId: string,
-    text: string,
-    attachedProduct?: Message['attachedProduct'],
-    attachedService?: Message['attachedService'],
-  ) => {
-    const newMsg = {
-      id: `msg-${Date.now()}`,
-      conversationId,
-      senderId: 'user-me',
-      senderName: 'You',
-      text,
-      timestamp: 'Just now',
-      isMe: true,
-      attachedProduct,
-      attachedService,
-    };
-
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === conversationId) {
-          return {
-            ...c,
-            lastMessage: text,
-            lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      }),
-    );
-    showToast('Message sent', 'info');
-  };
-
-  const openConversationWithBusiness = (
-    businessId: string,
-    options?: {
-      initialMessage?: string;
-      attachedProduct?: Message['attachedProduct'];
-      attachedService?: Message['attachedService'];
-    },
-  ) => {
-    // 1. Check if conversation already exists
-    const existingConv = conversations.find((c) => c.businessId === businessId);
-
-    if (existingConv) {
-      setActiveConversationId(existingConv.id);
-      if (options?.initialMessage) {
-        sendMessage(
-          existingConv.id,
-          options.initialMessage,
-          options.attachedProduct,
-          options.attachedService,
-        );
-      }
-      showToast(`Opening chat with ${existingConv.businessName}...`, 'info');
+  const openConversationWithBusiness = (businessId: string) => {
+    // Prototype screens still pass mock ids; those just open the inbox.
+    if (!z.uuid().safeParse(businessId).success) {
       router.push('/messages');
       return;
     }
-
-    // 2. If no existing conversation, create a new one
-    const biz = businesses.find((b) => b.id === businessId);
-    const newConvId = `conv-${Date.now()}`;
-    const initialText = options?.initialMessage;
-
-    const initialMessages = initialText
-      ? [
-          {
-            id: `msg-${Date.now()}`,
-            conversationId: newConvId,
-            senderId: 'user-me',
-            senderName: 'You',
-            text: initialText,
-            timestamp: 'Just now',
-            isMe: true,
-            attachedProduct: options?.attachedProduct,
-            attachedService: options?.attachedService,
-          },
-        ]
-      : [];
-
-    const newConversation: Conversation = {
-      id: newConvId,
-      businessId,
-      businessName: biz?.name || 'Verified Supplier',
-      businessAvatar:
-        biz?.avatar ||
-        'https://images.unsplash.com/photo-1560179704-617a1a2e8172?auto=format&fit=crop&w=120&q=80',
-      businessVerified: biz?.verified ?? true,
-      businessCity: biz?.city || 'India',
-      lastMessage: initialText || 'Started conversation',
-      lastMessageTime: 'Just now',
-      unreadCount: 0,
-      online: true,
-      messages: initialMessages,
-    };
-
-    setConversations((prev) => [newConversation, ...prev]);
-    setActiveConversationId(newConvId);
-    showToast(`Started direct chat with ${newConversation.businessName}!`, 'success');
-    router.push('/messages');
+    chatApi.open(businessId).then(
+      (conversation) => router.push(`/messages/${conversation.id}`),
+      (error: unknown) => showToast(errorMessage(error), 'error'),
+    );
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -597,7 +486,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
-  const unreadMessagesCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
 
   const openEnquiryModal = (info: { title: string; businessName: string; businessId?: string }) => {
     setEnquiryState({
@@ -653,12 +541,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         followedBusinessIds,
         toggleFollowBusiness,
 
-        conversations,
-        activeConversationId,
-        setActiveConversationId,
-        sendMessage,
         openConversationWithBusiness,
-        unreadMessagesCount,
 
         notifications,
         markNotificationAsRead,

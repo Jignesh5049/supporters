@@ -133,6 +133,7 @@ async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
             subject={product.title}
             businessName={product.business.name}
             businessId={product.business.id}
+            listing={{ type: 'product', id: product.id }}
             shareUrl={`${origin}${productPath(product.id)}`}
           />
         </div>

@@ -47,8 +47,10 @@ export function useInbox(filter: InboxFilter) {
   return useInfiniteQuery(inboxQueryOptions(filter));
 }
 
-/** Unread messages across the first inbox pages, for the nav badge. */
-export function useUnreadCount(isEnabled: boolean): number {
+/** Unread messages across the loaded inbox pages, for the nav badge. Zero while signed out. */
+export function useUnreadCount(): number {
+  // The socket runs only while signed in, so its status doubles as the session signal here.
+  const isEnabled = useConnectionStatus() !== 'idle';
   const { data } = useInfiniteQuery({
     ...inboxQueryOptions({ q: null, hidden: false }),
     enabled: isEnabled,

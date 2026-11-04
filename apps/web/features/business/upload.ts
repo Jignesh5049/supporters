@@ -1,5 +1,7 @@
 import {
   type Media,
+  type PresignUploadInput,
+  type Upload,
   type UploadPurpose,
   presignUploadSchema,
   presignedUploadSchema,
@@ -28,31 +30,17 @@ const defaultDeps: UploadDeps = {
 };
 
 /**
- * Uploads one image: `POST /v1/uploads/presign`, `PUT` the bytes straight to
+ * Uploads one file: `POST /v1/uploads/presign`, `PUT` the bytes straight to
  * storage with exactly the signed headers, then `POST /v1/uploads/:id/complete`,
- * which checks the stored size and magic bytes. Returns the ready media.
+ * which checks the stored size and magic bytes. Returns the ready upload.
  */
-export async function uploadImage(
+export async function uploadFile(
   file: File,
-  purpose: UploadPurpose,
+  input: PresignUploadInput,
   deps: UploadDeps = defaultDeps,
-): Promise<Media> {
-  const input = presignUploadSchema.safeParse({
-    purpose,
-    contentType: file.type,
-    size: file.size,
-  });
-  if (!input.success) {
-    const issue = input.error.issues[0];
-    throw new UploadError(
-      issue?.path[0] === 'size'
-        ? 'That image is too large. Use one under 10 MB.'
-        : 'Use a JPEG, PNG, WebP or HEIC image.',
-    );
-  }
-
+): Promise<Upload> {
   const presigned = presignedUploadSchema.parse(
-    await deps.request('/v1/uploads/presign', { method: 'POST', body: input.data }),
+    await deps.request('/v1/uploads/presign', { method: 'POST', body: input }),
   );
 
   let response: Response;
@@ -77,7 +65,33 @@ export async function uploadImage(
   const upload = uploadSchema.parse(
     await deps.request(`/v1/uploads/${presigned.id}/complete`, { method: 'POST' }),
   );
-  if (upload.status !== 'ready' || !upload.url) {
+  if (upload.status !== 'ready') {
+    throw new ApiError({ status: 422, code: 'UPLOAD_REJECTED', title: 'Upload rejected' });
+  }
+  return upload;
+}
+
+/** Uploads one public image (avatar, cover, listing or post) and returns its media. */
+export async function uploadImage(
+  file: File,
+  purpose: UploadPurpose,
+  deps: UploadDeps = defaultDeps,
+): Promise<Media> {
+  const input = presignUploadSchema.safeParse({
+    purpose,
+    contentType: file.type,
+    size: file.size,
+  });
+  if (!input.success) {
+    const issue = input.error.issues[0];
+    throw new UploadError(
+      issue?.path[0] === 'size'
+        ? 'That image is too large. Use one under 10 MB.'
+        : 'Use a JPEG, PNG, WebP or HEIC image.',
+    );
+  }
+  const upload = await uploadFile(file, input.data, deps);
+  if (!upload.url) {
     throw new ApiError({ status: 422, code: 'UPLOAD_REJECTED', title: 'Upload rejected' });
   }
   return { id: upload.id, url: upload.url };
