@@ -10,6 +10,7 @@ import {
   REFRESH_TOKEN_ABSOLUTE_TTL_SEC,
   REFRESH_TOKEN_TTL_SEC,
   revokedSessionKey,
+  SESSION_REVOKED_CHANNEL,
 } from './auth.constants';
 
 const graceKey = (tokenHash: string) => `rt:grace:${tokenHash}`;
@@ -232,6 +233,8 @@ export class SessionService {
     for (const id of ids) {
       // Outlives any access token issued for the session, plus clock-skew margin.
       pipeline.set(revokedSessionKey(id), '1', 'EX', ACCESS_TOKEN_TTL_SEC + 60);
+      // Open sockets of the session disconnect at once (backend spec, Realtime chat).
+      pipeline.publish(SESSION_REVOKED_CHANNEL, id);
     }
     await pipeline.exec();
   }

@@ -11,6 +11,7 @@ export const ErrorCode = {
   Forbidden: 'FORBIDDEN',
   CsrfFailed: 'CSRF_FAILED',
   NotFound: 'NOT_FOUND',
+  Conflict: 'CONFLICT',
   RateLimited: 'RATE_LIMITED',
   InvalidCredentials: 'INVALID_CREDENTIALS',
   AccountSuspended: 'ACCOUNT_SUSPENDED',
