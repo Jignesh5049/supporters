@@ -14,11 +14,11 @@ describe('notification schemas', () => {
   it('marks ids or everything, nothing else', () => {
     const parse = (body: unknown) => markNotificationsReadSchema.safeParse(body).success;
     expect(parse({ all: true })).toBe(true);
-    expect(parse({ ids: [crypto.randomUUID()] })).toBe(true);
+    expect(parse({ ids: ['0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b'] })).toBe(true);
     expect(parse({ all: false })).toBe(false);
     expect(parse({ ids: [] })).toBe(false);
     expect(parse({ ids: ['x'] })).toBe(false);
-    expect(parse({ ids: [crypto.randomUUID()], all: true })).toBe(false);
+    expect(parse({ ids: ['0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b'], all: true })).toBe(false);
     expect(parse({})).toBe(false);
   });
 });
