@@ -3,7 +3,7 @@
 import { Badge } from '@supporters/ui-web/components/badge';
 import { Button } from '@supporters/ui-web/components/button';
 import { cn } from '@supporters/ui-web/lib/utils';
-import { BadgeCheck, Building2, Eye, Package, Pencil, Wrench } from 'lucide-react';
+import { BadgeCheck, Building2, Eye, FileText, Package, Pencil, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BusinessLogo } from '@/components/catalog/business-logo';
@@ -23,6 +23,7 @@ const LINKS = [
   { label: 'Edit profile', href: '/business/edit', icon: Pencil },
   { label: 'Products', href: '/business/products', icon: Package },
   { label: 'Services', href: '/business/services', icon: Wrench },
+  { label: 'Posts', href: '/business/posts', icon: FileText },
 ];
 
 export function HubHeader({ business }: { business: HubBusiness }) {
