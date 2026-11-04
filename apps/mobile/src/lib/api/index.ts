@@ -7,6 +7,8 @@ import { createProductsApi } from './products';
 import { createServicesApi } from './services';
 import { createCategoriesApi } from './categories';
 import { createUploadsApi } from './uploads';
+import { createPostsApi } from './posts';
+import { createSocialApi } from './social';
 import { createApiClient } from './client';
 import { API_URL, APP_VERSION } from './config';
 
@@ -16,6 +18,8 @@ export type { ProductsApi, ListQuery, MyListingsInputQuery } from './products';
 export type { ServicesApi } from './services';
 export type { CategoriesApi, CategoriesResponse } from './categories';
 export type { UploadsApi } from './uploads';
+export type { PostsApi, PageQuery, MyPostsQuery } from './posts';
+export type { SocialApi, FeedQuery, CommentsQuery, SavesQuery } from './social';
 
 /** The one API client for the app. Screens use Query hooks or specific domain APIs, never raw fetch. */
 export const apiClient = createApiClient({
@@ -35,3 +39,5 @@ export const productsApi = createProductsApi(apiClient);
 export const servicesApi = createServicesApi(apiClient);
 export const categoriesApi = createCategoriesApi(apiClient);
 export const uploadsApi = createUploadsApi(apiClient);
+export const postsApi = createPostsApi(apiClient);
+export const socialApi = createSocialApi(apiClient);

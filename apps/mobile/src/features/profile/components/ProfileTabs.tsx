@@ -11,15 +11,18 @@ import {
   MapPin,
   Eye,
 } from 'lucide-react-native';
-import { FeedPost, Product, UserProfile } from '../../../../mock';
-import { FeedPostCard } from '../../../components/FeedPostCard';
+import type { Post } from '@supporters/shared';
+import { Product, UserProfile } from '../../../../mock';
+import { PostCard, type PostCardProps } from '../../feed/components/PostCard';
+import { toPostCardModel } from '../../social/mappers';
 import { colors, spacing, borderRadius } from '../../../styles/theme';
 
 export type ProfileTabType = 'posts' | 'catalog' | 'about';
 
 interface ProfileTabsProps {
   currentUser: UserProfile;
-  posts: FeedPost[];
+  posts: Post[];
+  postActions: Omit<PostCardProps, 'post' | 'isDetail'>;
   products: Product[];
   onOpenProduct: (productId: string) => void;
   onContactProductSupplier: (product: Product) => void;
@@ -29,6 +32,7 @@ interface ProfileTabsProps {
 export function ProfileTabs({
   currentUser,
   posts,
+  postActions,
   products,
   onOpenProduct,
   onContactProductSupplier,
@@ -77,7 +81,9 @@ export function ProfileTabs({
                 </Text>
               </View>
             ) : (
-              posts.map((post) => <FeedPostCard key={post.id} post={post} />)
+              posts.map((post) => (
+                <PostCard key={post.id} post={toPostCardModel(post)} {...postActions} />
+              ))
             )}
           </View>
         )}
