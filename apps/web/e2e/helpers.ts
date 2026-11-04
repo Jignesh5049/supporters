@@ -32,3 +32,22 @@ export async function registerFreshUser(page: Page, name = 'Playwright Tester') 
   await expect(page).toHaveURL('/onboarding');
   return { phone };
 }
+
+/** A real JPEG for upload checks (the API reads the magic bytes): a screenshot of a colour block. */
+export async function jpeg(page: Page, color: string): Promise<Buffer> {
+  await page.setContent(`<div style="width:480px;height:360px;background:${color}"></div>`);
+  return page.screenshot({ type: 'jpeg', clip: { x: 0, y: 0, width: 480, height: 360 } });
+}
+
+/** From /onboarding, creates a business page (no logo) and lands on the Hub's products list. */
+export async function createBusinessPage(page: Page, businessName: string) {
+  await page.goto('/onboarding/business');
+  await page.getByLabel('Business name').fill(businessName);
+  await page.getByLabel('Business type').selectOption('wholesaler');
+  await page.getByLabel('Category', { exact: true }).selectOption({ index: 1 });
+  await page.getByLabel('State').selectOption({ label: 'Gujarat' });
+  await expect(page.getByLabel('City')).toBeEnabled();
+  await page.getByLabel('City').selectOption({ label: 'Surat' });
+  await page.getByRole('button', { name: 'Create business page' }).click();
+  await expect(page).toHaveURL('/business/products');
+}
