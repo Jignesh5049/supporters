@@ -11,6 +11,12 @@ import type { Redis } from 'ioredis';
 import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
 import { authRoutes } from './modules/auth/auth.routes';
+import { blocksRoutes } from './modules/blocks/blocks.routes';
+import { BlocksService } from './modules/blocks/blocks.service';
+import { chatRoutes } from './modules/chat/chat.routes';
+import { ChatService } from './modules/chat/chat.service';
+import { enquiriesRoutes } from './modules/enquiries/enquiries.routes';
+import { EnquiriesService } from './modules/enquiries/enquiries.service';
 import { businessesRoutes } from './modules/businesses/businesses.routes';
 import { BusinessesService } from './modules/businesses/businesses.service';
 import { commentsRoutes } from './modules/comments/comments.routes';
@@ -158,10 +164,11 @@ export async function buildApp(options: BuildAppOptions) {
       : new DisabledPasswordChecker());
   const categories = new CategoriesService(app.prisma);
   const places = new PlacesService(app.prisma);
+  const storage = options.storage ?? new S3Storage(createS3Client(env), env.S3_BUCKET);
   const uploads = new UploadsService(
     app.prisma,
     app.limiter,
-    options.storage ?? new S3Storage(createS3Client(env), env.S3_BUCKET),
+    storage,
     mediaProcessor,
     env.MEDIA_PUBLIC_URL,
     app.log,
@@ -171,6 +178,8 @@ export async function buildApp(options: BuildAppOptions) {
   const products = new ProductsService(app.prisma, businesses, categories, places, listingWriter);
   const services = new ServicesService(app.prisma, businesses, categories, places, listingWriter);
   const posts = new PostsService(app.prisma, businesses, uploads, new SaveLookup(app.prisma));
+  const blocks = new BlocksService(app.prisma);
+  const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
     auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
@@ -186,6 +195,9 @@ export async function buildApp(options: BuildAppOptions) {
     saves: new SavesService(app.prisma, posts, products, services, businesses),
     follows: new FollowsService(app.prisma, businesses),
     feed: new FeedService(app.prisma, posts, places),
+    blocks,
+    chat,
+    enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
   });
 
   await app.register(healthRoutes);
@@ -204,6 +216,9 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(savesRoutes);
       await v1.register(followsRoutes);
       await v1.register(feedRoutes);
+      await v1.register(chatRoutes);
+      await v1.register(enquiriesRoutes);
+      await v1.register(blocksRoutes);
     },
     { prefix: '/v1' },
   );

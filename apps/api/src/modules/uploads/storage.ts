@@ -17,6 +17,8 @@ export interface StoredObject {
 export interface ObjectStorage {
   /** A PUT URL that only accepts this exact content type and length. */
   presignPut(key: string, contentType: string, size: number, ttlSec: number): Promise<string>;
+  /** A short-lived GET URL for a private object. */
+  presignGet(key: string, ttlSec: number, options: { contentType: string }): Promise<string>;
   head(key: string): Promise<StoredObject | null>;
   /** The first `length` bytes, for the magic-byte check. */
   readStart(key: string, length: number): Promise<Uint8Array>;
@@ -64,6 +66,19 @@ export class S3Storage implements ObjectStorage {
       expiresIn: ttlSec,
       signableHeaders: new Set(['content-type', 'content-length']),
     });
+  }
+
+  presignGet(key: string, ttlSec: number, options: { contentType: string }) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ResponseContentType: options.contentType,
+      // Documents download instead of rendering in the browser.
+      ResponseContentDisposition: options.contentType.startsWith('image/')
+        ? 'inline'
+        : 'attachment',
+    });
+    return getSignedUrl(this.client, command, { expiresIn: ttlSec });
   }
 
   async head(key: string): Promise<StoredObject | null> {

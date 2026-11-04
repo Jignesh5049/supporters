@@ -44,6 +44,8 @@ export const MEDIA_LIMITS = {
   kycImageTypes: ['image/jpeg', 'image/png'],
   /** Presigned upload URLs expire after this (backend spec, Security: Uploads). */
   presignTtlSec: 300,
+  /** Signed GET links for private chat files (backend spec, Security: Uploads). */
+  signedGetTtlSec: 300,
 } as const;
 
 export const LISTING_LIMITS = {
@@ -135,4 +137,27 @@ export const REQUIREMENT = {
 export const FEED_LIMITS = {
   /** Post ids per `POST /feed/seen` call, the same as an events batch. */
   seenBatchMax: 50,
+} as const;
+
+/** Messaging (product spec, "Messaging: DMs and enquiries"; backend spec, Realtime chat). */
+export const CHAT_LIMITS = {
+  /** One PDF per message; images go up to MEDIA_LIMITS.imagesPerMessage. */
+  documentsPerMessage: 1,
+  /** A client sends typing at most this often; the server drops faster events. */
+  typingThrottleMs: 3_000,
+  typingTtlSec: 5,
+  /** Presence key lifetime; the heartbeat renews it. */
+  presenceTtlSec: 60,
+  searchQueryMax: 80,
+} as const;
+
+export const ENQUIRY_LIMITS = {
+  /** One enquiry per listing per window. */
+  perListingWindowSec: 24 * 60 * 60,
+  /** Response rate and time cover this many days. */
+  statsWindowDays: 90,
+  /** An enquiry counts as answered in time within this many hours. */
+  respondedWithinHours: 24,
+  /** Stats show on the business page from this many enquiries. */
+  statsMinEnquiries: 5,
 } as const;
