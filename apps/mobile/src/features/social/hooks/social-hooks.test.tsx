@@ -161,4 +161,33 @@ describe('useToggleFollow', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(countOf(queryClient, business.slug)).toBe(14);
   });
+
+  it('adds a new follow to the following list at once and restores it on error', async () => {
+    const { queryClient, wrapper } = setup();
+    const business = makeBusiness();
+    const summary = {
+      id: business.id,
+      slug: business.slug,
+      name: 'Asha Traders',
+      logo: null,
+      city: { id: uuid(901), name: 'Surat', stateCode: 'GJ' },
+      isVerified: false,
+      isPremium: false,
+    };
+    const key = [...socialKeys.following, 'u1'];
+    queryClient.setQueryData(key, {
+      pages: [{ data: [], nextCursor: null }],
+      pageParams: [undefined],
+    });
+    mockApi.socialApi.setFollowing.mockRejectedValue(new ApiError(500, 'SERVICE_UNAVAILABLE'));
+
+    const { result } = await renderHook(() => useToggleFollow(), { wrapper });
+    const listOf = () =>
+      queryClient.getQueryData<{ pages: { data: unknown[] }[] }>(key)?.pages[0].data.length;
+    await act(async () => {
+      result.current.mutate({ businessId: business.id, isFollowing: true, summary });
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(listOf()).toBe(0);
+  });
 });

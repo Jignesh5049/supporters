@@ -1,230 +1,158 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
-import { ArrowLeft, Share2, Settings, ChevronRight } from 'lucide-react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { slugPattern, type BusinessSummary } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
 import { useApp } from '../context/AppContext';
-import { colors, spacing } from '../styles/theme';
+import { ApiError, ApiErrorCode, messageForError } from '../lib/api';
+import { useBusiness, useMyBusiness } from '../features/business/hooks';
 import { BusinessHero } from '../features/business/components/BusinessHero';
-import { BusinessNavTabs, BusinessTabType } from '../features/business/components/BusinessNavTabs';
-import { BusinessProductsTab } from '../features/business/components/BusinessProductsTab';
-import { BusinessServicesTab } from '../features/business/components/BusinessServicesTab';
-import { BusinessPostsTab } from '../features/business/components/BusinessPostsTab';
-import { BusinessAboutTab } from '../features/business/components/BusinessAboutTab';
+import {
+  BusinessNavTabs,
+  type BusinessTabType,
+} from '../features/business/components/BusinessNavTabs';
+import {
+  BusinessAboutTab,
+  BusinessPostsTab,
+  BusinessProductsTab,
+  BusinessServicesTab,
+} from '../features/business/components/BusinessTabs';
 import { FollowersModal } from '../features/business/components/FollowersModal';
+import { followedIds, useFollowing, useToggleFollow } from '../features/social/hooks/use-follow';
+import { useRequireAuth } from '../features/social/use-require-auth';
+
+function TopBar({ title }: { title: string }) {
+  return (
+    <View className="border-border bg-background h-13 flex-row items-center gap-2 border-b px-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        onPress={() => router.back()}
+        accessibilityLabel="Go back"
+      >
+        <Icon as={ArrowLeft} size={20} />
+      </Button>
+      <Text className="flex-1 text-base font-bold" numberOfLines={1}>
+        {title}
+      </Text>
+    </View>
+  );
+}
 
 export function BusinessDetailScreen() {
-  const {
-    businesses,
-    products,
-    services,
-    posts,
-    savedProductIds,
-    toggleSaveProduct,
-    followedBusinessIds,
-    toggleFollowBusiness,
-    openEnquiryModal,
-    openShareModal,
-    openConversationWithBusiness,
-    routeParams,
-    navigate,
-    currentUser,
-  } = useApp();
-
+  const { slug: rawSlug } = useLocalSearchParams<{ slug: string }>();
+  const slug = typeof rawSlug === 'string' && slugPattern.test(rawSlug) ? rawSlug : '';
+  const { openShareModal, openEnquiryModal, showToast } = useApp();
+  const requireAuth = useRequireAuth();
   const [activeTab, setActiveTab] = useState<BusinessTabType>('products');
-  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followersOpen, setFollowersOpen] = useState(false);
 
-  const businessId = routeParams?.businessId || 'b-1';
-  const business = businesses.find((b) => b.id === businessId) || businesses[0];
+  const business = useBusiness(slug);
+  const myBusiness = useMyBusiness();
+  const following = useFollowing();
+  const toggleFollow = useToggleFollow();
 
-  const isOwner = currentUser?.businessId === business?.id;
-
-  const businessProducts = products.filter((p) => p.businessId === business?.id);
-  const businessServices = services.filter((s) => s.businessId === business?.id);
-  const businessPosts = posts.filter(
-    (p) => p.businessId === business?.id && p.postStatus !== 'Draft' && p.postStatus !== 'Archived',
-  );
-
-  const isFollowing = business ? followedBusinessIds.includes(business.id) : false;
-
-  if (!business) {
+  if (business.isPending && slug) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigate('home')} style={styles.backBtn}>
-            <ArrowLeft size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.topBarTitle}>Business Not Found</Text>
+      <SafeAreaView className="bg-background flex-1">
+        <TopBar title="Business" />
+        <ActivityIndicator className="mt-8" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!business.data) {
+    const isMissing =
+      !slug ||
+      (business.error instanceof ApiError && business.error.code === ApiErrorCode.NotFound);
+    return (
+      <SafeAreaView className="bg-background flex-1">
+        <TopBar title="Business" />
+        <View className="items-center gap-3 p-8">
+          <Text className="text-center text-base font-semibold">
+            {isMissing ? 'Business not found' : messageForError(business.error)}
+          </Text>
+          {!isMissing ? (
+            <Button onPress={() => business.refetch()}>
+              <Text>Try again</Text>
+            </Button>
+          ) : null}
         </View>
       </SafeAreaView>
     );
   }
 
+  const data = business.data;
+  const isOwner = myBusiness.data?.id === data.id;
+  const isFollowing = followedIds(following.data).has(data.id);
+  const shareUrl = `https://supporters.in/business/${encodeURIComponent(data.slug)}`;
+  const summary: BusinessSummary = {
+    id: data.id,
+    slug: data.slug,
+    name: data.name,
+    logo: data.logo,
+    city: data.city,
+    isVerified: data.isVerified,
+    isPremium: data.isPremium,
+  };
+
+  const handleToggleFollow = () =>
+    requireAuth(() =>
+      toggleFollow.mutate(
+        { businessId: data.id, isFollowing: !isFollowing, summary },
+        { onError: (error) => showToast(messageForError(error), 'error') },
+      ),
+    );
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Header Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => navigate('home')}
-          style={styles.backBtn}
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle} numberOfLines={1}>
-          {business.name}
-        </Text>
-        <TouchableOpacity
-          onPress={() =>
-            openShareModal({
-              title: `${business.name} on Supporters`,
-              url: `https://supporters.in/business/${business.slug}`,
-            })
-          }
-          style={styles.shareBtn}
-          accessibilityLabel="Share profile"
-        >
-          <Share2 size={18} color={colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Owner Quick Access Banner */}
-      {isOwner && (
-        <TouchableOpacity
-          style={styles.ownerBanner}
-          onPress={() => navigate('business_hub')}
-          activeOpacity={0.85}
-        >
-          <View style={styles.ownerBannerLeft}>
-            <Settings size={16} color="#0D9488" />
-            <View>
-              <Text style={styles.ownerBannerTitle}>You are viewing your public storefront</Text>
-              <Text style={styles.ownerBannerSub}>Switch to Business Hub Manager to edit</Text>
-            </View>
-          </View>
-          <ChevronRight size={18} color="#0D9488" />
-        </TouchableOpacity>
-      )}
-
-      {/* Scrollable Profile Body */}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+    <SafeAreaView className="bg-background flex-1">
+      <TopBar title={data.name} />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {isOwner ? (
+          <Button
+            variant="secondary"
+            className="mx-4 mt-3"
+            onPress={() => router.push('/hub')}
+            accessibilityLabel="Open Business Hub"
+          >
+            <Text>You are viewing your public page. Open Business Hub</Text>
+          </Button>
+        ) : null}
         <BusinessHero
-          business={business}
+          business={data}
           isFollowing={isFollowing}
-          onToggleFollow={() => toggleFollowBusiness(business.id)}
-          onOpenFollowers={() => setFollowersModalOpen(true)}
-          onOpenChat={() => openConversationWithBusiness(business.id)}
-          onOpenShare={() =>
-            openShareModal({
-              title: `${business.name} on Supporters`,
-              url: `https://supporters.in/business/${business.slug}`,
-            })
+          isFollowBusy={toggleFollow.isPending}
+          canFollow={!isOwner}
+          onToggleFollow={handleToggleFollow}
+          onOpenFollowers={() => setFollowersOpen(true)}
+          onShare={() => openShareModal({ title: `${data.name} on Supporters`, url: shareUrl })}
+          onEnquiry={() =>
+            requireAuth(() =>
+              openEnquiryModal({ title: data.name, businessName: data.name, businessId: data.id }),
+            )
           }
         />
-
-        <BusinessNavTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          productsCount={businessProducts.length}
-          servicesCount={businessServices.length}
-          postsCount={businessPosts.length}
-        />
-
-        {activeTab === 'products' && (
-          <BusinessProductsTab
-            products={businessProducts}
-            savedProductIds={savedProductIds}
-            onToggleSave={toggleSaveProduct}
-            onOpenProduct={(id) => navigate('product_detail', { productId: id })}
-            onOpenEnquiry={(product) => openEnquiryModal(product)}
-          />
-        )}
-
-        {activeTab === 'services' && (
-          <BusinessServicesTab
-            services={businessServices}
-            savedServiceIds={savedProductIds}
-            onToggleSave={toggleSaveProduct}
-            onOpenService={(id) => navigate('service_detail', { serviceId: id })}
-            onOpenEnquiry={(service) => openEnquiryModal(service)}
-          />
-        )}
-
-        {activeTab === 'posts' && <BusinessPostsTab posts={businessPosts} />}
-
-        {activeTab === 'about' && <BusinessAboutTab business={business} />}
+        <BusinessNavTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        {activeTab === 'products' ? (
+          <BusinessProductsTab businessId={data.id} onOpen={(path) => router.push(path as never)} />
+        ) : null}
+        {activeTab === 'services' ? (
+          <BusinessServicesTab businessId={data.id} onOpen={(path) => router.push(path as never)} />
+        ) : null}
+        {activeTab === 'posts' ? <BusinessPostsTab businessId={data.id} /> : null}
+        {activeTab === 'about' ? <BusinessAboutTab business={data} /> : null}
       </ScrollView>
 
-      {/* Followers Modal */}
       <FollowersModal
-        visible={followersModalOpen}
-        onClose={() => setFollowersModalOpen(false)}
-        businessName={business.name}
+        visible={followersOpen}
+        onClose={() => setFollowersOpen(false)}
+        businessId={data.id}
+        businessName={data.name}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topBar: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBarTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginHorizontal: spacing.sm,
-  },
-  shareBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ownerBanner: {
-    backgroundColor: '#F0FDFA',
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCFBF1',
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  ownerBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  ownerBannerTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0F766E',
-  },
-  ownerBannerSub: {
-    fontSize: 11,
-    color: '#115E59',
-    marginTop: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-});
