@@ -13,14 +13,14 @@ export function HubEmptyState({ onCreateProfile }: HubEmptyStateProps) {
       <View style={styles.iconCircle}>
         <Store size={38} color={colors.primary} />
       </View>
-      <Text style={styles.title}>No Business Profile Found</Text>
+      <Text style={styles.title}>Create your business</Text>
       <Text style={styles.description}>
         Create your digital B2B storefront to showcase products, connect with wholesale buyers, and
         publish company dispatches.
       </Text>
       <TouchableOpacity style={styles.createBtn} onPress={onCreateProfile} activeOpacity={0.85}>
         <Plus size={16} color="#FFFFFF" />
-        <Text style={styles.createBtnText}>Create Your Business Profile</Text>
+        <Text style={styles.createBtnText}>Create your business</Text>
       </TouchableOpacity>
     </View>
   );

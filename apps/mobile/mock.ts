@@ -22,9 +22,7 @@ export interface Business {
   businessType: BusinessType;
   city: string;
   state: string;
-  fullAddress: string;
   phone: string;
-  showPhone?: boolean;
   email: string;
   website?: string;
   gstin?: string;
@@ -36,19 +34,6 @@ export interface Business {
   responseRate: string;
   tags: string[];
   isFollowed?: boolean;
-  instagram?: string;
-  facebook?: string;
-  youtube?: string;
-  addressLine?: string;
-  area?: string;
-  pinCode?: string;
-  country?: string;
-  mapUrl?: string;
-  openingHours?: string;
-  availabilityStatus?: string;
-  priceRange?: string;
-  contactPerson?: string;
-  profileCompletion?: number;
 }
 
 export interface Product {
@@ -193,7 +178,6 @@ export interface UserProfile {
   city: string;
   state: string;
   phone: string;
-  showPhone?: boolean;
   email: string;
   followersCount: number;
   followingCount: number;
@@ -290,7 +274,6 @@ export const CURRENT_USER: UserProfile = {
   memberSince: 'March 2023',
   hasBusiness: true,
   businessId: 'b-1',
-  showPhone: true,
 };
 
 // ==========================================
@@ -402,7 +385,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Manufacturer',
     city: 'Ahmedabad',
     state: 'Gujarat',
-    fullAddress: 'Plot 42, GIDC Electronic Estate, Naroda, Ahmedabad, Gujarat 382330',
     phone: '+91 98250 14890',
     email: 'contact@shreeelectronics.in',
     website: 'https://shreeelectronics.in',
@@ -416,7 +398,6 @@ export const MOCK_BUSINESSES: Business[] = [
     responseRate: 'Under 1 hour',
     tags: ['Smart TV', 'OEM Manufacturer', 'LED Panels', 'Wholesale Electronics'],
     isFollowed: false,
-    showPhone: true,
   },
   {
     id: 'b-2',
@@ -431,7 +412,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Manufacturer',
     city: 'Vadodara',
     state: 'Gujarat',
-    fullAddress: 'Survey No. 118, Makarpura Industrial Area, Vadodara, Gujarat 390010',
     phone: '+91 97241 88402',
     email: 'orders@patelfurniture.com',
     website: 'https://patelfurniture.com',
@@ -459,7 +439,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Wholesaler',
     city: 'Anand',
     state: 'Gujarat',
-    fullAddress: 'Charotar APMC Market Yard, Godown 14, Anand, Gujarat 388001',
     phone: '+91 94270 51239',
     email: 'hello@kevalyaspices.com',
     website: 'https://kevalyaspices.com',
@@ -487,7 +466,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Manufacturer',
     city: 'Surat',
     state: 'Gujarat',
-    fullAddress: 'Shop 301-304, Millennium Textile Market 2, Ring Road, Surat, Gujarat 395002',
     phone: '+91 98980 77312',
     email: 'textiles@suratsilkcraft.com',
     website: 'https://suratsilkcraft.com',
@@ -515,7 +493,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Manufacturer',
     city: 'Rajkot',
     state: 'Gujarat',
-    fullAddress: 'Aji GIDC Phase II, Road B, Rajkot, Gujarat 360003',
     phone: '+91 98242 66100',
     email: 'sales@apexgears.in',
     website: 'https://apexgears.in',
@@ -543,7 +520,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Service Provider',
     city: 'Bengaluru',
     state: 'Karnataka',
-    fullAddress: '5th Floor, Tower B, Embassy TechVillage, Outer Ring Road, Bengaluru 560103',
     phone: '+91 80 4129 9000',
     email: 'solutions@zenithtech.dev',
     website: 'https://zenithtech.dev',
@@ -571,7 +547,6 @@ export const MOCK_BUSINESSES: Business[] = [
     businessType: 'Manufacturer',
     city: 'Mumbai',
     state: 'Maharashtra',
-    fullAddress: 'Plot 77, MIDC Industrial Area, Andheri East, Mumbai, Maharashtra 400093',
     phone: '+91 98200 44910',
     email: 'info@greenshieldpack.in',
     website: 'https://greenshieldpack.in',

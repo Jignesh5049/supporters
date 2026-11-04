@@ -12,35 +12,33 @@ import {
 import { ArrowLeft, ChevronRight, ExternalLink, LogOut, Trash2 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
+import { messageForError } from '../lib/api';
+import { useMyBusiness, useUpdateBusinessMutation } from '../features/business/hooks';
 
 export function SettingsScreen() {
-  const {
-    currentUser,
-    userBusiness,
-    updateBusinessProfile,
-    updateUserProfile,
-    showToast,
-    navigate,
-    signOut,
-  } = useApp();
+  const { currentUser, showToast, navigate, signOut } = useApp();
 
   const [rfqNotifications, setRfqNotifications] = useState(true);
   const [chatNotifications, setChatNotifications] = useState(true);
   const [marketingNotifications, setMarketingNotifications] = useState(false);
   const [profilePublic, setProfilePublic] = useState(true);
-  const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
-    userBusiness?.showPhone ?? currentUser.showPhone ?? true,
-  );
+  const { data: business } = useMyBusiness();
+  const updateBusiness = useUpdateBusinessMutation();
+  const showPhoneOnCatalog = business?.isContactPublic ?? false;
 
   const handleToggleShowPhone = (val: boolean) => {
-    setShowPhoneOnCatalog(val);
-    updateBusinessProfile({ showPhone: val });
-    updateUserProfile({ showPhone: val });
-    showToast(
-      val
-        ? 'Phone number will now be shown on your catalog'
-        : 'Phone number is now hidden from your catalog',
-      'info',
+    updateBusiness.mutate(
+      { isContactPublic: val },
+      {
+        onSuccess: () =>
+          showToast(
+            val
+              ? 'Phone number will now be shown on your catalog'
+              : 'Phone number is now hidden from your catalog',
+            'info',
+          ),
+        onError: (error) => showToast(messageForError(error), 'error'),
+      },
     );
   };
 
@@ -213,12 +211,13 @@ export function SettingsScreen() {
                 </View>
               </View>
               <Text style={styles.rowSub}>
-                Allow buyers to view your contact number ({currentUser.phone || userBusiness?.phone}
-                ) directly on your catalog storefront
+                Allow buyers to view your contact number (
+                {currentUser.phone || business?.contactPhone}) directly on your catalog storefront
               </Text>
             </View>
             <Switch
               value={showPhoneOnCatalog}
+              disabled={!business || updateBusiness.isPending}
               onValueChange={handleToggleShowPhone}
               trackColor={{ false: '#D1D5DB', true: colors.primary }}
             />

@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MapPin, Instagram, Clock } from 'lucide-react-native';
 import { colors } from '../../../styles/theme';
-import type { Business } from '../../../../mock';
+import type { MyBusiness } from '@supporters/shared';
+import { openingHoursSummary } from '../../business/labels';
 
 interface HubStorefrontHighlightsProps {
-  business: Business;
+  business: MyBusiness;
 }
 
 export function HubStorefrontHighlights({ business }: HubStorefrontHighlightsProps) {
@@ -15,19 +16,19 @@ export function HubStorefrontHighlights({ business }: HubStorefrontHighlightsPro
       <View style={styles.infoRow}>
         <MapPin size={13} color="#64748B" />
         <Text style={styles.infoText} numberOfLines={1}>
-          {business.fullAddress || `${business.city}, ${business.state}`}
+          {[business.address, business.city.name, business.state.name].filter(Boolean).join(', ')}
         </Text>
       </View>
       <View style={styles.infoRow}>
         <Instagram size={13} color="#A3238E" />
         <Text style={[styles.infoText, { color: '#A3238E' }]}>
-          {business.instagram || '@shree_electronics_official'}
+          {business.socials.instagram ?? 'Add your Instagram link'}
         </Text>
       </View>
       <View style={styles.infoRow}>
         <Clock size={13} color="#64748B" />
         <Text style={styles.infoText}>
-          {business.openingHours || 'Mon - Sat: 9:30 AM - 7:30 PM'}
+          {openingHoursSummary(business.openingHours) ?? 'Add your opening hours'}
         </Text>
       </View>
     </View>

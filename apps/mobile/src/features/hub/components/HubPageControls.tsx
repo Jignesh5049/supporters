@@ -1,14 +1,29 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Newspaper, FileText, PlusCircle, Sliders, ChevronRight } from 'lucide-react-native';
+import {
+  Newspaper,
+  FileText,
+  PlusCircle,
+  Sliders,
+  ChevronRight,
+  Package,
+  Wrench,
+} from 'lucide-react-native';
 import { colors } from '../../../styles/theme';
 
 interface HubPageControlsProps {
   draftPostsCount: number;
+  onOpenProducts: () => void;
+  onOpenServices: () => void;
   onNavigate: (route: string) => void;
 }
 
-export function HubPageControls({ draftPostsCount, onNavigate }: HubPageControlsProps) {
+export function HubPageControls({
+  draftPostsCount,
+  onOpenProducts,
+  onOpenServices,
+  onNavigate,
+}: HubPageControlsProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionHeader}>Business Page Controls</Text>
@@ -34,6 +49,33 @@ export function HubPageControls({ draftPostsCount, onNavigate }: HubPageControls
             </View>
             <Text style={styles.hubCardDesc}>
               Publish updates, manage drafts, archive or delete factory posts
+            </Text>
+          </View>
+          <ChevronRight size={18} color="#94A3B8" />
+        </TouchableOpacity>
+
+        {/* Module: Products and Services */}
+        <TouchableOpacity style={styles.hubCard} onPress={onOpenProducts} activeOpacity={0.8}>
+          <View style={[styles.hubIconCircle, { backgroundColor: '#ECFEFF' }]}>
+            <Package size={20} color={colors.accentCyan} />
+          </View>
+          <View style={styles.hubCardText}>
+            <Text style={styles.hubCardTitle}>Manage Products</Text>
+            <Text style={styles.hubCardDesc}>
+              Add, edit, publish or archive your product listings
+            </Text>
+          </View>
+          <ChevronRight size={18} color="#94A3B8" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.hubCard} onPress={onOpenServices} activeOpacity={0.8}>
+          <View style={[styles.hubIconCircle, { backgroundColor: '#FFF7ED' }]}>
+            <Wrench size={20} color="#EA580C" />
+          </View>
+          <View style={styles.hubCardText}>
+            <Text style={styles.hubCardTitle}>Manage Services</Text>
+            <Text style={styles.hubCardDesc}>
+              Add, edit, publish or archive your service listings
             </Text>
           </View>
           <ChevronRight size={18} color="#94A3B8" />

@@ -163,10 +163,6 @@ interface AppContextType {
     bankName?: string;
   }) => { success: boolean; message: string };
 
-  // Business Management (Owner interface)
-  userBusiness: Business | undefined;
-  updateBusinessProfile: (data: Partial<Business>) => void;
-
   // Modals
   enquiryModal: EnquiryTarget;
   openEnquiryModal: (info: { title: string; businessName: string; businessId?: string }) => void;
@@ -407,15 +403,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateUserProfile = (data: Partial<UserProfile>) => {
     setCurrentUser((prev) => ({ ...prev, ...data }));
     showToast('Profile updated successfully!', 'success');
-  };
-
-  // Business Profile Management
-  const userBusiness = businesses.find((b) => b.id === currentUser.businessId) || businesses[0];
-
-  const updateBusinessProfile = (data: Partial<Business>) => {
-    const targetId = currentUser.businessId || userBusiness?.id || 'b-1';
-    setBusinesses((prev) => prev.map((b) => (b.id === targetId ? { ...b, ...data } : b)));
-    showToast('Business details updated successfully!', 'success');
   };
 
   // Wallet & Withdrawal Management
@@ -676,8 +663,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         referralData,
         walletData,
         requestWithdrawal,
-        userBusiness,
-        updateBusinessProfile,
         enquiryModal,
         openEnquiryModal,
         closeEnquiryModal,
