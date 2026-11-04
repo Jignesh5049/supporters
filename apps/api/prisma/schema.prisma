@@ -62,24 +62,29 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  city           City?           @relation(fields: [cityId], references: [id], onDelete: SetNull)
-  sessions       Session[]
-  devices        Device[]
-  consents       Consent[]
-  interests      UserInterest[]
-  business       Business?
-  uploads        Upload[]
-  comments       Comment[]
-  likes          Like[]
-  saves          Save[]
-  follows        Follow[]
-  feedSeen       FeedSeen[]
-  conversations  Conversation[]
-  sentMessages   Message[]
-  hiddenMessages MessageHidden[]
-  enquiries      Enquiry[]
-  blocksMade     Block[]         @relation("Blocker")
-  blocksReceived Block[]         @relation("Blocked")
+  city                 City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  sessions             Session[]
+  devices              Device[]
+  consents             Consent[]
+  interests            UserInterest[]
+  business             Business?
+  uploads              Upload[]
+  comments             Comment[]
+  likes                Like[]
+  saves                Save[]
+  follows              Follow[]
+  feedSeen             FeedSeen[]
+  conversations        Conversation[]
+  sentMessages         Message[]
+  hiddenMessages       MessageHidden[]
+  enquiries            Enquiry[]
+  blocksMade           Block[]               @relation("Blocker")
+  blocksReceived       Block[]               @relation("Blocked")
+  notifications        Notification[]        @relation("NotificationRecipient")
+  actedOn              Notification[]        @relation("NotificationActor")
+  notificationPrefs    NotificationPref[]
+  pushTokens           PushToken[]
+  webPushSubscriptions WebPushSubscription[]
 
   @@map("users")
 }
@@ -120,8 +125,10 @@ model Session {
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device               Device?               @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  pushTokens           PushToken[]
+  webPushSubscriptions WebPushSubscription[]
 
   @@index([userId, revokedAt], map: "idx_sessions_user_id_revoked_at")
   @@index([familyId], map: "idx_sessions_family_id")
@@ -831,4 +838,137 @@ model Block {
   @@unique([blockerId, blockedId], map: "uq_blocks_blocker_id_blocked_id")
   @@index([blockedId], map: "idx_blocks_blocked_id")
   @@map("blocks")
+}
+
+// Notifications (backend spec, Data model: Notifications; product spec, Notifications).
+
+enum NotificationCategory {
+  messages
+  enquiries
+  business
+  referrals
+  subscription
+  account
+
+  @@map("notification_category")
+}
+
+enum NotificationChannel {
+  push
+  email
+
+  @@map("notification_channel")
+}
+
+/// One in-app item. Batched events (likes, comments, follows) grow one unread row per group_key
+/// for 10 minutes instead of adding rows. Deleted after 90 days.
+model Notification {
+  id          String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// The recipient.
+  userId      String               @map("user_id") @db.Uuid
+  /// e.g. post.liked (NotificationType in packages/shared).
+  type        String
+  category    NotificationCategory
+  /// The latest person behind it; null for system events.
+  actorUserId String?              @map("actor_user_id") @db.Uuid
+  actorCount  Int                  @default(1) @map("actor_count")
+  /// conversation, enquiry, post, business or account.
+  targetType  String               @map("target_type")
+  targetId    String?              @map("target_id") @db.Uuid
+  /// Events with the same key batch together, e.g. post.liked:<post id>.
+  groupKey    String?              @map("group_key")
+  readAt      DateTime?            @map("read_at") @db.Timestamptz(6)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user  User  @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, id], map: "idx_notifications_user_id_id")
+  @@index([userId, category, id], map: "idx_notifications_user_id_category_id")
+  /// The unread badge.
+  @@index([userId], map: "idx_notifications_user_id_unread", where: raw("read_at IS NULL"))
+  /// Finding the open batch to grow.
+  @@index([userId, groupKey, createdAt], map: "idx_notifications_user_id_group_key_created_at", where: raw("group_key IS NOT NULL AND read_at IS NULL"))
+  @@index([actorUserId], map: "idx_notifications_actor_user_id")
+  /// The 90-day cleanup.
+  @@index([createdAt], map: "idx_notifications_created_at")
+  @@map("notifications")
+}
+
+/// Off switches. A missing row means the channel is on for that category.
+model NotificationPref {
+  id        String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String               @map("user_id") @db.Uuid
+  category  NotificationCategory
+  channel   NotificationChannel
+  enabled   Boolean
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, channel], map: "uq_notification_prefs_user_id_category_channel")
+  @@map("notification_prefs")
+}
+
+/// An Expo push token, tied to the session that registered it: a signed-out device gets no push.
+model PushToken {
+  id         String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  sessionId  String         @map("session_id") @db.Uuid
+  /// ExponentPushToken[...]. A device that switches accounts moves to the new account.
+  token      String         @unique(map: "uq_push_tokens_token")
+  platform   DevicePlatform
+  lastUsedAt DateTime       @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, id], map: "idx_push_tokens_user_id_id")
+  @@index([sessionId], map: "idx_push_tokens_session_id")
+  @@map("push_tokens")
+}
+
+/// A browser's Web Push subscription (opt-in from Settings), tied to the session like push_tokens.
+model WebPushSubscription {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  sessionId  String   @map("session_id") @db.Uuid
+  /// The push service URL; only known push services are accepted.
+  endpoint   String   @unique(map: "uq_web_push_subscriptions_endpoint")
+  p256dh     String
+  auth       String
+  lastUsedAt DateTime @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, id], map: "idx_web_push_subscriptions_user_id_id")
+  @@index([sessionId], map: "idx_web_push_subscriptions_session_id")
+  @@map("web_push_subscriptions")
+}
+
+/// Domain events, written in the same transaction as the change (transactional outbox). The
+/// worker relays unpublished rows to the notifications queue, and records what it fanned out.
+model OutboxEvent {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// entity.verb, e.g. enquiry.created.
+  type        String
+  /// Ids only: never message text or contact details.
+  payload     Json
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  /// The deliveries decided when it was processed, so a retried job re-queues the same ones.
+  fanout      Json?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([id], map: "idx_outbox_events_unpublished", where: raw("published_at IS NULL"))
+  @@index([processedAt], map: "idx_outbox_events_processed_at", where: raw("processed_at IS NOT NULL"))
+  @@map("outbox_events")
 }

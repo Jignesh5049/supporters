@@ -14,6 +14,7 @@ import { AppError, ErrorCode, isUniqueViolation, rateLimited } from '../../lib/e
 import type { SlidingWindowLimiter } from '../../lib/sliding-window';
 import type { Redis } from 'ioredis';
 import { toMe } from '../users/users.service';
+import { recordEvent } from '../notifications/outbox';
 import type { OtpService } from './otp.service';
 import {
   type BreachedPasswordChecker,
@@ -131,7 +132,12 @@ export class AuthService {
       throw new AppError(403, ErrorCode.MfaRequired, 'Use the admin sign-in');
     }
 
-    const session = await this.sessions.create(user, meta);
+    // The new-login security alert commits with the session (product spec, Notifications).
+    const session = await this.prisma.$transaction(async (tx) => {
+      const issued = await this.sessions.create(user, meta, tx);
+      await recordEvent(tx, 'security.login', { userId: user.id, sessionId: issued.sessionId });
+      return issued;
+    });
     return { user: toMe(user), session };
   }
 
@@ -144,9 +150,10 @@ export class AuthService {
     if (!user || user.status !== 'active') {
       throw new AppError(400, ErrorCode.OtpInvalid, 'Incorrect or expired code');
     }
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash: await hashPassword(input.newPassword) },
+    const passwordHash = await hashPassword(input.newPassword);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+      await recordEvent(tx, 'security.password_changed', { userId: user.id });
     });
     await this.sessions.revokeAllForUser(user.id);
   }

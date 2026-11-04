@@ -24,6 +24,7 @@ import {
   toBusinessSummary,
 } from '../businesses/businesses.service';
 import { toMoney } from '../listings/listings.service';
+import { recordEvent } from '../notifications/outbox';
 import type { SaveLookup } from '../saves/saves.service';
 import { type MediaUrl, type UploadsService, toMedia } from '../uploads/uploads.service';
 
@@ -327,6 +328,7 @@ export class PostsService {
       const { count } = isLiked
         ? await tx.like.createMany({ data: [{ userId, postId }], skipDuplicates: true })
         : await tx.like.deleteMany({ where: { userId, postId } });
+      if (count > 0 && isLiked) await recordEvent(tx, 'post.liked', { userId, postId });
       const likeCount =
         count > 0
           ? await this.adjustCounter(tx, postId, 'likeCount', isLiked ? 1 : -1)
