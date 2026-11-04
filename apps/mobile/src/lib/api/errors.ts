@@ -1,3 +1,4 @@
+import { PLAN_LIMITS } from '@supporters/shared';
 import { z } from 'zod';
 
 /**
@@ -15,6 +16,7 @@ export const ApiErrorCode = {
   OtpInvalid: 'OTP_INVALID',
   OtpAttemptsExceeded: 'OTP_ATTEMPTS_EXCEEDED',
   PhoneTaken: 'PHONE_TAKEN',
+  PostLimitReached: 'POST_LIMIT_REACHED',
   PasswordBreached: 'PASSWORD_BREACHED',
   PolicyVersionOutdated: 'POLICY_VERSION_OUTDATED',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
@@ -101,6 +103,7 @@ const MESSAGES: Record<string, string> = {
   [ApiErrorCode.OtpInvalid]: 'That code is wrong or has expired.',
   [ApiErrorCode.OtpAttemptsExceeded]: 'Too many wrong codes. Request a new one.',
   [ApiErrorCode.PhoneTaken]: 'An account with this mobile number already exists. Sign in instead.',
+  [ApiErrorCode.PostLimitReached]: `The free plan allows ${PLAN_LIMITS.free.postsPer7Days} published posts in any 7 days. Try again when an older post is more than 7 days old, or save this one as a draft.`,
   [ApiErrorCode.PasswordBreached]:
     'This password has appeared in a data breach. Choose a different one.',
   [ApiErrorCode.PolicyVersionOutdated]: 'Our terms have changed. Update the app to continue.',

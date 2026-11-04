@@ -1,16 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { router, usePathname } from 'expo-router';
 import {
-  FeedPost,
   Product,
   Service,
   Business,
   Conversation,
   NotificationItem,
   UserProfile,
-  PostType,
   CURRENT_USER,
-  MOCK_POSTS,
   MOCK_PRODUCTS,
   MOCK_SERVICES,
   MOCK_BUSINESSES,
@@ -108,23 +105,6 @@ interface AppContextType {
   currentUser: UserProfile;
   updateUserProfile: (data: Partial<UserProfile>) => void;
 
-  // Posts
-  posts: FeedPost[];
-  addPost: (data: {
-    postType: PostType;
-    content: string;
-    images?: string[];
-    aspectRatio?: '16:9' | '9:16';
-    attachedProduct?: FeedPost['attachedProduct'];
-    attachedService?: FeedPost['attachedService'];
-    offerTag?: string;
-  }) => void;
-  deletePost: (postId: string) => void;
-  likedPostIds: string[];
-  toggleLikePost: (postId: string) => void;
-  savedPostIds: string[];
-  toggleSavePost: (postId: string) => void;
-
   // Products
   products: Product[];
   savedProductIds: string[];
@@ -186,8 +166,6 @@ interface AppContextType {
   // Business Management (Owner interface)
   userBusiness: Business | undefined;
   updateBusinessProfile: (data: Partial<Business>) => void;
-  updateBusinessPost: (postId: string, data: Partial<FeedPost>) => void;
-  setBusinessPostStatus: (postId: string, status: 'Published' | 'Draft' | 'Archived') => void;
 
   // Modals
   enquiryModal: EnquiryTarget;
@@ -230,7 +208,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Data states
   const [currentUser, setCurrentUser] = useState<UserProfile>(CURRENT_USER);
-  const [posts, setPosts] = useState<FeedPost[]>(MOCK_POSTS);
   const [products] = useState<Product[]>(MOCK_PRODUCTS);
   const [services] = useState<Service[]>(MOCK_SERVICES);
   const [businesses, setBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
@@ -240,8 +217,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
   const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
 
-  const [likedPostIds, setLikedPostIds] = useState<string[]>(['post-2']);
-  const [savedPostIds, setSavedPostIds] = useState<string[]>(['post-2']);
   const [savedProductIds, setSavedProductIds] = useState<string[]>(['p-1', 'p-2']);
   const [savedServiceIds, setSavedServiceIds] = useState<string[]>(['s-1']);
   const [savedBusinessIds, setSavedBusinessIds] = useState<string[]>(['b-1', 'b-2']);
@@ -369,38 +344,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = (data: ResetPasswordData) => authService.resetPassword(data);
 
-  const toggleLikePost = (postId: string) => {
-    setLikedPostIds((prev) => {
-      const isLiked = prev.includes(postId);
-      const next = isLiked ? prev.filter((id) => id !== postId) : [...prev, postId];
-      setPosts((currentPosts) =>
-        currentPosts.map((p) => {
-          if (p.id === postId) {
-            return {
-              ...p,
-              likesCount: isLiked ? Math.max(0, p.likesCount - 1) : p.likesCount + 1,
-              isLiked: !isLiked,
-            };
-          }
-          return p;
-        }),
-      );
-      if (!isLiked) {
-        showToast('Post liked', 'info');
-      }
-      return next;
-    });
-  };
-
-  const toggleSavePost = (postId: string) => {
-    setSavedPostIds((prev) => {
-      const isSaved = prev.includes(postId);
-      const next = isSaved ? prev.filter((id) => id !== postId) : [...prev, postId];
-      showToast(isSaved ? 'Removed from saved posts' : 'Post saved to your collection', 'success');
-      return next;
-    });
-  };
-
   const toggleSaveProduct = (productId: string) => {
     setSavedProductIds((prev) => {
       const isSaved = prev.includes(productId);
@@ -461,66 +404,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addPost = (data: {
-    postType: PostType;
-    content: string;
-    images?: string[];
-    aspectRatio?: '16:9' | '9:16';
-    attachedProduct?: FeedPost['attachedProduct'];
-    attachedService?: FeedPost['attachedService'];
-    offerTag?: string;
-  }) => {
-    const userBusiness = businesses.find((b) => b.id === currentUser.businessId);
-
-    const newPost: FeedPost = {
-      id: `post-${Date.now()}`,
-      authorId: currentUser.email || 'user-me',
-      isOwnPost: true,
-      businessId: currentUser.businessId || 'b-user',
-      businessName: currentUser.hasBusiness && userBusiness ? userBusiness.name : currentUser.name,
-      businessAvatar: currentUser.avatar,
-      businessVerified: userBusiness ? userBusiness.verified : false,
-      location: currentUser.city || 'Ahmedabad',
-      createdAt: 'Just now',
-      postType: data.postType,
-      content: data.content,
-      images: data.images,
-      aspectRatio: data.aspectRatio || '16:9',
-      attachedProduct: data.attachedProduct,
-      attachedService: data.attachedService,
-      offerTag: data.offerTag,
-      likesCount: 0,
-      commentsCount: 0,
-      sharesCount: 0,
-      isLiked: false,
-      isSaved: false,
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-    showToast('Your update has been published to Supporters feed!', 'success');
-  };
-
-  const deletePost = (postId: string) => {
-    const postToDelete = posts.find((p) => p.id === postId);
-    if (!postToDelete) return;
-
-    const isOwn = Boolean(
-      postToDelete.isOwnPost ||
-      (postToDelete.authorId &&
-        (postToDelete.authorId === currentUser.email ||
-          postToDelete.authorId === 'user-me' ||
-          postToDelete.authorId === currentUser.username)),
-    );
-
-    if (!isOwn) {
-      showToast('You can only delete posts published by your own account', 'error');
-      return;
-    }
-
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-    showToast('Your post has been deleted from the feed', 'info');
-  };
-
   const updateUserProfile = (data: Partial<UserProfile>) => {
     setCurrentUser((prev) => ({ ...prev, ...data }));
     showToast('Profile updated successfully!', 'success');
@@ -533,16 +416,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const targetId = currentUser.businessId || userBusiness?.id || 'b-1';
     setBusinesses((prev) => prev.map((b) => (b.id === targetId ? { ...b, ...data } : b)));
     showToast('Business details updated successfully!', 'success');
-  };
-
-  const updateBusinessPost = (postId: string, data: Partial<FeedPost>) => {
-    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, ...data } : p)));
-    showToast('Post updated successfully!', 'success');
-  };
-
-  const setBusinessPostStatus = (postId: string, status: 'Published' | 'Draft' | 'Archived') => {
-    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, postStatus: status } : p)));
-    showToast(`Post status updated to ${status}`, 'info');
   };
 
   // Wallet & Withdrawal Management
@@ -778,13 +651,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDrawerOpen,
         currentUser,
         updateUserProfile,
-        posts,
-        addPost,
-        deletePost,
-        likedPostIds,
-        toggleLikePost,
-        savedPostIds,
-        toggleSavePost,
         products,
         savedProductIds,
         toggleSaveProduct,
@@ -812,8 +678,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         requestWithdrawal,
         userBusiness,
         updateBusinessProfile,
-        updateBusinessPost,
-        setBusinessPostStatus,
         enquiryModal,
         openEnquiryModal,
         closeEnquiryModal,

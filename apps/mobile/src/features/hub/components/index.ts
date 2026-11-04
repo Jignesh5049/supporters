@@ -8,7 +8,6 @@ export * from './HubBannerHeader';
 export * from './HubEmptyState';
 export * from './HubMetricsAndCompletion';
 export * from './HubPageControls';
-export * from './BusinessPostManageCard';
 export * from './AddProductModal';
 export * from './AddServiceModal';
 export * from './EnquiryLeadCard';

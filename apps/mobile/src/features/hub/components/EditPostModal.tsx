@@ -1,122 +1,81 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { X } from 'lucide-react-native';
-import { colors } from '../../../styles/theme';
-import type { FeedPost } from '../../../../mock';
+import React, { useState } from 'react';
+import { Modal, View } from 'react-native';
+import { PostType, TEXT_LIMITS, type Post } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Input } from '@supporters/ui-native/components/input';
+import { Text } from '@supporters/ui-native/components/text';
+import { Textarea } from '@supporters/ui-native/components/textarea';
 
 interface EditPostModalProps {
-  post: FeedPost | null;
-  editContent: string;
-  setEditContent: (v: string) => void;
+  post: Post | null;
+  isSaving: boolean;
+  error: string | null;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (changes: { body: string; offerTag?: string }) => void;
 }
 
-export function EditPostModal({
+function EditForm({
   post,
-  editContent,
-  setEditContent,
+  isSaving,
+  error,
   onClose,
   onSave,
-}: EditPostModalProps) {
-  if (!post) return null;
+}: Omit<EditPostModalProps, 'post'> & { post: Post }) {
+  const [body, setBody] = useState(post.body);
+  const [offerTag, setOfferTag] = useState(post.offerTag ?? '');
+  const isOffer = post.type === PostType.Offer;
 
   return (
-    <Modal visible={Boolean(post)} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.dialog}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Edit Business Post</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={20} color="#667085" />
-            </TouchableOpacity>
-          </View>
-
-          <TextInput
-            style={styles.textInput}
-            value={editContent}
-            onChangeText={setEditContent}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
+    <View className="bg-background flex-1 justify-end bg-black/40">
+      <View className="bg-background gap-3 rounded-t-2xl p-4">
+        <Text className="text-base font-semibold">Edit post</Text>
+        {isOffer ? (
+          <Input
+            value={offerTag}
+            onChangeText={setOfferTag}
+            maxLength={TEXT_LIMITS.offerTag.max}
+            accessibilityLabel="Offer tag"
           />
-
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={onSave}>
-              <Text style={styles.saveBtnText}>Save Changes</Text>
-            </TouchableOpacity>
-          </View>
+        ) : null}
+        <Textarea
+          value={body}
+          onChangeText={setBody}
+          maxLength={TEXT_LIMITS.postBody.max}
+          numberOfLines={6}
+          accessibilityLabel="Post message"
+        />
+        {error ? (
+          <Text className="text-destructive text-sm" role="alert">
+            {error}
+          </Text>
+        ) : null}
+        <View className="flex-row gap-2">
+          <Button variant="outline" className="flex-1" onPress={onClose} disabled={isSaving}>
+            <Text>Cancel</Text>
+          </Button>
+          <Button
+            className="flex-1"
+            disabled={isSaving || (isOffer && offerTag.trim().length === 0)}
+            onPress={() => onSave({ body, ...(isOffer ? { offerTag: offerTag.trim() } : {}) })}
+          >
+            <Text>{isSaving ? 'Saving' : 'Save'}</Text>
+          </Button>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  dialog: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 13,
-    minHeight: 100,
-    marginBottom: 16,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-  },
-  cancelBtnText: {
-    color: colors.textSecondary,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  saveBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-  },
-  saveBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-});
+/** Edits the text of a post. Its photos, video and type are fixed once created. */
+export function EditPostModal(props: EditPostModalProps) {
+  return (
+    <Modal
+      visible={props.post !== null}
+      transparent
+      animationType="slide"
+      onRequestClose={props.onClose}
+    >
+      {props.post ? <EditForm {...props} post={props.post} /> : null}
+    </Modal>
+  );
+}
