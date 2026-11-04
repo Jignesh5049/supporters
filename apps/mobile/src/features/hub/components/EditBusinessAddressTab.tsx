@@ -1,154 +1,72 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors } from '../../../styles/theme';
+import { View } from 'react-native';
+import { BUSINESS_LIMITS } from '@supporters/shared';
+import { Input } from '@supporters/ui-native/components/input';
+import { useCities, useStates } from '../../places/hooks';
+import { FormField } from './FormField';
+import { OptionPicker } from './OptionPicker';
+import type { EditTabProps } from './EditBusinessBasicTab';
 
-interface EditBusinessAddressTabProps {
-  addressLine: string;
-  setAddressLine: (v: string) => void;
-  area: string;
-  setArea: (v: string) => void;
-  city: string;
-  setCity: (v: string) => void;
-  state: string;
-  setState: (v: string) => void;
-  pinCode: string;
-  setPinCode: (v: string) => void;
-  country: string;
-  setCountry: (v: string) => void;
-  mapUrl: string;
-  setMapUrl: (v: string) => void;
-}
+export function EditBusinessAddressTab({ values, onChange }: EditTabProps) {
+  const states = useStates();
+  const cities = useCities(values.stateCode || null);
 
-export function EditBusinessAddressTab({
-  addressLine,
-  setAddressLine,
-  area,
-  setArea,
-  city,
-  setCity,
-  state,
-  setState,
-  pinCode,
-  setPinCode,
-  country,
-  setCountry,
-  mapUrl,
-  setMapUrl,
-}: EditBusinessAddressTabProps) {
   return (
-    <View style={styles.formSection}>
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Street / Factory Address Line *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={addressLine}
-          onChangeText={setAddressLine}
-          placeholder="e.g. Plot 42, Phase II, GIDC Industrial Estate"
-          placeholderTextColor="#94A3B8"
+    <View className="gap-4 p-4">
+      <FormField label="Street / Factory Address">
+        <Input
+          value={values.address}
+          onChangeText={(address) => onChange({ address })}
+          maxLength={BUSINESS_LIMITS.address.max}
+          placeholder="e.g. Plot 42, Phase II, GIDC Industrial Estate, Naroda"
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Area / Industrial Zone</Text>
-        <TextInput
-          style={styles.textInput}
-          value={area}
-          onChangeText={setArea}
-          placeholder="e.g. Naroda Industrial Zone"
-          placeholderTextColor="#94A3B8"
+      <FormField label="State *">
+        <OptionPicker
+          title="State"
+          placeholder="Choose a state"
+          options={(states.data ?? []).map((state) => ({ id: state.code, label: state.name }))}
+          value={values.stateCode || null}
+          // A city belongs to one state, so changing the state clears the city.
+          onChange={(stateCode) => onChange({ stateCode, cityId: '' })}
+          isLoading={states.isPending}
+          searchable
         />
-      </View>
+      </FormField>
 
-      <View style={styles.rowFields}>
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>City *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={city}
-            onChangeText={setCity}
-            placeholder="Ahmedabad"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+      <FormField label="City *">
+        <OptionPicker
+          title="City"
+          placeholder={values.stateCode ? 'Choose a city' : 'Choose a state first'}
+          options={(cities.data ?? []).map((city) => ({ id: city.id, label: city.name }))}
+          value={values.cityId || null}
+          onChange={(cityId) => onChange({ cityId })}
+          isLoading={cities.isPending && Boolean(values.stateCode)}
+          disabled={!values.stateCode}
+          searchable
+        />
+      </FormField>
 
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>State *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={state}
-            onChangeText={setState}
-            placeholder="Gujarat"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
-      </View>
+      <FormField label="PIN Code">
+        <Input
+          value={values.pincode}
+          onChangeText={(pincode) => onChange({ pincode })}
+          placeholder="382330"
+          keyboardType="numeric"
+          maxLength={6}
+        />
+      </FormField>
 
-      <View style={styles.rowFields}>
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>PIN Code *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={pinCode}
-            onChangeText={setPinCode}
-            placeholder="382330"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-          />
-        </View>
-
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>Country</Text>
-          <TextInput
-            style={styles.textInput}
-            value={country}
-            onChangeText={setCountry}
-            placeholder="India"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
-      </View>
-
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Google Maps Location URL</Text>
-        <TextInput
-          style={styles.textInput}
-          value={mapUrl}
-          onChangeText={setMapUrl}
+      <FormField label="Google Maps Location URL">
+        <Input
+          value={values.mapUrl}
+          onChangeText={(mapUrl) => onChange({ mapUrl })}
           placeholder="https://maps.google.com/?q=..."
-          placeholderTextColor="#94A3B8"
           keyboardType="url"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formSection: {
-    padding: 16,
-  },
-  fieldGroup: {
-    marginBottom: 14,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.textPrimary,
-    backgroundColor: '#FFFFFF',
-  },
-  rowFields: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-});

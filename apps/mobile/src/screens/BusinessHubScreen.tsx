@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { router } from 'expo-router';
 import { ArrowLeft, Settings } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -11,17 +19,39 @@ import {
   HubStorefrontHighlights,
 } from '../features/hub/components';
 import { useMyPosts } from '../features/hub/hooks/use-my-posts';
-import { useMyBusiness } from '../features/business/hooks';
+import { hasNoBusiness, useMyBusiness } from '../features/business/hooks';
+import { listingsUsage } from '../features/business/labels';
+import { messageForError } from '../lib/api';
 import { FollowersModal } from '../features/business/components/FollowersModal';
 
 export function BusinessHubScreen() {
-  const { userBusiness, products, navigate } = useApp();
+  const { navigate } = useApp();
   const publishedPosts = useMyPosts('published');
   const draftPosts = useMyPosts('draft');
   const myBusiness = useMyBusiness();
+  const business = myBusiness.data;
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
-  if (!userBusiness) {
+  if (myBusiness.isPending) {
+    return (
+      <View style={[styles.screenWrapper, styles.centered]}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (myBusiness.isError && !hasNoBusiness(myBusiness.error)) {
+    return (
+      <View style={[styles.screenWrapper, styles.centered]}>
+        <Text style={styles.errorText}>{messageForError(myBusiness.error)}</Text>
+        <TouchableOpacity onPress={() => myBusiness.refetch()} style={styles.retryBtn}>
+          <Text style={styles.retryBtnText}>Try again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!business) {
     return (
       <View style={styles.screenWrapper}>
         <View style={styles.topBar}>
@@ -44,8 +74,7 @@ export function BusinessHubScreen() {
   // Counts of the first page (20) of each list; the Posts screen has the full lists.
   const publishedPostsCount = publishedPosts.data?.pages[0]?.data.length ?? 0;
   const draftPostsCount = draftPosts.data?.pages[0]?.data.length ?? 0;
-  const businessProducts = products.filter((p) => p.businessId === userBusiness.id);
-  const completionPercent = userBusiness.profileCompletion || 85;
+  const usage = listingsUsage(business.publishedListings, business.publishedListingsLimit);
 
   return (
     <View style={styles.screenWrapper}>
@@ -71,17 +100,18 @@ export function BusinessHubScreen() {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <HubBannerHeader
-          business={userBusiness}
-          onViewPublicProfile={() => navigate('business_detail', { slug: myBusiness.data?.slug })}
+          business={business}
+          onViewPublicProfile={() => navigate('business_detail', { slug: business.slug })}
           onEditProfile={() => navigate('business_edit')}
         />
 
         <HubMetricsAndCompletion
-          completionPercent={completionPercent}
-          followersCount={userBusiness.followersCount}
+          completionPercent={business.profileCompletion}
+          followersCount={business.followerCount}
           postsCount={publishedPostsCount + draftPostsCount}
           publishedPostsCount={publishedPostsCount}
-          productsCount={businessProducts.length}
+          listingsLabel={usage.label}
+          isAtListingLimit={usage.atLimit}
           onOpenFollowers={() => setFollowersModalOpen(true)}
           onNavigatePosts={() => navigate('business_posts')}
           onCompleteProfile={() => navigate('business_edit')}
@@ -89,17 +119,19 @@ export function BusinessHubScreen() {
 
         <HubPageControls
           draftPostsCount={draftPostsCount}
+          onOpenProducts={() => router.push('/hub/products')}
+          onOpenServices={() => router.push('/hub/services')}
           onNavigate={(route: string) => navigate(route as any)}
         />
 
-        <HubStorefrontHighlights business={userBusiness} />
+        <HubStorefrontHighlights business={business} />
       </ScrollView>
 
       <FollowersModal
         visible={followersModalOpen}
         onClose={() => setFollowersModalOpen(false)}
-        businessId={myBusiness.data?.id ?? ''}
-        businessName={userBusiness.name}
+        businessId={business.id}
+        businessName={business.name}
       />
     </View>
   );
@@ -136,5 +168,26 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

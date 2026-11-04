@@ -7,7 +7,9 @@ interface HubMetricsAndCompletionProps {
   followersCount: number;
   postsCount: number;
   publishedPostsCount: number;
-  productsCount: number;
+  /** Published listings, e.g. '12 / 25' on the free plan or '12' when there is no limit. */
+  listingsLabel: string;
+  isAtListingLimit: boolean;
   onOpenFollowers: () => void;
   onNavigatePosts: () => void;
   onCompleteProfile: () => void;
@@ -18,7 +20,8 @@ export function HubMetricsAndCompletion({
   followersCount,
   postsCount,
   publishedPostsCount,
-  productsCount,
+  listingsLabel,
+  isAtListingLimit,
   onOpenFollowers,
   onNavigatePosts,
   onCompleteProfile,
@@ -31,7 +34,9 @@ export function HubMetricsAndCompletion({
           <View style={styles.completionTextCol}>
             <Text style={styles.completionTitle}>Profile Completion: {completionPercent}%</Text>
             <Text style={styles.completionSub}>
-              Add Instagram link & operating hours to rank higher in search
+              {completionPercent >= 100
+                ? 'Your profile is complete'
+                : 'Add the missing details, like links and opening hours, to rank higher in search'}
             </Text>
           </View>
           <TouchableOpacity onPress={onCompleteProfile}>
@@ -58,8 +63,10 @@ export function HubMetricsAndCompletion({
         </TouchableOpacity>
 
         <View style={styles.metricCard}>
-          <Text style={[styles.metricNumber, { color: '#00AEEF' }]}>{productsCount}</Text>
-          <Text style={styles.metricLabel}>Catalog Items</Text>
+          <Text style={[styles.metricNumber, { color: isAtListingLimit ? '#DC2626' : '#00AEEF' }]}>
+            {listingsLabel}
+          </Text>
+          <Text style={styles.metricLabel}>Published Listings</Text>
         </View>
       </View>
     </View>

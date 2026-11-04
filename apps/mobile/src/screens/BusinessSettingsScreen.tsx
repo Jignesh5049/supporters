@@ -12,14 +12,19 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
+import { messageForError } from '../lib/api';
+import { useMyBusiness, useUpdateBusinessMutation } from '../features/business/hooks';
 
 export function BusinessSettingsScreen() {
-  const { userBusiness, updateBusinessProfile, navigate, showToast } = useApp();
+  const { navigate, showToast } = useApp();
+  const { data: business } = useMyBusiness();
+  const updateBusiness = useUpdateBusinessMutation();
 
   const [inquiryAlerts, setInquiryAlerts] = useState(true);
   const [postAlerts, setPostAlerts] = useState(true);
   const [catalogPublic, setCatalogPublic] = useState(true);
-  const [showPhone, setShowPhone] = useState(userBusiness?.showPhone ?? true);
+  // The server value; the switch follows it, so a failed save never leaves it flipped.
+  const showPhone = business?.isContactPublic ?? false;
 
   const handleDeactivate = () => {
     Alert.alert(
@@ -200,22 +205,29 @@ export function BusinessSettingsScreen() {
                 </View>
               </View>
               <Text style={styles.toggleSub}>
-                Allow buyers to view your contact number ({userBusiness?.phone}) directly on your
-                catalog storefront
+                Allow buyers to view your contact number (
+                {business?.contactPhone ?? 'no phone added yet'}) directly on your catalog
+                storefront
               </Text>
             </View>
             <Switch
               value={showPhone}
-              onValueChange={(val) => {
-                setShowPhone(val);
-                updateBusinessProfile({ showPhone: val });
-                showToast(
-                  val
-                    ? 'Phone number will now be shown on your catalog'
-                    : 'Phone number is now hidden from your catalog',
-                  'info',
-                );
-              }}
+              disabled={!business || updateBusiness.isPending}
+              onValueChange={(val) =>
+                updateBusiness.mutate(
+                  { isContactPublic: val },
+                  {
+                    onSuccess: () =>
+                      showToast(
+                        val
+                          ? 'Phone number will now be shown on your catalog'
+                          : 'Phone number is now hidden from your catalog',
+                        'info',
+                      ),
+                    onError: (error) => showToast(messageForError(error), 'error'),
+                  },
+                )
+              }
               trackColor={{ false: '#CBD5E1', true: colors.primary }}
             />
           </View>

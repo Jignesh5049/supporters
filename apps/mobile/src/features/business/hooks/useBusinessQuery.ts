@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateBusinessInput, UpdateBusinessInput } from '@supporters/shared';
-import { businessesApi } from '../../../lib/api';
+import { ApiError, ApiErrorCode, businessesApi } from '../../../lib/api';
 
 export const businessKeys = {
   all: ['business'] as const,
@@ -15,6 +15,11 @@ export function useBusiness(slug: string) {
     enabled: Boolean(slug),
     staleTime: 5 * 60_000,
   });
+}
+
+/** `GET /me/business` answers 404 for a user who has not created a business yet. */
+export function hasNoBusiness(error: unknown): boolean {
+  return error instanceof ApiError && error.code === ApiErrorCode.NotFound;
 }
 
 export function useMyBusiness() {

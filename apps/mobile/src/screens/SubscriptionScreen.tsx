@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Crown, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react-native';
-import { useApp } from '../context/AppContext';
+import { useMyBusiness } from '../features/business/hooks';
 import { colors, spacing, borderRadius } from '../styles/theme';
 
 export function SubscriptionScreen() {
-  const { userBusiness } = useApp();
-  const isVerified = userBusiness?.verified ?? false;
+  const { data: business } = useMyBusiness();
+  const isVerified = business?.isVerified ?? false;
 
   const perks = [
     'Official Blue Shield Verified Vendor Trustmark',

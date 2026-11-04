@@ -3,10 +3,11 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Eye, Edit2 } from 'lucide-react-native';
 import { colors } from '../../../styles/theme';
-import type { Business } from '../../../../mock';
+import type { MyBusiness } from '@supporters/shared';
+import { businessTypeLabel } from '../../business/labels';
 
 interface HubBannerHeaderProps {
-  business: Business;
+  business: MyBusiness;
   onViewPublicProfile: () => void;
   onEditProfile: () => void;
 }
@@ -19,7 +20,7 @@ export function HubBannerHeader({
   return (
     <View style={styles.bannerCard}>
       <Image
-        source={{ uri: business.coverImage }}
+        source={{ uri: business.cover?.url }}
         style={styles.coverImage}
         contentFit="cover"
         transition={200}
@@ -29,12 +30,12 @@ export function HubBannerHeader({
         <View style={styles.avatarRow}>
           <View style={styles.avatarWrapper}>
             <Image
-              source={{ uri: business.avatar }}
+              source={{ uri: business.logo?.url }}
               style={styles.avatar}
               contentFit="cover"
               transition={200}
             />
-            {business.verified && (
+            {business.isVerified && (
               <View style={styles.verifiedDot}>
                 <Check size={10} color="#FFFFFF" strokeWidth={3} />
               </View>
@@ -60,19 +61,19 @@ export function HubBannerHeader({
 
         <View style={styles.titleRow}>
           <Text style={styles.businessName}>{business.name}</Text>
-          {business.verified && (
+          {business.isVerified && (
             <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedBadgeText}>Verified Gold</Text>
+              <Text style={styles.verifiedBadgeText}>Verified</Text>
             </View>
           )}
         </View>
 
         <Text style={styles.businessCategory}>
-          {business.category} · {business.businessType} · {business.city}
+          {business.category.name} · {businessTypeLabel(business.type)} · {business.city.name}
         </Text>
 
         <Text style={styles.aboutSnippet} numberOfLines={2}>
-          {business.about}
+          {business.about ?? 'Add a short description of your business.'}
         </Text>
       </View>
     </View>

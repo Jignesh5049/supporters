@@ -1,105 +1,51 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors } from '../../../styles/theme';
+import { View } from 'react-native';
+import { Input } from '@supporters/ui-native/components/input';
+import { FormField } from './FormField';
+import type { EditTabProps } from './EditBusinessBasicTab';
 
-interface EditBusinessSocialTabProps {
-  instagram: string;
-  setInstagram: (v: string) => void;
-  website: string;
-  setWebsite: (v: string) => void;
-  facebook: string;
-  setFacebook: (v: string) => void;
-  youtube: string;
-  setYoutube: (v: string) => void;
-}
-
-export function EditBusinessSocialTab({
-  instagram,
-  setInstagram,
-  website,
-  setWebsite,
-  facebook,
-  setFacebook,
-  youtube,
-  setYoutube,
-}: EditBusinessSocialTabProps) {
+export function EditBusinessSocialTab({ values, onChange }: EditTabProps) {
   return (
-    <View style={styles.formSection}>
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Instagram Handle</Text>
-        <TextInput
-          style={styles.textInput}
-          value={instagram}
-          onChangeText={setInstagram}
-          placeholder="@shree_electronics_official"
-          placeholderTextColor="#94A3B8"
+    <View className="gap-4 p-4">
+      <FormField label="Instagram Profile Link">
+        <Input
+          value={values.instagram}
+          onChangeText={(instagram) => onChange({ instagram })}
+          placeholder="https://instagram.com/shree_electronics"
+          keyboardType="url"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Company Website URL</Text>
-        <TextInput
-          style={styles.textInput}
-          value={website}
-          onChangeText={setWebsite}
+      <FormField label="Company Website URL">
+        <Input
+          value={values.website}
+          onChangeText={(website) => onChange({ website })}
           placeholder="https://shreeelectronics.in"
-          placeholderTextColor="#94A3B8"
           keyboardType="url"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Facebook Page Link</Text>
-        <TextInput
-          style={styles.textInput}
-          value={facebook}
-          onChangeText={setFacebook}
+      <FormField label="Facebook Page Link">
+        <Input
+          value={values.facebook}
+          onChangeText={(facebook) => onChange({ facebook })}
           placeholder="https://facebook.com/shreeelectronics"
-          placeholderTextColor="#94A3B8"
           keyboardType="url"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>YouTube Channel / Demo Reel</Text>
-        <TextInput
-          style={styles.textInput}
-          value={youtube}
-          onChangeText={setYoutube}
+      <FormField label="YouTube Channel / Demo Reel">
+        <Input
+          value={values.youtube}
+          onChangeText={(youtube) => onChange({ youtube })}
           placeholder="https://youtube.com/@shreeelectronics"
-          placeholderTextColor="#94A3B8"
           keyboardType="url"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formSection: {
-    padding: 16,
-  },
-  fieldGroup: {
-    marginBottom: 14,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.textPrimary,
-    backgroundColor: '#FFFFFF',
-  },
-});

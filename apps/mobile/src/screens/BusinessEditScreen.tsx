@@ -1,320 +1,232 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { MyBusiness } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
 import { useApp } from '../context/AppContext';
-import { colors } from '../styles/theme';
+import { messageForError, uploadsApi } from '../lib/api';
 import {
-  EditBusinessBasicTab,
-  EditBusinessSocialTab,
+  businessToForm,
+  buildCreateBusinessInput,
+  buildUpdateBusinessInput,
+  emptyBusinessForm,
+  type BusinessFormValues,
+} from '../features/business/business-form';
+import {
+  hasNoBusiness,
+  useCreateBusinessMutation,
+  useMyBusiness,
+  useUpdateBusinessMutation,
+} from '../features/business/hooks';
+import {
   EditBusinessAddressTab,
+  EditBusinessBasicTab,
   EditBusinessOperationsTab,
+  EditBusinessSocialTab,
 } from '../features/hub/components';
+import { pickCroppedImage } from '../features/hub/image-picker';
 
+type TabKey = 'basic' | 'social' | 'address' | 'hours';
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'basic', label: '1. Basic' },
+  { key: 'social', label: '2. Social & Web' },
+  { key: 'address', label: '3. Address' },
+  { key: 'hours', label: '4. Operations' },
+];
+
+/** Creates the owner's business, or edits it when they already have one. */
 export function BusinessEditScreen() {
-  const { userBusiness, updateBusinessProfile, navigate, showToast } = useApp();
+  const { navigate } = useApp();
+  const business = useMyBusiness();
 
-  const [activeTab, setActiveTab] = useState<'basic' | 'social' | 'address' | 'hours'>('basic');
+  if (business.isPending) {
+    return (
+      <SafeAreaView className="bg-background flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
+  }
+  if (business.isError && !hasNoBusiness(business.error)) {
+    return (
+      <SafeAreaView className="bg-background flex-1 items-center justify-center gap-3 p-6">
+        <Text className="text-center">{messageForError(business.error)}</Text>
+        <Button variant="outline" onPress={() => business.refetch()}>
+          <Text>Try again</Text>
+        </Button>
+        <Button variant="ghost" onPress={() => navigate('business_hub')}>
+          <Text>Back to the hub</Text>
+        </Button>
+      </SafeAreaView>
+    );
+  }
+  return <BusinessForm business={business.data ?? null} />;
+}
 
-  // Form states initialized with userBusiness
-  const [name, setName] = useState(userBusiness?.name || '');
-  const [category, setCategory] = useState(userBusiness?.category || '');
-  const [about, setAbout] = useState(userBusiness?.about || '');
-  const [avatar, setAvatar] = useState(userBusiness?.avatar || '');
-  const [coverImage, setCoverImage] = useState(userBusiness?.coverImage || '');
-  const [contactPerson, setContactPerson] = useState(userBusiness?.contactPerson || 'Aarav Mehta');
-  const [phone, setPhone] = useState(userBusiness?.phone || '');
-  const [email, setEmail] = useState(userBusiness?.email || '');
+function BusinessForm({ business }: { business: MyBusiness | null }) {
+  const { navigate, showToast } = useApp();
+  const createBusiness = useCreateBusinessMutation();
+  const updateBusiness = useUpdateBusinessMutation();
+  const isCreating = business === null;
 
-  // Social & Website
-  const [instagram, setInstagram] = useState(
-    userBusiness?.instagram || '@shree_electronics_official',
+  const [values, setValues] = useState<BusinessFormValues>(
+    business ? businessToForm(business) : emptyBusinessForm(),
   );
-  const [website, setWebsite] = useState(userBusiness?.website || 'https://shreeelectronics.in');
-  const [facebook, setFacebook] = useState(
-    userBusiness?.facebook || 'https://facebook.com/shreeelectronics',
-  );
-  const [youtube, setYoutube] = useState(
-    userBusiness?.youtube || 'https://youtube.com/@shreeelectronics',
-  );
+  const [activeTab, setActiveTab] = useState<TabKey>('basic');
+  const [error, setError] = useState<string | null>(null);
+  // A picked photo shows right away; its upload id goes into the form once it is ready.
+  const [logoUri, setLogoUri] = useState<string | undefined>(business?.logo?.url);
+  const [coverUri, setCoverUri] = useState<string | undefined>(business?.cover?.url);
+  const [uploading, setUploading] = useState<{ logo: boolean; cover: boolean }>({
+    logo: false,
+    cover: false,
+  });
 
-  // Address
-  const [addressLine, setAddressLine] = useState(
-    userBusiness?.addressLine || 'Plot 42, Phase II, GIDC Industrial Estate',
-  );
-  const [area, setArea] = useState(userBusiness?.area || 'Naroda Industrial Zone');
-  const [city, setCity] = useState(userBusiness?.city || 'Ahmedabad');
-  const [state, setState] = useState(userBusiness?.state || 'Gujarat');
-  const [pinCode, setPinCode] = useState(userBusiness?.pinCode || '382330');
-  const [country, setCountry] = useState(userBusiness?.country || 'India');
-  const [mapUrl, setMapUrl] = useState(
-    userBusiness?.mapUrl || 'https://maps.google.com/?q=Naroda+GIDC+Ahmedabad',
-  );
-
-  // Operating Info
-  const [openingHours, setOpeningHours] = useState(
-    userBusiness?.openingHours || 'Mon - Sat: 9:00 AM - 7:30 PM',
-  );
-  const [availabilityStatus, setAvailabilityStatus] = useState(
-    userBusiness?.availabilityStatus || 'Immediate Dispatch Available',
-  );
-  const [priceRange, setPriceRange] = useState(
-    userBusiness?.priceRange || '₹₹ (Wholesale / Bulk Commercial)',
-  );
-
-  const handlePickLogo = async () => {
-    try {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.85,
-      });
-      if (!res.canceled && res.assets?.[0]?.uri) {
-        setAvatar(res.assets[0].uri);
-        showToast('Logo updated!', 'info');
-      }
-    } catch {
-      // Ignored
-    }
+  const change = (patch: Partial<BusinessFormValues>) => {
+    setError(null);
+    setValues((current) => ({ ...current, ...patch }));
   };
 
-  const handlePickCover = async () => {
-    try {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.85,
-      });
-      if (!res.canceled && res.assets?.[0]?.uri) {
-        setCoverImage(res.assets[0].uri);
-        showToast('Cover image updated!', 'info');
-      }
-    } catch {
-      // Ignored
-    }
-  };
-
-  const handleSave = () => {
-    if (!name.trim()) {
-      Alert.alert('Required', 'Business name cannot be empty.');
+  const pickImage = async (kind: 'logo' | 'cover') => {
+    const picked = await pickCroppedImage(kind === 'logo' ? [1, 1] : [16, 9]);
+    if (!picked.ok) {
+      showToast('Allow photo access in Settings to choose a picture.', 'error');
       return;
     }
+    const image = picked.media[0];
+    if (!image) return;
+    setUploading((current) => ({ ...current, [kind]: true }));
+    try {
+      const upload = await uploadsApi.uploadFile(
+        image.uri,
+        image.contentType,
+        kind === 'logo' ? 'avatar' : 'cover',
+      );
+      if (kind === 'logo') {
+        setLogoUri(image.uri);
+        change({ logoMediaId: upload.id });
+      } else {
+        setCoverUri(image.uri);
+        change({ coverMediaId: upload.id });
+      }
+    } catch (uploadError) {
+      showToast(messageForError(uploadError), 'error');
+    } finally {
+      setUploading((current) => ({ ...current, [kind]: false }));
+    }
+  };
 
-    const fullAddr = `${addressLine.trim()}, ${area.trim()}, ${city.trim()}, ${state.trim()} - ${pinCode.trim()}`;
+  const isSaving = createBusiness.isPending || updateBusiness.isPending;
+  const isBusy = isSaving || uploading.logo || uploading.cover;
 
-    updateBusinessProfile({
-      name: name.trim(),
-      category: category.trim(),
-      about: about.trim(),
-      avatar: avatar || userBusiness?.avatar,
-      coverImage: coverImage || userBusiness?.coverImage,
-      contactPerson: contactPerson.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      instagram: instagram.trim(),
-      website: website.trim(),
-      facebook: facebook.trim(),
-      youtube: youtube.trim(),
-      addressLine: addressLine.trim(),
-      area: area.trim(),
-      city: city.trim(),
-      state: state.trim(),
-      pinCode: pinCode.trim(),
-      country: country.trim(),
-      fullAddress: fullAddr,
-      mapUrl: mapUrl.trim(),
-      openingHours: openingHours.trim(),
-      availabilityStatus: availabilityStatus.trim(),
-      priceRange: priceRange.trim(),
-      profileCompletion: 95,
-    });
-
-    navigate('business_hub');
+  const handleSave = () => {
+    const onError = (saveError: unknown) => setError(messageForError(saveError));
+    if (isCreating) {
+      const built = buildCreateBusinessInput(values);
+      if (!built.ok) return setError(built.message);
+      createBusiness.mutate(built.input, {
+        onSuccess: () => {
+          showToast('Your business is ready!', 'success');
+          navigate('business_hub');
+        },
+        onError,
+      });
+    } else {
+      const built = buildUpdateBusinessInput(values);
+      if (!built.ok) return setError(built.message);
+      updateBusiness.mutate(built.input, {
+        onSuccess: () => {
+          showToast('Business details updated successfully!', 'success');
+          navigate('business_hub');
+        },
+        onError,
+      });
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.screenWrapper}
+      className="bg-background flex-1"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => navigate('business_hub')}
-          style={styles.backBtn}
-          accessibilityLabel="Go back"
-        >
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Edit Business Profile</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveTopBtn}>
-          <Text style={styles.saveTopBtnText}>Save</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView edges={['top']} className="bg-background">
+        <View className="border-border flex-row items-center justify-between border-b px-4 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onPress={() => navigate('business_hub')}
+            accessibilityLabel="Go back"
+          >
+            <Icon as={ArrowLeft} size={20} />
+          </Button>
+          <Text className="text-base font-bold">
+            {isCreating ? 'Create your business' : 'Edit Business Profile'}
+          </Text>
+          <Button size="sm" disabled={isBusy} onPress={handleSave} accessibilityLabel="Save">
+            <Text>{isSaving ? 'Saving' : isCreating ? 'Create' : 'Save'}</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
 
-      {/* Section Tabs */}
-      <View style={styles.sectionTabs}>
-        {[
-          { key: 'basic', label: '1. Basic' },
-          { key: 'social', label: '2. Social & Web' },
-          { key: 'address', label: '3. Address' },
-          { key: 'hours', label: '4. Operations' },
-        ].map((tab) => {
+      <View className="bg-muted/40 border-border flex-row border-b">
+        {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
-            <TouchableOpacity
+            <Button
               key={tab.key}
-              onPress={() => setActiveTab(tab.key as any)}
-              style={[styles.sectionTabItem, isActive && styles.sectionTabItemActive]}
+              variant="ghost"
+              className={
+                isActive
+                  ? 'border-primary bg-background flex-1 rounded-none border-b-2'
+                  : 'flex-1 rounded-none border-b-2 border-transparent'
+              }
+              onPress={() => setActiveTab(tab.key)}
+              accessibilityState={{ selected: isActive }}
             >
-              <Text style={[styles.sectionTabText, isActive && styles.sectionTabTextActive]}>
+              <Text
+                className={
+                  isActive ? 'text-primary text-xs font-bold' : 'text-muted-foreground text-xs'
+                }
+              >
                 {tab.label}
               </Text>
-            </TouchableOpacity>
+            </Button>
           );
         })}
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {activeTab === 'basic' && (
+      {error ? (
+        <Text className="text-destructive px-4 pt-3 text-sm" role="alert">
+          {error}
+        </Text>
+      ) : null}
+
+      <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+        {activeTab === 'basic' ? (
           <EditBusinessBasicTab
-            coverImage={coverImage || userBusiness?.coverImage}
-            avatar={avatar || userBusiness?.avatar}
-            name={name}
-            setName={setName}
-            category={category}
-            setCategory={setCategory}
-            about={about}
-            setAbout={setAbout}
-            contactPerson={contactPerson}
-            setContactPerson={setContactPerson}
-            phone={phone}
-            setPhone={setPhone}
-            email={email}
-            setEmail={setEmail}
-            onPickCover={handlePickCover}
-            onPickLogo={handlePickLogo}
+            values={values}
+            onChange={change}
+            coverUri={coverUri}
+            logoUri={logoUri}
+            isUploadingCover={uploading.cover}
+            isUploadingLogo={uploading.logo}
+            onPickCover={() => void pickImage('cover')}
+            onPickLogo={() => void pickImage('logo')}
           />
-        )}
-
-        {activeTab === 'social' && (
-          <EditBusinessSocialTab
-            instagram={instagram}
-            setInstagram={setInstagram}
-            website={website}
-            setWebsite={setWebsite}
-            facebook={facebook}
-            setFacebook={setFacebook}
-            youtube={youtube}
-            setYoutube={setYoutube}
-          />
-        )}
-
-        {activeTab === 'address' && (
-          <EditBusinessAddressTab
-            addressLine={addressLine}
-            setAddressLine={setAddressLine}
-            area={area}
-            setArea={setArea}
-            city={city}
-            setCity={setCity}
-            state={state}
-            setState={setState}
-            pinCode={pinCode}
-            setPinCode={setPinCode}
-            country={country}
-            setCountry={setCountry}
-            mapUrl={mapUrl}
-            setMapUrl={setMapUrl}
-          />
-        )}
-
-        {activeTab === 'hours' && (
-          <EditBusinessOperationsTab
-            openingHours={openingHours}
-            setOpeningHours={setOpeningHours}
-            availabilityStatus={availabilityStatus}
-            setAvailabilityStatus={setAvailabilityStatus}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-          />
-        )}
+        ) : null}
+        {activeTab === 'social' ? (
+          <EditBusinessSocialTab values={values} onChange={change} />
+        ) : null}
+        {activeTab === 'address' ? (
+          <EditBusinessAddressTab values={values} onChange={change} />
+        ) : null}
+        {activeTab === 'hours' ? (
+          <EditBusinessOperationsTab values={values} onChange={change} />
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  screenWrapper: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    padding: 6,
-  },
-  topBarTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  saveTopBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  saveTopBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  sectionTabs: {
-    flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sectionTabItem: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  sectionTabItemActive: {
-    borderBottomColor: colors.primary,
-    backgroundColor: '#FFFFFF',
-  },
-  sectionTabText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  sectionTabTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  container: {
-    flex: 1,
-  },
-});

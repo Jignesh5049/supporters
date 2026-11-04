@@ -1,246 +1,182 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Camera, Upload } from 'lucide-react-native';
-import { colors } from '../../../styles/theme';
+import { BUSINESS_LIMITS, BusinessType } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Input } from '@supporters/ui-native/components/input';
+import { Text } from '@supporters/ui-native/components/text';
+import { Textarea } from '@supporters/ui-native/components/textarea';
+import { businessTypeLabel } from '../../business/labels';
+import type { BusinessFormValues } from '../../business/business-form';
+import { useCategoriesQuery } from '../../categories/hooks';
+import { FormField } from './FormField';
+import { OptionPicker } from './OptionPicker';
 
-interface EditBusinessBasicTabProps {
-  coverImage?: string;
-  avatar?: string;
-  name: string;
-  setName: (v: string) => void;
-  category: string;
-  setCategory: (v: string) => void;
-  about: string;
-  setAbout: (v: string) => void;
-  contactPerson: string;
-  setContactPerson: (v: string) => void;
-  phone: string;
-  setPhone: (v: string) => void;
-  email: string;
-  setEmail: (v: string) => void;
+export interface EditTabProps {
+  values: BusinessFormValues;
+  onChange: (patch: Partial<BusinessFormValues>) => void;
+}
+
+interface EditBusinessBasicTabProps extends EditTabProps {
+  coverUri?: string;
+  logoUri?: string;
+  isUploadingCover: boolean;
+  isUploadingLogo: boolean;
   onPickCover: () => void;
   onPickLogo: () => void;
 }
 
+const TYPE_OPTIONS = Object.values(BusinessType).map((type) => ({
+  id: type,
+  label: businessTypeLabel(type),
+}));
+
 export function EditBusinessBasicTab({
-  coverImage,
-  avatar,
-  name,
-  setName,
-  category,
-  setCategory,
-  about,
-  setAbout,
-  contactPerson,
-  setContactPerson,
-  phone,
-  setPhone,
-  email,
-  setEmail,
+  values,
+  onChange,
+  coverUri,
+  logoUri,
+  isUploadingCover,
+  isUploadingLogo,
   onPickCover,
   onPickLogo,
 }: EditBusinessBasicTabProps) {
+  const categories = useCategoriesQuery();
+  const categoryOptions = (categories.data?.data ?? []).map(({ id, name }) => ({
+    id,
+    label: name,
+  }));
+
   return (
-    <View style={styles.formSection}>
-      {/* Visual Logo & Cover preview */}
-      <View style={styles.mediaPreviewCard}>
-        <View style={styles.coverPreviewContainer}>
-          <Image
-            source={{ uri: coverImage }}
-            style={styles.coverImg}
-            contentFit="cover"
-            transition={200}
-          />
-          <TouchableOpacity style={styles.changeCoverBtn} onPress={onPickCover} activeOpacity={0.8}>
+    <View className="gap-4 p-4">
+      <View className="border-border bg-card gap-3 rounded-xl border p-3">
+        <View className="bg-muted h-32 overflow-hidden rounded-lg">
+          {coverUri ? (
+            <Image
+              source={{ uri: coverUri }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={200}
+              accessibilityLabel="Cover photo"
+            />
+          ) : null}
+          {isUploadingCover ? (
+            <View className="bg-background/70 absolute inset-0 items-center justify-center">
+              <ActivityIndicator />
+            </View>
+          ) : null}
+          <TouchableOpacity
+            onPress={onPickCover}
+            disabled={isUploadingCover}
+            activeOpacity={0.8}
+            accessibilityLabel="Change cover photo"
+            className="absolute bottom-2 right-2 flex-row items-center gap-1 rounded-md bg-black/65 px-2 py-1.5"
+          >
             <Camera size={13} color="#FFFFFF" />
-            <Text style={styles.changeBtnText}>Change Cover</Text>
+            <Text className="text-xs font-semibold text-white">Change Cover</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.logoRow}>
-          <Image
-            source={{ uri: avatar }}
-            style={styles.logoImg}
-            contentFit="cover"
-            transition={200}
-          />
-          <TouchableOpacity style={styles.changeLogoBtn} onPress={onPickLogo} activeOpacity={0.8}>
-            <Upload size={13} color={colors.primary} />
-            <Text style={styles.changeLogoBtnText}>Upload New Logo</Text>
-          </TouchableOpacity>
+        <View className="flex-row items-center gap-3">
+          <View className="bg-muted size-14 overflow-hidden rounded-lg">
+            {logoUri ? (
+              <Image
+                source={{ uri: logoUri }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+                transition={200}
+                accessibilityLabel="Logo"
+              />
+            ) : null}
+            {isUploadingLogo ? (
+              <View className="bg-background/70 absolute inset-0 items-center justify-center">
+                <ActivityIndicator />
+              </View>
+            ) : null}
+          </View>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isUploadingLogo}
+            onPress={onPickLogo}
+            accessibilityLabel="Upload a new logo"
+          >
+            <Icon as={Upload} size={13} />
+            <Text>Upload New Logo</Text>
+          </Button>
         </View>
       </View>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Registered Business Name *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={name}
-          onChangeText={setName}
+      <FormField label="Registered Business Name *">
+        <Input
+          value={values.name}
+          onChangeText={(name) => onChange({ name })}
+          maxLength={BUSINESS_LIMITS.name.max}
           placeholder="e.g. Shree Electronics & Systems"
-          placeholderTextColor="#94A3B8"
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Industry / Primary Category *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={category}
-          onChangeText={setCategory}
-          placeholder="e.g. Electronics, Textile, Industrial Machinery"
-          placeholderTextColor="#94A3B8"
+      <FormField label="Business Type *">
+        <OptionPicker
+          title="Business type"
+          placeholder="Choose a type"
+          options={TYPE_OPTIONS}
+          value={values.type || null}
+          onChange={(type) => onChange({ type: type as BusinessFormValues['type'] })}
         />
-      </View>
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>About / Business Overview</Text>
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
-          value={about}
-          onChangeText={setAbout}
-          placeholder="Describe your manufacturing capacity, products, and commercial specialties..."
-          placeholderTextColor="#94A3B8"
-          multiline
+      <FormField label="Industry / Primary Category *">
+        <OptionPicker
+          title="Category"
+          placeholder="Choose a category"
+          options={categoryOptions}
+          value={values.categoryId || null}
+          onChange={(categoryId) => onChange({ categoryId })}
+          isLoading={categories.isPending}
+          searchable
+        />
+      </FormField>
+
+      <FormField label="About / Business Overview">
+        <Textarea
+          value={values.about}
+          onChangeText={(about) => onChange({ about })}
+          maxLength={BUSINESS_LIMITS.about.max}
           numberOfLines={4}
-          textAlignVertical="top"
+          placeholder="Describe your manufacturing capacity, products, and commercial specialties..."
         />
-      </View>
+      </FormField>
 
-      <View style={styles.rowFields}>
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>Contact Person</Text>
-          <TextInput
-            style={styles.textInput}
-            value={contactPerson}
-            onChangeText={setContactPerson}
-            placeholder="e.g. Aarav Mehta"
-            placeholderTextColor="#94A3B8"
-          />
-        </View>
+      <FormField label="Contact Person">
+        <Input
+          value={values.contactPerson}
+          onChangeText={(contactPerson) => onChange({ contactPerson })}
+          placeholder="e.g. Aarav Mehta"
+        />
+      </FormField>
 
-        <View style={[styles.fieldGroup, { flex: 1 }]}>
-          <Text style={styles.fieldLabel}>Contact Phone *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="+91 98765 43210"
-            placeholderTextColor="#94A3B8"
-            keyboardType="phone-pad"
-          />
-        </View>
-      </View>
+      <FormField label="Contact Phone" hint="A 10-digit Indian number. +91 is added for you.">
+        <Input
+          value={values.contactPhone}
+          onChangeText={(contactPhone) => onChange({ contactPhone })}
+          placeholder="98765 43210"
+          keyboardType="phone-pad"
+          maxLength={16}
+        />
+      </FormField>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.fieldLabel}>Official Email Address</Text>
-        <TextInput
-          style={styles.textInput}
-          value={email}
-          onChangeText={setEmail}
+      <FormField label="Official Email Address">
+        <Input
+          value={values.contactEmail}
+          onChangeText={(contactEmail) => onChange({ contactEmail })}
           placeholder="sales@shreeelectronics.in"
-          placeholderTextColor="#94A3B8"
           keyboardType="email-address"
           autoCapitalize="none"
         />
-      </View>
+      </FormField>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formSection: {
-    padding: 16,
-  },
-  mediaPreviewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  coverPreviewContainer: {
-    position: 'relative',
-    borderRadius: 10,
-    overflow: 'hidden',
-    height: 120,
-    backgroundColor: '#E2E8F0',
-  },
-  coverImg: {
-    width: '100%',
-    height: '100%',
-  },
-  changeCoverBtn: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  changeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
-  },
-  logoImg: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
-  },
-  changeLogoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-    backgroundColor: '#EEF0FA',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  changeLogoBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  fieldGroup: {
-    marginBottom: 14,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.textPrimary,
-    backgroundColor: '#FFFFFF',
-  },
-  textArea: {
-    minHeight: 80,
-  },
-  rowFields: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-});
