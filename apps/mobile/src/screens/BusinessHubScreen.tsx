@@ -10,11 +10,14 @@ import {
   HubPageControls,
   HubStorefrontHighlights,
 } from '../features/hub/components';
+import { useMyPosts } from '../features/hub/hooks/use-my-posts';
 import { useMyBusiness } from '../features/business/hooks';
 import { FollowersModal } from '../features/business/components/FollowersModal';
 
 export function BusinessHubScreen() {
-  const { userBusiness, posts, products, navigate } = useApp();
+  const { userBusiness, products, navigate } = useApp();
+  const publishedPosts = useMyPosts('published');
+  const draftPosts = useMyPosts('draft');
   const myBusiness = useMyBusiness();
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
@@ -38,9 +41,9 @@ export function BusinessHubScreen() {
     );
   }
 
-  const businessPosts = posts.filter((p) => p.businessId === userBusiness.id || p.isOwnPost);
-  const publishedPostsCount = businessPosts.filter((p) => p.postStatus !== 'Draft').length;
-  const draftPostsCount = businessPosts.filter((p) => p.postStatus === 'Draft').length;
+  // Counts of the first page (20) of each list; the Posts screen has the full lists.
+  const publishedPostsCount = publishedPosts.data?.pages[0]?.data.length ?? 0;
+  const draftPostsCount = draftPosts.data?.pages[0]?.data.length ?? 0;
   const businessProducts = products.filter((p) => p.businessId === userBusiness.id);
   const completionPercent = userBusiness.profileCompletion || 85;
 
@@ -76,7 +79,7 @@ export function BusinessHubScreen() {
         <HubMetricsAndCompletion
           completionPercent={completionPercent}
           followersCount={userBusiness.followersCount}
-          postsCount={businessPosts.length}
+          postsCount={publishedPostsCount + draftPostsCount}
           publishedPostsCount={publishedPostsCount}
           productsCount={businessProducts.length}
           onOpenFollowers={() => setFollowersModalOpen(true)}

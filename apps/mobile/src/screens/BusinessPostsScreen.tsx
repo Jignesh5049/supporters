@@ -1,260 +1,165 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { ArrowLeft, Plus, Inbox } from 'lucide-react-native';
+import { ActivityIndicator, Alert, FlatList, View } from 'react-native';
+import { router } from 'expo-router';
+import { ArrowLeft, Plus } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PLAN_LIMITS, PostStatus, type Post } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Tabs, TabsList, TabsTrigger } from '@supporters/ui-native/components/tabs';
+import { Text } from '@supporters/ui-native/components/text';
+import { EmptyState } from '@supporters/ui-native/patterns';
 import { useApp } from '../context/AppContext';
-import { FeedPost } from '../../mock';
-import { colors } from '../styles/theme';
-import { BusinessPostManageCard, EditPostModal } from '../features/hub/components';
+import { messageForError } from '../lib/api';
+import { EditPostModal } from '../features/hub/components/EditPostModal';
+import { HubPostRow, type PostAction } from '../features/hub/components/HubPostRow';
+import { useDeletePost, useMyPosts, useUpdatePost } from '../features/hub/hooks/use-my-posts';
+
+type Filter = 'all' | PostStatus;
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: PostStatus.Published, label: 'Published' },
+  { value: PostStatus.Draft, label: 'Drafts' },
+  { value: PostStatus.Archived, label: 'Archived' },
+];
 
 export function BusinessPostsScreen() {
-  const { posts, userBusiness, updateBusinessPost, setBusinessPostStatus, deletePost, navigate } =
-    useApp();
+  const { showToast } = useApp();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [editing, setEditing] = useState<Post | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const posts = useMyPosts(filter === 'all' ? undefined : filter);
+  const update = useUpdatePost();
+  const remove = useDeletePost();
+  const items = posts.data?.pages.flatMap((page) => page.data) ?? [];
+  const isBusy = update.isPending || remove.isPending;
 
-  const [activeFilter, setActiveFilter] = useState<'All' | 'Published' | 'Draft' | 'Archived'>(
-    'All',
-  );
-  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
-  const [editContent, setEditContent] = useState('');
-
-  // Owner posts for user's business
-  const myPosts = posts.filter((p) => p.businessId === userBusiness?.id || p.isOwnPost);
-
-  const filteredPosts = myPosts.filter((p) => {
-    const status = p.postStatus || 'Published';
-    if (activeFilter === 'Published') return status === 'Published';
-    if (activeFilter === 'Draft') return status === 'Draft';
-    if (activeFilter === 'Archived') return status === 'Archived';
-    return true;
-  });
-
-  const handleDeletePost = (post: FeedPost) => {
-    Alert.alert(
-      'Delete Post',
-      'Are you sure you want to permanently delete this post from your business page? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deletePost(post.id),
-        },
-      ],
+  const setStatus = (post: Post, status: PostStatus, done: string) =>
+    update.mutate(
+      { id: post.id, status },
+      {
+        onSuccess: () => showToast(done, 'success'),
+        // Includes the weekly limit message when publishing hits the free plan cap.
+        onError: (error) => showToast(messageForError(error), 'error'),
+      },
     );
-  };
 
-  const handleOpenEdit = (post: FeedPost) => {
-    setEditingPost(post);
-    setEditContent(post.content);
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingPost) return;
-    updateBusinessPost(editingPost.id, {
-      content: editContent.trim() || editingPost.content,
-    });
-    setEditingPost(null);
-  };
-
-  const handleTogglePublish = (post: FeedPost) => {
-    const current = post.postStatus || 'Published';
-    const next = current === 'Published' ? 'Draft' : 'Published';
-    setBusinessPostStatus(post.id, next);
-  };
-
-  const handleArchive = (post: FeedPost) => {
-    const current = post.postStatus || 'Published';
-    const next = current === 'Archived' ? 'Published' : 'Archived';
-    setBusinessPostStatus(post.id, next);
+  const handleAction = (action: PostAction, post: Post) => {
+    switch (action) {
+      case 'edit':
+        setEditError(null);
+        setEditing(post);
+        break;
+      case 'publish':
+        setStatus(post, PostStatus.Published, 'Post published');
+        break;
+      case 'archive':
+        setStatus(post, PostStatus.Archived, 'Post archived');
+        break;
+      case 'delete':
+        Alert.alert('Delete post', 'This permanently deletes the post and its comments.', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () =>
+              remove.mutate(post.id, {
+                onSuccess: () => showToast('Post deleted', 'success'),
+                onError: (error) => showToast(messageForError(error), 'error'),
+              }),
+          },
+        ]);
+        break;
+    }
   };
 
   return (
-    <View style={styles.screenWrapper}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => navigate('business_hub')}
-          style={styles.backBtn}
+    <SafeAreaView className="bg-background flex-1">
+      <View className="border-border flex-row items-center gap-2 border-b px-2 py-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onPress={() => router.back()}
           accessibilityLabel="Go back"
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Manage Business Posts</Text>
-        <TouchableOpacity
-          onPress={() => navigate('create')}
-          style={styles.newPostBtn}
-          activeOpacity={0.8}
-        >
-          <Plus size={15} color="#FFFFFF" />
-          <Text style={styles.newPostBtnText}>New</Text>
-        </TouchableOpacity>
+          <Icon as={ArrowLeft} size={20} />
+        </Button>
+        <Text className="flex-1 text-base font-semibold">Manage posts</Text>
+        <Button size="sm" onPress={() => router.push('/create')} accessibilityLabel="New post">
+          <Icon as={Plus} size={14} className="text-primary-foreground" />
+          <Text>New</Text>
+        </Button>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterBar}>
-        {(['All', 'Published', 'Draft', 'Archived'] as const).map((tab) => {
-          const count =
-            tab === 'All'
-              ? myPosts.length
-              : myPosts.filter((p) => (p.postStatus || 'Published') === tab).length;
-
-          const isActive = activeFilter === tab;
-
-          return (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => setActiveFilter(tab)}
-              style={[styles.filterTab, isActive && styles.filterTabActive]}
-            >
-              <Text style={[styles.filterTabText, isActive && styles.filterTabTextActive]}>
-                {tab} ({count})
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {filteredPosts.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Inbox size={36} color="#94A3B8" />
-            <Text style={styles.emptyTitle}>No {activeFilter} Posts Found</Text>
-            <Text style={styles.emptySub}>
-              {activeFilter === 'Draft'
-                ? 'Drafts saved from the composer will be safely stored here before going live.'
-                : 'Create and broadcast new catalog items, factory dispatch updates, or seasonal offers.'}
-            </Text>
-            <TouchableOpacity style={styles.emptyActionBtn} onPress={() => navigate('create')}>
-              <Text style={styles.emptyActionBtnText}>Create New Post</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.postsList}>
-            {filteredPosts.map((post) => (
-              <BusinessPostManageCard
-                key={post.id}
-                post={post}
-                onTogglePublish={handleTogglePublish}
-                onEdit={handleOpenEdit}
-                onArchive={handleArchive}
-                onDelete={handleDeletePost}
-              />
+      <View className="px-4 py-2">
+        <Tabs value={filter} onValueChange={(value) => setFilter(value as Filter)}>
+          <TabsList className="w-full">
+            {FILTERS.map((f) => (
+              <TabsTrigger key={f.value} value={f.value} className="flex-1">
+                <Text>{f.label}</Text>
+              </TabsTrigger>
             ))}
-          </View>
-        )}
-      </ScrollView>
+          </TabsList>
+        </Tabs>
+        <Text variant="muted" className="mt-2 text-xs">
+          The free plan publishes up to {PLAN_LIMITS.free.postsPer7Days} posts in any 7 days.
+        </Text>
+      </View>
+
+      {posts.isPending ? (
+        <ActivityIndicator className="mt-8" />
+      ) : posts.isError && items.length === 0 ? (
+        <View className="items-center gap-3 p-8">
+          <Text className="text-center">{messageForError(posts.error)}</Text>
+          <Button onPress={() => posts.refetch()}>
+            <Text>Try again</Text>
+          </Button>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(post) => post.id}
+          renderItem={({ item }) => (
+            <HubPostRow post={item} isBusy={isBusy} onAction={handleAction} />
+          )}
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 }}
+          ListEmptyComponent={
+            <EmptyState
+              title="No posts here"
+              description="Share an update, product or offer with your followers."
+              actionLabel="Create a post"
+              onAction={() => router.push('/create')}
+              className="mx-4 my-6"
+            />
+          }
+          onEndReached={() => {
+            if (posts.hasNextPage && !posts.isFetchingNextPage) posts.fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
+          refreshing={posts.isRefetching && !posts.isFetchingNextPage}
+          onRefresh={() => posts.refetch()}
+        />
+      )}
 
       <EditPostModal
-        post={editingPost}
-        editContent={editContent}
-        setEditContent={setEditContent}
-        onClose={() => setEditingPost(null)}
-        onSave={handleSaveEdit}
+        post={editing}
+        isSaving={update.isPending}
+        error={editError}
+        onClose={() => setEditing(null)}
+        onSave={(changes) =>
+          editing &&
+          update.mutate(
+            { id: editing.id, ...changes },
+            {
+              onSuccess: () => {
+                setEditing(null);
+                showToast('Post updated', 'success');
+              },
+              onError: (error) => setEditError(messageForError(error)),
+            },
+          )
+        }
       />
-    </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screenWrapper: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    padding: 6,
-  },
-  topBarTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  newPostBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  newPostBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  filterBar: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  filterTabActive: {
-    borderBottomColor: colors.primary,
-  },
-  filterTabText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  filterTabTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  container: {
-    flex: 1,
-    padding: 12,
-  },
-  emptyContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 32,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  emptySub: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  emptyActionBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  emptyActionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  postsList: {
-    paddingBottom: 24,
-  },
-});
