@@ -10,10 +10,12 @@ import {
   HubPageControls,
   HubStorefrontHighlights,
 } from '../features/hub/components';
+import { useMyBusiness } from '../features/business/hooks';
 import { FollowersModal } from '../features/business/components/FollowersModal';
 
 export function BusinessHubScreen() {
   const { userBusiness, posts, products, navigate } = useApp();
+  const myBusiness = useMyBusiness();
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
   if (!userBusiness) {
@@ -67,7 +69,7 @@ export function BusinessHubScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <HubBannerHeader
           business={userBusiness}
-          onViewPublicProfile={() => navigate('business_detail', { businessId: userBusiness.id })}
+          onViewPublicProfile={() => navigate('business_detail', { slug: myBusiness.data?.slug })}
           onEditProfile={() => navigate('business_edit')}
         />
 
@@ -93,6 +95,7 @@ export function BusinessHubScreen() {
       <FollowersModal
         visible={followersModalOpen}
         onClose={() => setFollowersModalOpen(false)}
+        businessId={myBusiness.data?.id ?? ''}
         businessName={userBusiness.name}
       />
     </View>

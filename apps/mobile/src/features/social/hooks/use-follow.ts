@@ -4,7 +4,7 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
-import type { Business, FollowingItem, Page } from '@supporters/shared';
+import type { Business, BusinessSummary, FollowingItem, Page } from '@supporters/shared';
 import { socialApi } from '../../../lib/api';
 import { businessKeys } from '../../business/hooks/useBusinessQuery';
 import { socialKeys } from '../query-keys';
@@ -25,7 +25,9 @@ export function useFollowing() {
 }
 
 /** Business ids from the loaded pages of the following list. */
-export function followedIds(data: FollowingPages | undefined): Set<string> {
+export function followedIds(
+  data: InfiniteData<Page<FollowingItem>, unknown> | undefined,
+): Set<string> {
   return new Set(data?.pages.flatMap((page) => page.data.map((item) => item.business.id)));
 }
 
@@ -42,6 +44,8 @@ export function useFollowers(businessId: string, enabled = true) {
 export interface FollowInput {
   businessId: string;
   isFollowing: boolean;
+  /** Lets the following list show a new follow before the server answers. */
+  summary?: BusinessSummary;
 }
 
 /**
@@ -61,18 +65,37 @@ export function useToggleFollow() {
   return useMutation({
     mutationFn: ({ businessId, isFollowing }: FollowInput) =>
       socialApi.setFollowing(businessId, isFollowing),
-    onMutate: async ({ businessId, isFollowing }) => {
+    onMutate: async ({ businessId, isFollowing, summary }) => {
       await queryClient.cancelQueries({ queryKey: businessKeys.all });
+      await queryClient.cancelQueries({ queryKey: socialKeys.following });
+      const previousFollowing = queryClient.getQueriesData<FollowingPages>({
+        queryKey: socialKeys.following,
+      });
+      queryClient.setQueriesData<FollowingPages>({ queryKey: socialKeys.following }, (data) => {
+        if (!data) return data;
+        const pages = data.pages.map((page, i) => ({
+          ...page,
+          data: [
+            ...(isFollowing && summary && i === 0
+              ? [{ business: summary, followedAt: new Date().toISOString() }]
+              : []),
+            ...page.data.filter((item) => isFollowing || item.business.id !== businessId),
+          ],
+        }));
+        return { ...data, pages };
+      });
       const before = queryClient
         .getQueriesData<Business>({ queryKey: businessKeys.all })
         .map(([, data]) => data)
         .find((data) => data?.id === businessId);
       setCount(businessId, (count) => count + (isFollowing ? 1 : -1));
-      return { count: before?.followerCount };
+      return { count: before?.followerCount, previousFollowing };
     },
     onError: (_error, { businessId }, context) => {
       const count = context?.count;
       if (count !== undefined) setCount(businessId, () => count);
+      for (const [key, data] of context?.previousFollowing ?? [])
+        queryClient.setQueryData(key, data);
     },
     onSuccess: (state, { businessId }) => {
       setCount(businessId, () => state.followerCount);
