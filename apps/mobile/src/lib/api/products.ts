@@ -26,6 +26,7 @@ export interface ProductsApi {
   listMine(query?: MyListingsInputQuery): Promise<Page<Product>>;
   create(data: CreateProductInput): Promise<Product>;
   update(id: string, data: UpdateProductInput): Promise<Product>;
+  remove(id: string): Promise<void>;
 }
 
 export function createProductsApi(client: ApiClient): ProductsApi {
@@ -70,5 +71,7 @@ export function createProductsApi(client: ApiClient): ProductsApi {
         body: updateProductSchema.parse(data),
         schema: productSchema,
       }),
+    remove: (id) =>
+      client.request(`/me/business/products/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   };
 }
