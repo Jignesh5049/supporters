@@ -1,360 +1,210 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Package, Trash2, Eye, EyeOff } from 'lucide-react-native';
+import { ArrowLeft, Package, Plus } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ListingStatus, type Product } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
+import { EmptyState } from '@supporters/ui-native/patterns';
 import { useApp } from '../context/AppContext';
-import { Product } from '../../mock';
-import { colors } from '../styles/theme';
+import { messageForError } from '../lib/api';
+import { hasNoBusiness, useMyBusiness } from '../features/business/hooks';
+import { listingsUsage } from '../features/business/labels';
+import {
+  useMyProducts,
+  useRemoveProductMutation,
+  useUpdateProductMutation,
+} from '../features/catalog/hooks';
+import { moqLabel, productPriceLabel } from '../features/catalog/labels';
 import { AddProductModal } from '../features/hub/components/AddProductModal';
+import {
+  ListingRowActions,
+  ListingStatusTabs,
+} from '../features/hub/components/ListingManageParts';
 
 export function HubProductsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { products, currentUser, showToast } = useApp();
+  const { showToast } = useApp();
+  const business = useMyBusiness();
+  const [status, setStatus] = useState<ListingStatus>(ListingStatus.Published);
+  const products = useMyProducts({ status });
+  const update = useUpdateProductMutation();
+  const remove = useRemoveProductMutation();
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const myBusinessId = currentUser?.businessId || 'b-1';
-  const [productList, setProductList] = useState<Product[]>(
-    products.filter((p) => p.businessId === myBusinessId),
-  );
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const items = products.data?.pages.flatMap((page) => page.data) ?? [];
+  const usage = business.data
+    ? listingsUsage(business.data.publishedListings, business.data.publishedListingsLimit)
+    : null;
 
-  const handleAddProduct = (data: {
-    title: string;
-    price: string;
-    unit: string;
-    minOrder: string;
-    category: string;
-    description: string;
-  }) => {
-    const newProd: Product = {
-      id: `p-${Date.now()}`,
-      businessId: myBusinessId,
-      businessName: currentUser?.name || 'My Business',
-      businessCity: currentUser?.city || 'Ahmedabad',
-      businessVerified: true,
-      businessAvatar:
-        currentUser?.avatar ||
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
-      title: data.title,
-      slug: data.title.toLowerCase().replace(/\s+/g, '-'),
-      category: data.category,
-      price: parseFloat(data.price) || 0,
-      unit: data.unit,
-      minOrderQuantity: parseInt(data.minOrder, 10) || 1,
-      images: [
-        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
-      ],
-      description: data.description || 'High quality manufactured item.',
-      specifications: { Quality: 'Grade A', Origin: 'India' },
-      availability: 'In Stock',
-      deliveryTime: '2-4 business days',
-      shippingAreas: ['Pan India'],
-      rating: 5.0,
-      reviewCount: 0,
-    };
-
-    setProductList((prev) => [newProd, ...prev]);
-    showToast('Product added to your catalog!', 'success');
+  const openModal = (product: Product | null) => {
+    setEditing(product);
+    setModalOpen(true);
   };
 
-  const handleDeleteProduct = (id: string) => {
-    Alert.alert(
-      'Delete Product',
-      'Are you sure you want to remove this product from your catalog?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setProductList((prev) => prev.filter((p) => p.id !== id));
-            showToast('Product deleted', 'info');
-          },
-        },
-      ],
+  const changeStatus = (product: Product, next: ListingStatus) =>
+    update.mutate(
+      { id: product.id, data: { status: next } },
+      {
+        onSuccess: () =>
+          showToast(next === ListingStatus.Published ? 'Product published' : 'Product archived'),
+        onError: (error) => showToast(messageForError(error), 'error'),
+      },
     );
-  };
 
-  const handleToggleStock = (id: string) => {
-    let nextStatus = '';
-    setProductList((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          nextStatus = p.availability === 'In Stock' ? 'Made to Order' : 'In Stock';
-          return {
-            ...p,
-            availability: nextStatus as any,
-          };
-        }
-        return p;
-      }),
-    );
-    showToast(`Product set to ${nextStatus}`, 'success');
-  };
+  const confirmDelete = (product: Product) =>
+    Alert.alert('Delete Product', `Remove "${product.title}" from your catalog for good?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          remove.mutate(product.id, {
+            onSuccess: () => showToast('Product deleted', 'info'),
+            onError: (error) => showToast(messageForError(error), 'error'),
+          }),
+      },
+    ]);
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Products ({productList.length})</Text>
-        </View>
-
-        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalOpen(true)}>
-          <Plus size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-          <Text style={styles.addButtonText}>Add Product</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtext}>
-          Manage wholesale products visible on your Supporters business storefront.
+  const header = (
+    <View className="gap-3 pb-3">
+      <Text variant="muted" className="text-xs">
+        Manage wholesale products visible on your Supporters business storefront.
+      </Text>
+      {usage ? (
+        <Text className={usage.atLimit ? 'text-destructive text-xs' : 'text-xs'}>
+          {usage.label} published listings (products and services together)
         </Text>
-
-        {productList.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Package size={48} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>No products listed yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Upload your catalog items to start receiving buyer RFQs and direct enquiries.
-            </Text>
-            <TouchableOpacity style={styles.emptyAddBtn} onPress={() => setAddModalOpen(true)}>
-              <Text style={styles.emptyAddBtnText}>Add Your First Product</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          productList.map((p) => {
-            const inStock = p.availability === 'In Stock';
-            return (
-              <TouchableOpacity
-                key={p.id}
-                style={styles.productCard}
-                onPress={() => router.push(`/product/${p.id}` as any)}
-                activeOpacity={0.85}
-              >
-                <Image
-                  source={{
-                    uri:
-                      p.images?.[0] ||
-                      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
-                  }}
-                  style={styles.productImage}
-                />
-                <View style={styles.productDetails}>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>{p.category}</Text>
-                  </View>
-                  <Text style={styles.productTitle} numberOfLines={1}>
-                    {p.title}
-                  </Text>
-                  <Text style={styles.productPrice}>
-                    ₹{p.price.toLocaleString('en-IN')} / {p.unit}
-                  </Text>
-                  <Text style={styles.productMoq}>Min Order: {p.minOrderQuantity} units</Text>
-
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity
-                      style={[styles.stockToggle, inStock ? styles.stockIn : styles.stockOut]}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleToggleStock(p.id);
-                      }}
-                    >
-                      {inStock ? (
-                        <Eye size={12} color="#16A34A" />
-                      ) : (
-                        <EyeOff size={12} color="#DC2626" />
-                      )}
-                      <Text
-                        style={[styles.stockToggleText, { color: inStock ? '#16A34A' : '#DC2626' }]}
-                      >
-                        {inStock ? 'In Stock' : 'Made to Order'}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.deleteBtn}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProduct(p.id);
-                      }}
-                    >
-                      <Trash2 size={15} color="#DC2626" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
-
-      <AddProductModal
-        visible={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSubmit={handleAddProduct}
-      />
+      ) : null}
+      <ListingStatusTabs value={status} onChange={setStatus} />
     </View>
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    padding: 6,
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    padding: 14,
-    paddingBottom: 40,
-  },
-  subtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-    paddingHorizontal: 20,
-  },
-  emptyAddBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emptyAddBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  productImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    marginRight: 12,
-  },
-  productDetails: {
-    flex: 1,
-  },
-  categoryBadge: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  productTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  productPrice: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  productMoq: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 1,
-    marginBottom: 8,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stockToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
-  },
-  stockIn: {
-    backgroundColor: '#ECFDF5',
-  },
-  stockOut: {
-    backgroundColor: '#FEF2F2',
-  },
-  stockToggleText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  deleteBtn: {
-    padding: 6,
-  },
-});
+  const noBusiness = business.isError && hasNoBusiness(business.error);
+
+  return (
+    <SafeAreaView className="bg-background flex-1">
+      <View className="border-border flex-row items-center justify-between border-b px-3 py-2">
+        <View className="flex-row items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onPress={() => router.back()}
+            accessibilityLabel="Go back"
+          >
+            <Icon as={ArrowLeft} size={20} />
+          </Button>
+          <Text className="text-base font-bold">Products</Text>
+        </View>
+        <Button size="sm" disabled={!business.data} onPress={() => openModal(null)}>
+          <Icon as={Plus} size={16} className="text-primary-foreground" />
+          <Text>Add Product</Text>
+        </Button>
+      </View>
+
+      {noBusiness ? (
+        <View className="flex-1 justify-center p-4">
+          <EmptyState
+            title="Create your business first"
+            description="Products belong to your business page."
+            actionLabel="Create your business"
+            onAction={() => router.push('/hub/edit')}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(product) => product.id}
+          contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
+          ListHeaderComponent={header}
+          onEndReached={() => products.hasNextPage && products.fetchNextPage()}
+          onEndReachedThreshold={0.5}
+          refreshing={products.isRefetching && !products.isFetchingNextPage}
+          onRefresh={() => products.refetch()}
+          ListEmptyComponent={
+            products.isPending ? (
+              <ActivityIndicator className="mt-8" />
+            ) : products.isError ? (
+              <View className="items-center gap-3 py-8">
+                <Text className="text-center">{messageForError(products.error)}</Text>
+                <Button variant="outline" onPress={() => products.refetch()}>
+                  <Text>Try again</Text>
+                </Button>
+              </View>
+            ) : (
+              <View className="items-center gap-2 py-12">
+                <Icon as={Package} size={48} className="text-muted-foreground" />
+                <Text className="text-base font-bold">No products here yet</Text>
+                <Text variant="muted" className="px-5 text-center text-sm">
+                  Upload your catalog items to start receiving buyer enquiries.
+                </Text>
+                {status !== ListingStatus.Archived ? (
+                  <Button className="mt-2" onPress={() => openModal(null)}>
+                    <Text>Add a product</Text>
+                  </Button>
+                ) : null}
+              </View>
+            )
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              className="border-border bg-card mb-2.5 flex-row gap-3 rounded-xl border p-3"
+              onPress={() =>
+                item.status === ListingStatus.Published
+                  ? router.push(`/product/${item.id}`)
+                  : openModal(item)
+              }
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+            >
+              <Image
+                source={{ uri: item.images[0]?.url }}
+                style={{ width: 80, height: 80, borderRadius: 8 }}
+                contentFit="cover"
+                accessibilityLabel={item.title}
+              />
+              <View className="flex-1 gap-1">
+                <Text className="text-muted-foreground text-xs font-bold">
+                  {item.category.name}
+                </Text>
+                <Text className="text-sm font-bold" numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text className="text-primary text-sm font-extrabold">
+                  {productPriceLabel(item)}
+                </Text>
+                {moqLabel(item) ? (
+                  <Text variant="muted" className="text-xs">
+                    {moqLabel(item)}
+                  </Text>
+                ) : null}
+                <ListingRowActions
+                  status={item.status}
+                  isBusy={update.isPending || remove.isPending}
+                  onPublish={() => changeStatus(item, ListingStatus.Published)}
+                  onArchive={() => changeStatus(item, ListingStatus.Archived)}
+                  onEdit={() => openModal(item)}
+                  onDelete={() => confirmDelete(item)}
+                />
+              </View>
+            </Pressable>
+          )}
+        />
+      )}
+
+      <AddProductModal
+        visible={modalOpen}
+        product={editing}
+        onClose={() => setModalOpen(false)}
+        onSaved={(message) => {
+          setModalOpen(false);
+          showToast(message);
+        }}
+      />
+    </SafeAreaView>
+  );
+}

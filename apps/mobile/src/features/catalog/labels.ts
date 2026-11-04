@@ -38,3 +38,6 @@ export function areaLabel(area: Area): string {
 }
 
 export { capitalise };
+
+/** "sq_metre" becomes "Sq metre". */
+export const unitOptionLabel = (unit: string) => capitalise(words(unit));

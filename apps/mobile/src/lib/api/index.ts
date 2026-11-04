@@ -13,7 +13,7 @@ import { createSocialApi } from './social';
 import { createApiClient } from './client';
 import { API_URL, APP_VERSION } from './config';
 
-export { ApiError, ApiErrorCode, messageForError } from './errors';
+export { ApiError, ApiErrorCode, listingLimitMessage, messageForError } from './errors';
 export type { BusinessesApi } from './businesses';
 export type { ProductsApi, ListQuery, MyListingsInputQuery } from './products';
 export type { ServicesApi } from './services';

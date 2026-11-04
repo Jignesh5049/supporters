@@ -26,6 +26,7 @@ export interface ServicesApi {
   listMine(query?: MyListingsInputQuery): Promise<Page<Service>>;
   create(data: CreateServiceInput): Promise<Service>;
   update(id: string, data: UpdateServiceInput): Promise<Service>;
+  remove(id: string): Promise<void>;
 }
 
 export function createServicesApi(client: ApiClient): ServicesApi {
@@ -70,5 +71,7 @@ export function createServicesApi(client: ApiClient): ServicesApi {
         body: updateServiceSchema.parse(data),
         schema: serviceSchema,
       }),
+    remove: (id) =>
+      client.request(`/me/business/services/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   };
 }

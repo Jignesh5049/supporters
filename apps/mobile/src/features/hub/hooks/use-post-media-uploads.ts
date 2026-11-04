@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { UploadPurpose } from '@supporters/shared';
 import { uploadsApi } from '../../../lib/api';
 import type { PickedMedia } from '../post-media';
 
@@ -14,11 +15,11 @@ export interface MediaUpload {
 let counter = 0;
 
 /**
- * Uploads post media as it is picked: presign, PUT, complete. Each file has its
+ * Uploads media (post media by default, or listing photos) as it is picked: presign, PUT, complete. Each file has its
  * own status, so one failure can be retried or removed without losing the rest.
  */
-export function usePostMediaUploads() {
-  const [uploads, setUploads] = useState<MediaUpload[]>([]);
+export function usePostMediaUploads(purpose: UploadPurpose = 'post', initial: MediaUpload[] = []) {
+  const [uploads, setUploads] = useState<MediaUpload[]>(initial);
 
   const patch = useCallback((key: string, change: Partial<MediaUpload>) => {
     setUploads((current) => current.map((u) => (u.key === key ? { ...u, ...change } : u)));
@@ -27,13 +28,13 @@ export function usePostMediaUploads() {
   const run = useCallback(
     async (key: string, media: PickedMedia) => {
       try {
-        const upload = await uploadsApi.uploadFile(media.uri, media.contentType, 'post');
+        const upload = await uploadsApi.uploadFile(media.uri, media.contentType, purpose);
         patch(key, { status: 'ready', uploadId: upload.id, error: undefined });
       } catch (error) {
         patch(key, { status: 'failed', error });
       }
     },
-    [patch],
+    [patch, purpose],
   );
 
   const add = useCallback(
@@ -63,7 +64,7 @@ export function usePostMediaUploads() {
     [patch, run, uploads],
   );
 
-  const reset = useCallback(() => setUploads([]), []);
+  const reset = useCallback((next: MediaUpload[] = []) => setUploads(next), []);
 
   return {
     uploads,

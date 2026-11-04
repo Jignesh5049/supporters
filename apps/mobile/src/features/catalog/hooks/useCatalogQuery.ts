@@ -1,14 +1,24 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from '@tanstack/react-query';
 import type {
   CreateProductInput,
   CreateServiceInput,
   Page,
+  ListingStatus,
   Product,
   Service,
   UpdateProductInput,
   UpdateServiceInput,
 } from '@supporters/shared';
 import { productsApi, servicesApi, type MyListingsInputQuery } from '../../../lib/api';
+import { businessKeys } from '../../business/hooks/useBusinessQuery';
+import { removeListing, upsertListing } from '../listing-cache';
 
 export const catalogKeys = {
   products: ['products'] as const,
@@ -82,50 +92,90 @@ export function useMyServices(filter?: MyListingsInputQuery) {
   });
 }
 
+type ListingKind = 'products' | 'services';
+
+/** Writes a saved listing into the owner's cached lists and refreshes everything that counts it. */
+export function cacheSavedListing<T extends { id: string; status: ListingStatus }>(
+  queryClient: QueryClient,
+  kind: ListingKind,
+  saved: T,
+) {
+  const detailKey =
+    kind === 'products' ? catalogKeys.productDetail(saved.id) : catalogKeys.serviceDetail(saved.id);
+  queryClient.setQueryData(detailKey, saved);
+  const mine = [...catalogKeys[kind], 'mine'];
+  for (const [key, data] of queryClient.getQueriesData<InfiniteData<Page<T>>>({ queryKey: mine })) {
+    const filter = (key[2] as MyListingsInputQuery | undefined)?.status;
+    queryClient.setQueryData(key, upsertListing(data, saved, filter));
+  }
+  invalidateListings(queryClient, kind);
+}
+
+export function cacheRemovedListing(queryClient: QueryClient, kind: ListingKind, id: string) {
+  const mine = [...catalogKeys[kind], 'mine'];
+  for (const [key, data] of queryClient.getQueriesData<
+    InfiniteData<Page<{ id: string; status: ListingStatus }>>
+  >({ queryKey: mine })) {
+    queryClient.setQueryData(key, removeListing(data, id));
+  }
+  queryClient.removeQueries({
+    queryKey: kind === 'products' ? catalogKeys.productDetail(id) : catalogKeys.serviceDetail(id),
+  });
+  invalidateListings(queryClient, kind);
+}
+
+/** Public lists and the business's published-listings count both change when a listing does. */
+function invalidateListings(queryClient: QueryClient, kind: ListingKind) {
+  queryClient.invalidateQueries({ queryKey: catalogKeys[kind] });
+  queryClient.invalidateQueries({ queryKey: businessKeys.mine() });
+}
+
 export function useCreateProductMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: CreateProductInput) => productsApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogKeys.products });
-    },
+    onSuccess: (saved) => cacheSavedListing(queryClient, 'products', saved),
   });
 }
 
 export function useUpdateProductMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateProductInput }) =>
       productsApi.update(id, data),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(catalogKeys.productDetail(updated.id), updated);
-      queryClient.invalidateQueries({ queryKey: catalogKeys.products });
-    },
+    onSuccess: (saved) => cacheSavedListing(queryClient, 'products', saved),
+  });
+}
+
+export function useRemoveProductMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => productsApi.remove(id),
+    onSuccess: (_result, id) => cacheRemovedListing(queryClient, 'products', id),
   });
 }
 
 export function useCreateServiceMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: CreateServiceInput) => servicesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogKeys.services });
-    },
+    onSuccess: (saved) => cacheSavedListing(queryClient, 'services', saved),
   });
 }
 
 export function useUpdateServiceMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateServiceInput }) =>
       servicesApi.update(id, data),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(catalogKeys.serviceDetail(updated.id), updated);
-      queryClient.invalidateQueries({ queryKey: catalogKeys.services });
-    },
+    onSuccess: (saved) => cacheSavedListing(queryClient, 'services', saved),
+  });
+}
+
+export function useRemoveServiceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => servicesApi.remove(id),
+    onSuccess: (_result, id) => cacheRemovedListing(queryClient, 'services', id),
   });
 }

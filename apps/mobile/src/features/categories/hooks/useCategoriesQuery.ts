@@ -13,3 +13,16 @@ export function useCategoriesQuery() {
     staleTime: 10 * 60_000,
   });
 }
+
+/** Categories and subcategories as one list for a picker: "Textiles", "Textiles › Cotton". */
+export function useCategoryOptions() {
+  const query = useCategoriesQuery();
+  const options = (query.data?.data ?? []).flatMap((category) => [
+    { id: category.id, label: category.name },
+    ...category.subcategories.map((sub) => ({
+      id: sub.id,
+      label: `${category.name} › ${sub.name}`,
+    })),
+  ]);
+  return { options, isLoading: query.isPending };
+}

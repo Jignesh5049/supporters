@@ -17,6 +17,8 @@ export const ApiErrorCode = {
   OtpAttemptsExceeded: 'OTP_ATTEMPTS_EXCEEDED',
   PhoneTaken: 'PHONE_TAKEN',
   PostLimitReached: 'POST_LIMIT_REACHED',
+  ListingLimitReached: 'LISTING_LIMIT_REACHED',
+  BusinessExists: 'BUSINESS_EXISTS',
   PasswordBreached: 'PASSWORD_BREACHED',
   PolicyVersionOutdated: 'POLICY_VERSION_OUTDATED',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
@@ -104,6 +106,8 @@ const MESSAGES: Record<string, string> = {
   [ApiErrorCode.OtpAttemptsExceeded]: 'Too many wrong codes. Request a new one.',
   [ApiErrorCode.PhoneTaken]: 'An account with this mobile number already exists. Sign in instead.',
   [ApiErrorCode.PostLimitReached]: `The free plan allows ${PLAN_LIMITS.free.postsPer7Days} published posts in any 7 days. Try again when an older post is more than 7 days old, or save this one as a draft.`,
+  [ApiErrorCode.ListingLimitReached]: listingLimitMessage(),
+  [ApiErrorCode.BusinessExists]: 'You already have a business. Open the Business Hub to manage it.',
   [ApiErrorCode.PasswordBreached]:
     'This password has appeared in a data breach. Choose a different one.',
   [ApiErrorCode.PolicyVersionOutdated]: 'Our terms have changed. Update the app to continue.',
@@ -111,6 +115,11 @@ const MESSAGES: Record<string, string> = {
   [ApiErrorCode.NetworkError]: 'No connection. Check your internet and try again.',
   [ApiErrorCode.UpgradeRequired]: 'Update the app to keep using Supporters.',
 };
+
+/** The free plan allows 25 published listings (products and services together). */
+export function listingLimitMessage(limit: number = PLAN_LIMITS.free.publishedListings): string {
+  return `The free plan allows ${limit} published listings. Archive one or save this as a draft, or upgrade to publish more.`;
+}
 
 const GENERIC_MESSAGE = 'Something went wrong. Try again.';
 
