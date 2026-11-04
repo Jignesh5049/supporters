@@ -1,11 +1,16 @@
 import {
   createProductSchema,
+  createServiceSchema,
   updateProductSchema,
+  updateServiceSchema,
   ListingStatus,
   MEDIA_LIMITS,
   type CreateProductInput,
+  type CreateServiceInput,
   type Product,
+  type Service,
   type UpdateProductInput,
+  type UpdateServiceInput,
 } from '@supporters/shared';
 
 export type ListingFormResult<T> = { ok: true; input: T } | { ok: false; message: string };
@@ -232,6 +237,117 @@ export function buildUpdateProductInput(
     availability: values.availability,
     shippingArea: area,
     specs,
+    mediaIds: values.mediaIds,
+    status,
+  });
+  return result.success
+    ? { ok: true, input: result.data }
+    : { ok: false, message: issueMessage(result.error.issues[0]) };
+}
+
+// --- Services ---------------------------------------------------------------
+
+export interface ServiceFormValues {
+  title: string;
+  categoryId: string;
+  description: string;
+  price: string;
+  priceUnit: Service['priceUnit'] | '';
+  turnaround: string;
+  availability: Service['availability'];
+  area: AreaValues;
+  /** One feature per line. */
+  features: string;
+  mediaIds: string[];
+}
+
+export const EMPTY_SERVICE_FORM: ServiceFormValues = {
+  title: '',
+  categoryId: '',
+  description: '',
+  price: '',
+  priceUnit: '',
+  turnaround: '',
+  availability: 'by_appointment',
+  area: ALL_INDIA,
+  features: '',
+  mediaIds: [],
+};
+
+export function serviceToForm(service: Service): ServiceFormValues {
+  return {
+    title: service.title,
+    categoryId: service.category.id,
+    description: service.description,
+    price: paiseToRupees(service.price?.amountPaise),
+    priceUnit: service.priceUnit ?? '',
+    turnaround: service.turnaround ?? '',
+    availability: service.availability,
+    area: {
+      allIndia: service.serviceArea.allIndia,
+      stateIds: service.serviceArea.states.map((state) => state.id),
+      cityIds: service.serviceArea.cities.map((city) => city.id),
+    },
+    features: service.features.join('\n'),
+    mediaIds: service.images.map((image) => image.id),
+  };
+}
+
+function parseServicePrice(values: ServiceFormValues): ListingFormResult<number | null> {
+  const price = rupeesToPaise(values.price);
+  return Number.isNaN(price)
+    ? { ok: false, message: 'Price: enter an amount like 500 or 99.50.' }
+    : { ok: true, input: price };
+}
+
+export function buildCreateServiceInput(
+  values: ServiceFormValues,
+  status: ListingStatus,
+): ListingFormResult<CreateServiceInput> {
+  const photo = needsPhoto(status, values.mediaIds);
+  if (photo) return { ok: false, message: photo };
+  const price = parseServicePrice(values);
+  if (!price.ok) return price;
+  const area = areaInput(values.area);
+  if (!area.ok) return area;
+  const result = createServiceSchema.safeParse({
+    title: values.title,
+    categoryId: values.categoryId,
+    description: values.description,
+    price: price.input === null ? undefined : { amountPaise: price.input },
+    priceUnit: values.priceUnit || undefined,
+    turnaround: blank(values.turnaround) ? undefined : values.turnaround,
+    availability: values.availability,
+    serviceArea: area.input,
+    features: linesToList(values.features),
+    mediaIds: values.mediaIds,
+    status,
+  });
+  return result.success
+    ? { ok: true, input: result.data }
+    : { ok: false, message: issueMessage(result.error.issues[0]) };
+}
+
+export function buildUpdateServiceInput(
+  values: ServiceFormValues,
+  status: ListingStatus,
+): ListingFormResult<UpdateServiceInput> {
+  const photo = needsPhoto(status, values.mediaIds);
+  if (photo) return { ok: false, message: photo };
+  const price = parseServicePrice(values);
+  if (!price.ok) return price;
+  const area = areaInput(values.area);
+  if (!area.ok) return area;
+  const result = updateServiceSchema.safeParse({
+    title: values.title,
+    categoryId: values.categoryId,
+    description: values.description,
+    price: price.input === null ? null : { amountPaise: price.input },
+    priceUnit: values.priceUnit || null,
+    turnaround: blank(values.turnaround) ? null : values.turnaround,
+    availability: values.availability,
+    serviceArea: area.input,
+    features: linesToList(values.features),
     mediaIds: values.mediaIds,
     status,
   });
