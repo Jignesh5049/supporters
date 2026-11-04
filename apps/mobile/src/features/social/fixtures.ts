@@ -10,7 +10,7 @@ export function makePost(n: number, overrides: Partial<Post> = {}): Post {
       slug: 'asha-traders',
       name: 'Asha Traders',
       logo: null,
-      city: { id: uuid(901), name: 'Surat' } as Post['business']['city'],
+      city: { id: uuid(901), name: 'Surat', stateCode: 'GJ' },
       isVerified: true,
       isPremium: false,
     },

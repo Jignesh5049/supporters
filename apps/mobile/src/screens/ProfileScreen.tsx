@@ -1,30 +1,31 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { router } from 'expo-router';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 import { ProfileHero } from '../features/profile/components/ProfileHero';
 import { ProfileStatsBar } from '../features/profile/components/ProfileStatsBar';
 import { ProfileTabs } from '../features/profile/components/ProfileTabs';
 import { EditProfileModal } from '../features/profile/components/EditProfileModal';
+import { useMyBusiness } from '../features/business/hooks';
+import { useBusinessPosts } from '../features/feed/hooks';
+import { usePostActions } from '../features/feed/use-post-actions';
+import { useFollowing } from '../features/social/hooks/use-follow';
 import { FollowingModal } from '../features/profile/components/FollowingModal';
 
 export function ProfileScreen() {
-  const {
-    currentUser,
-    updateUserProfile,
-    posts,
-    products,
-    businesses,
-    followedBusinessIds,
-    toggleFollowBusiness,
-    openConversationWithBusiness,
-    navigate,
-  } = useApp();
+  const { currentUser, updateUserProfile, products, openConversationWithBusiness, navigate } =
+    useApp();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
 
-  const myPosts = posts.filter((p) => p.businessId === currentUser.businessId);
+  const postActions = usePostActions();
+  const myBusiness = useMyBusiness();
+  const myPosts =
+    useBusinessPosts(myBusiness.data?.id).data?.pages.flatMap((page) => page.data) ?? [];
+  const following = useFollowing();
+  const followingCount = following.data?.pages.flatMap((page) => page.data).length ?? 0;
   const myProducts = products.filter((p) => p.businessId === currentUser.businessId);
 
   return (
@@ -40,9 +41,7 @@ export function ProfileScreen() {
         />
 
         <ProfileStatsBar
-          followingCount={
-            followedBusinessIds.length > 0 ? followedBusinessIds.length : currentUser.followingCount
-          }
+          followingCount={followingCount}
           businessesCount={currentUser.businessesCount}
           businessId={currentUser.businessId}
           onOpenFollowing={() => setIsFollowingModalOpen(true)}
@@ -57,6 +56,7 @@ export function ProfileScreen() {
         <ProfileTabs
           currentUser={currentUser}
           posts={myPosts}
+          postActions={postActions}
           products={myProducts}
           onOpenProduct={(productId) => navigate('product_detail', { productId })}
           onContactProductSupplier={(p) =>
@@ -81,11 +81,7 @@ export function ProfileScreen() {
       <FollowingModal
         visible={isFollowingModalOpen}
         onClose={() => setIsFollowingModalOpen(false)}
-        username={currentUser.username}
-        businesses={businesses}
-        followedBusinessIds={followedBusinessIds}
-        onToggleFollow={toggleFollowBusiness}
-        onNavigateBusiness={(businessId) => navigate('business_detail', { businessId })}
+        onOpenBusiness={(slug) => router.push(`/business/${encodeURIComponent(slug)}`)}
       />
     </SafeAreaView>
   );
