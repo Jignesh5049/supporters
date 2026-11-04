@@ -2,12 +2,14 @@ import 'server-only';
 import {
   type MyBusiness,
   type Page,
+  type Post,
   type Product,
   type Service,
   type ListingStatus,
   PAGINATION,
   myBusinessSchema,
   pageSchema,
+  postSchema,
   productSchema,
   serviceSchema,
 } from '@supporters/shared';
@@ -95,3 +97,30 @@ export async function requireMyBusiness(path: string): Promise<MyBusiness> {
   if (!business) redirect('/onboarding/business');
   return business;
 }
+
+/** The owner's posts in every status, newest first (`/v1/me/business/posts`). */
+export const listMyPosts = cache(async (cursor?: string): Promise<Page<Post>> => {
+  const query = new URLSearchParams({ limit: String(PAGINATION.maxLimit) });
+  if (cursor) query.set('cursor', cursor);
+  const page = await apiGet(`/v1/me/business/posts?${query}`, pageSchema(postSchema), {
+    withSession: true,
+  });
+  return page ?? { data: [], nextCursor: null };
+});
+
+/**
+ * One of the owner's posts, in any status. The API has no owner `GET` by id
+ * (the public one only returns published posts), so this walks the list.
+ */
+export const getMyPost = cache(async (id: string): Promise<Post | null> => {
+  if (!z.uuid().safeParse(id).success) return null;
+  let cursor: string | undefined;
+  for (let i = 0; i < MAX_PAGES; i += 1) {
+    const page = await listMyPosts(cursor);
+    const found = page.data.find((post) => post.id === id);
+    if (found) return found;
+    if (!page.nextCursor) return null;
+    cursor = page.nextCursor;
+  }
+  return null;
+});
