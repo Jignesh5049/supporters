@@ -1,4 +1,4 @@
-import type { Business, BusinessSummary, Product, Service } from '@supporters/shared';
+import type { Business, BusinessSummary, Post, Product, Service } from '@supporters/shared';
 
 /** API-shaped test data for the catalog mappers. Test-only; never rendered by the app. */
 
@@ -90,4 +90,30 @@ export const serviceFixture: Service = {
   availability: 'by_appointment',
   serviceArea: { allIndia: false, states: [state], cities: [city] },
   features: ['Reactive dyes'],
+};
+
+export const postFixture: Post = {
+  id: '4b0c4c55-3f6d-4b1f-9a51-2b2c0f3c9a40',
+  business: summaryFixture,
+  type: 'update',
+  body: 'New season prints are in.',
+  offerTag: null,
+  offerEndsAt: null,
+  attachment: null,
+  media: [
+    {
+      id: '4b0c4c55-3f6d-4b1f-9a51-2b2c0f3c9a41',
+      url: 'https://media.example/p1.webp',
+      kind: 'image',
+    },
+  ],
+  status: 'published',
+  likeCount: 3,
+  commentCount: 2,
+  saveCount: 1,
+  isLiked: false,
+  isSaved: false,
+  publishedAt: '2026-11-03T10:30:00.000Z',
+  createdAt: '2026-11-03T10:00:00.000Z',
+  updatedAt: '2026-11-03T10:00:00.000Z',
 };

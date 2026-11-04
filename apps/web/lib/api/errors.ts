@@ -1,3 +1,4 @@
+import { PLAN_LIMITS } from '@supporters/shared';
 import { z } from 'zod';
 
 /** RFC 9457 problem details as the API sends them (backend spec, API design). */
@@ -85,6 +86,8 @@ const MESSAGES: Record<string, string> = {
   SLUG_LOCKED: 'Your page link is locked while your business is verified.',
   LISTING_LIMIT_REACHED:
     'You have reached the free plan limit for published listings. Save this as a draft, unpublish another listing, or upgrade to Premium.',
+  POST_LIMIT_REACHED: `You have published ${PLAN_LIMITS.free.postsPer7Days} posts in the last 7 days, the free plan limit. Save this as a draft and publish it later, or upgrade to Premium.`,
+  FORBIDDEN: 'You can’t do that.',
   UPLOAD_INCOMPLETE: 'The image did not finish uploading. Try again.',
   UPLOAD_REJECTED: 'That file is not a supported image. Use a JPEG, PNG or WebP photo.',
   PAYLOAD_TOO_LARGE: 'That file is too large.',

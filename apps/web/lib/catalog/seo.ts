@@ -172,7 +172,7 @@ export function serviceJsonLd(service: Service, origin: string): JsonLd {
   });
 }
 
-interface PageSeo {
+export interface PageSeo {
   title: string;
   description: string;
   path: string;
