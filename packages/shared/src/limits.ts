@@ -104,6 +104,8 @@ export const RATE_LIMITS = {
   openRequirements: 10,
   quotesPerBusinessPerDay: 50,
   messages: { max: 30, windowSec: 10 },
+  /** All socket events other than sends (typing, read, presence, renew), per user. */
+  socketEvents: { max: 120, windowSec: 10 },
   newConversationsPerDay: 200,
   commentsPerHour: 30,
   reportsPerDay: 20,
@@ -149,6 +151,12 @@ export const CHAT_LIMITS = {
   /** Presence key lifetime; the heartbeat renews it. */
   presenceTtlSec: 60,
   searchQueryMax: 80,
+  /** Sockets one account may hold open at once (several devices and tabs). */
+  socketsPerUser: 10,
+  /** The client heartbeat renews presence this often; the key lives presenceTtlSec. */
+  presenceHeartbeatSec: 20,
+  /** Largest Socket.IO packet the server accepts. */
+  socketMaxPayloadBytes: 64 * 1024,
 } as const;
 
 export const ENQUIRY_LIMITS = {

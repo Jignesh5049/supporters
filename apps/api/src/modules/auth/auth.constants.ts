@@ -10,3 +10,6 @@ export const ARGON2_OPTIONS = { memoryCost: 19_456, timeCost: 2, parallelism: 1 
 
 /** Valkey key marking a session revoked. It only has to outlive the last access token. */
 export const revokedSessionKey = (sessionId: string) => `revoked:sid:${sessionId}`;
+
+/** Pub/sub channel that tells every API instance to drop the sockets of a revoked session. */
+export const SESSION_REVOKED_CHANNEL = 'session:revoked';

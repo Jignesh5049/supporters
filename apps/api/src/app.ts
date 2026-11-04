@@ -58,6 +58,7 @@ import { authPlugin } from './plugins/auth';
 import { csrfPlugin } from './plugins/csrf';
 import { prismaPlugin, valkeyPlugin } from './plugins/data';
 import { errorHandlerPlugin } from './plugins/error-handler';
+import { realtimePlugin } from './plugins/realtime';
 import { rateLimitPlugin } from './plugins/rate-limit';
 import { securityPlugin } from './plugins/security';
 
@@ -200,6 +201,7 @@ export async function buildApp(options: BuildAppOptions) {
     enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
   });
 
+  await app.register(realtimePlugin);
   await app.register(healthRoutes);
   await app.register(
     async (v1) => {
