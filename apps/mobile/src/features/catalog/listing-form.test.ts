@@ -1,15 +1,20 @@
 import { ListingStatus } from '@supporters/shared';
 import { uuid } from '../social/fixtures';
-import { makeProduct } from './fixtures';
+import { makeProduct, makeService } from './fixtures';
 import {
   buildCreateProductInput,
+  buildCreateServiceInput,
   buildUpdateProductInput,
+  buildUpdateServiceInput,
   EMPTY_PRODUCT_FORM,
+  EMPTY_SERVICE_FORM,
   paiseToRupees,
   parseSpecs,
   productToForm,
   rupeesToPaise,
+  serviceToForm,
   type ProductFormValues,
+  type ServiceFormValues,
 } from './listing-form';
 
 const product = (overrides: Partial<ProductFormValues> = {}): ProductFormValues => ({
@@ -17,6 +22,15 @@ const product = (overrides: Partial<ProductFormValues> = {}): ProductFormValues 
   title: 'Cotton roll',
   categoryId: uuid(800),
   description: 'Soft cotton',
+  mediaIds: [uuid(700)],
+  ...overrides,
+});
+
+const service = (overrides: Partial<ServiceFormValues> = {}): ServiceFormValues => ({
+  ...EMPTY_SERVICE_FORM,
+  title: 'CNC turning',
+  categoryId: uuid(800),
+  description: 'Precision work',
   mediaIds: [uuid(700)],
   ...overrides,
 });
@@ -139,6 +153,53 @@ describe('buildUpdateProductInput', () => {
     expect(buildUpdateProductInput(values, ListingStatus.Draft)).toMatchObject({
       ok: true,
       input: { price: null, unit: null, moq: null, deliveryTime: '3 to 5 days' },
+    });
+  });
+});
+
+describe('services', () => {
+  it('builds a service with features from lines', () => {
+    const result = buildCreateServiceInput(
+      service({ price: '5000', priceUnit: 'per_job', features: 'Free visit\n\n On time ' }),
+      ListingStatus.Published,
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      input: {
+        price: { amountPaise: 500_000, currency: 'INR' },
+        priceUnit: 'per_job',
+        features: ['Free visit', 'On time'],
+        serviceArea: { allIndia: true },
+      },
+    });
+  });
+
+  it('needs a photo to publish', () => {
+    expect(buildCreateServiceInput(service({ mediaIds: [] }), ListingStatus.Published).ok).toBe(
+      false,
+    );
+  });
+
+  it('keeps chosen cities when a service is saved again', () => {
+    const base = makeService(2);
+    const values = serviceToForm({
+      ...base,
+      serviceArea: {
+        allIndia: false,
+        states: [],
+        cities: [{ id: uuid(901), name: 'Surat', stateCode: 'GJ' }],
+      },
+    });
+    expect(buildUpdateServiceInput(values, ListingStatus.Published)).toMatchObject({
+      ok: true,
+      input: { serviceArea: { allIndia: false, cityIds: [uuid(901)] } },
+    });
+  });
+
+  it('clears the price with null on update', () => {
+    const values = { ...serviceToForm(makeService(2)), price: '', turnaround: '' };
+    expect(buildUpdateServiceInput(values, ListingStatus.Draft)).toMatchObject({
+      input: { price: null, turnaround: null, status: 'draft' },
     });
   });
 });

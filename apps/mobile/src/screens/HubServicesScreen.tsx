@@ -1,301 +1,210 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Wrench, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Wrench, Plus } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ListingStatus, type Service } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
+import { EmptyState } from '@supporters/ui-native/patterns';
 import { useApp } from '../context/AppContext';
-import { Service } from '../../mock';
-import { colors } from '../styles/theme';
+import { messageForError } from '../lib/api';
+import { hasNoBusiness, useMyBusiness } from '../features/business/hooks';
+import { listingsUsage } from '../features/business/labels';
+import {
+  useMyServices,
+  useRemoveServiceMutation,
+  useUpdateServiceMutation,
+} from '../features/catalog/hooks';
+import { servicePriceLabel } from '../features/catalog/labels';
 import { AddServiceModal } from '../features/hub/components/AddServiceModal';
+import {
+  ListingRowActions,
+  ListingStatusTabs,
+} from '../features/hub/components/ListingManageParts';
 
 export function HubServicesScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { services, currentUser, showToast } = useApp();
+  const { showToast } = useApp();
+  const business = useMyBusiness();
+  const [status, setStatus] = useState<ListingStatus>(ListingStatus.Published);
+  const services = useMyServices({ status });
+  const update = useUpdateServiceMutation();
+  const remove = useRemoveServiceMutation();
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const myBusinessId = currentUser?.businessId || 'b-1';
-  const [serviceList, setServiceList] = useState<Service[]>(
-    services.filter((s) => s.businessId === myBusinessId),
-  );
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const items = services.data?.pages.flatMap((page) => page.data) ?? [];
+  const usage = business.data
+    ? listingsUsage(business.data.publishedListings, business.data.publishedListingsLimit)
+    : null;
 
-  const handleAddService = (data: {
-    title: string;
-    startingPrice: string;
-    priceUnit: string;
-    category: string;
-    description: string;
-  }) => {
-    const newSvc: Service = {
-      id: `s-${Date.now()}`,
-      businessId: myBusinessId,
-      businessName: currentUser?.name || 'My Business',
-      businessCity: currentUser?.city || 'Ahmedabad',
-      businessVerified: true,
-      businessAvatar:
-        currentUser?.avatar ||
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
-      title: data.title,
-      slug: data.title.toLowerCase().replace(/\s+/g, '-'),
-      category: data.category,
-      startingPrice: parseFloat(data.startingPrice) || 0,
-      priceUnit: data.priceUnit,
-      images: [
-        'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
-      ],
-      description: data.description || 'Specialized B2B industrial service.',
-      features: ['Precision Machining', 'ISO Compliant', 'Turnaround in 48h'],
-      availability: 'By Appointment',
-      serviceArea: 'Gujarat, Maharashtra',
-      turnaroundTime: '2-4 business days',
-      rating: 5.0,
-      reviewCount: 0,
-    };
-
-    setServiceList((prev) => [newSvc, ...prev]);
-    showToast('Service listed on your storefront!', 'success');
+  const openModal = (service: Service | null) => {
+    setEditing(service);
+    setModalOpen(true);
   };
 
-  const handleDeleteService = (id: string) => {
-    Alert.alert(
-      'Remove Service',
-      'Are you sure you want to remove this service listing from your profile?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setServiceList((prev) => prev.filter((s) => s.id !== id));
-            showToast('Service listing deleted', 'info');
-          },
-        },
-      ],
+  const changeStatus = (service: Service, next: ListingStatus) =>
+    update.mutate(
+      { id: service.id, data: { status: next } },
+      {
+        onSuccess: () =>
+          showToast(next === ListingStatus.Published ? 'Service published' : 'Service archived'),
+        onError: (error) => showToast(messageForError(error), 'error'),
+      },
     );
-  };
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Services ({serviceList.length})</Text>
-        </View>
+  const confirmDelete = (service: Service) =>
+    Alert.alert('Delete Service', `Remove "${service.title}" from your catalog for good?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          remove.mutate(service.id, {
+            onSuccess: () => showToast('Service deleted', 'info'),
+            onError: (error) => showToast(messageForError(error), 'error'),
+          }),
+      },
+    ]);
 
-        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalOpen(true)}>
-          <Plus size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-          <Text style={styles.addButtonText}>Add Service</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.subtext}>
-          List B2B industrial, design, engineering, or logistics services offered by your
-          enterprise.
+  const header = (
+    <View className="gap-3 pb-3">
+      <Text variant="muted" className="text-xs">
+        Manage the services shown on your Supporters business storefront.
+      </Text>
+      {usage ? (
+        <Text className={usage.atLimit ? 'text-destructive text-xs' : 'text-xs'}>
+          {usage.label} published listings (services and services together)
         </Text>
-
-        {serviceList.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Wrench size={48} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>No services listed</Text>
-            <Text style={styles.emptySubtitle}>
-              Offer contract manufacturing, fabrication, or professional trade services to buyers.
-            </Text>
-            <TouchableOpacity style={styles.emptyAddBtn} onPress={() => setAddModalOpen(true)}>
-              <Text style={styles.emptyAddBtnText}>Add Your First Service</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          serviceList.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              style={styles.serviceCard}
-              onPress={() => router.push(`/service/${s.id}` as any)}
-              activeOpacity={0.85}
-            >
-              <Image
-                source={{
-                  uri:
-                    s.images?.[0] ||
-                    'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
-                }}
-                style={styles.serviceImage}
-              />
-              <View style={styles.serviceDetails}>
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryBadgeText}>{s.category}</Text>
-                </View>
-                <Text style={styles.serviceTitle} numberOfLines={1}>
-                  {s.title}
-                </Text>
-                <Text style={styles.servicePrice}>
-                  From ₹{s.startingPrice.toLocaleString('en-IN')} {s.priceUnit}
-                </Text>
-
-                <View style={styles.actionRow}>
-                  <Text style={styles.availabilityText}>{s.availability}</Text>
-                  <TouchableOpacity
-                    style={styles.deleteBtn}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      handleDeleteService(s.id);
-                    }}
-                  >
-                    <Trash2 size={15} color="#DC2626" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
-
-      <AddServiceModal
-        visible={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSubmit={handleAddService}
-      />
+      ) : null}
+      <ListingStatusTabs value={status} onChange={setStatus} />
     </View>
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    padding: 6,
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    padding: 14,
-    paddingBottom: 40,
-  },
-  subtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
-    paddingHorizontal: 20,
-  },
-  emptyAddBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emptyAddBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  serviceCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  serviceImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    marginRight: 12,
-  },
-  serviceDetails: {
-    flex: 1,
-  },
-  categoryBadge: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  serviceTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  servicePrice: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.primary,
-    marginBottom: 8,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  availabilityText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  deleteBtn: {
-    padding: 6,
-  },
-});
+  const noBusiness = business.isError && hasNoBusiness(business.error);
+
+  return (
+    <SafeAreaView className="bg-background flex-1">
+      <View className="border-border flex-row items-center justify-between border-b px-3 py-2">
+        <View className="flex-row items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onPress={() => router.back()}
+            accessibilityLabel="Go back"
+          >
+            <Icon as={ArrowLeft} size={20} />
+          </Button>
+          <Text className="text-base font-bold">Services</Text>
+        </View>
+        <Button size="sm" disabled={!business.data} onPress={() => openModal(null)}>
+          <Icon as={Plus} size={16} className="text-primary-foreground" />
+          <Text>Add Service</Text>
+        </Button>
+      </View>
+
+      {noBusiness ? (
+        <View className="flex-1 justify-center p-4">
+          <EmptyState
+            title="Create your business first"
+            description="Services belong to your business page."
+            actionLabel="Create your business"
+            onAction={() => router.push('/hub/edit')}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(service) => service.id}
+          contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
+          ListHeaderComponent={header}
+          onEndReached={() => services.hasNextPage && services.fetchNextPage()}
+          onEndReachedThreshold={0.5}
+          refreshing={services.isRefetching && !services.isFetchingNextPage}
+          onRefresh={() => services.refetch()}
+          ListEmptyComponent={
+            services.isPending ? (
+              <ActivityIndicator className="mt-8" />
+            ) : services.isError ? (
+              <View className="items-center gap-3 py-8">
+                <Text className="text-center">{messageForError(services.error)}</Text>
+                <Button variant="outline" onPress={() => services.refetch()}>
+                  <Text>Try again</Text>
+                </Button>
+              </View>
+            ) : (
+              <View className="items-center gap-2 py-12">
+                <Icon as={Wrench} size={48} className="text-muted-foreground" />
+                <Text className="text-base font-bold">No services here yet</Text>
+                <Text variant="muted" className="px-5 text-center text-sm">
+                  List what you offer to start receiving buyer enquiries.
+                </Text>
+                {status !== ListingStatus.Archived ? (
+                  <Button className="mt-2" onPress={() => openModal(null)}>
+                    <Text>Add a service</Text>
+                  </Button>
+                ) : null}
+              </View>
+            )
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              className="border-border bg-card mb-2.5 flex-row gap-3 rounded-xl border p-3"
+              onPress={() =>
+                item.status === ListingStatus.Published
+                  ? router.push(`/service/${item.id}`)
+                  : openModal(item)
+              }
+              accessibilityRole="button"
+              accessibilityLabel={item.title}
+            >
+              <Image
+                source={{ uri: item.images[0]?.url }}
+                style={{ width: 80, height: 80, borderRadius: 8 }}
+                contentFit="cover"
+                accessibilityLabel={item.title}
+              />
+              <View className="flex-1 gap-1">
+                <Text className="text-muted-foreground text-xs font-bold">
+                  {item.category.name}
+                </Text>
+                <Text className="text-sm font-bold" numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text className="text-primary text-sm font-extrabold">
+                  {servicePriceLabel(item)}
+                </Text>
+                {item.turnaround ? (
+                  <Text variant="muted" className="text-xs">
+                    Turnaround: {item.turnaround}
+                  </Text>
+                ) : null}
+                <ListingRowActions
+                  status={item.status}
+                  isBusy={update.isPending || remove.isPending}
+                  onPublish={() => changeStatus(item, ListingStatus.Published)}
+                  onArchive={() => changeStatus(item, ListingStatus.Archived)}
+                  onEdit={() => openModal(item)}
+                  onDelete={() => confirmDelete(item)}
+                />
+              </View>
+            </Pressable>
+          )}
+        />
+      )}
+
+      <AddServiceModal
+        visible={modalOpen}
+        service={editing}
+        onClose={() => setModalOpen(false)}
+        onSaved={(message) => {
+          setModalOpen(false);
+          showToast(message);
+        }}
+      />
+    </SafeAreaView>
+  );
+}
