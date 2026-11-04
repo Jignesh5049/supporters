@@ -29,6 +29,9 @@ export const ErrorCode = {
   PostLimitReached: 'POST_LIMIT_REACHED',
   UploadIncomplete: 'UPLOAD_INCOMPLETE',
   UploadRejected: 'UPLOAD_REJECTED',
+  Blocked: 'BLOCKED',
+  IdempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
+  RequestInProgress: 'REQUEST_IN_PROGRESS',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   InternalError: 'INTERNAL_ERROR',
 } as const;

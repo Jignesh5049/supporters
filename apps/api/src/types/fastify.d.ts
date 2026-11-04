@@ -3,6 +3,9 @@ import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
 import type { AuthService } from '../modules/auth/auth.service';
+import type { BlocksService } from '../modules/blocks/blocks.service';
+import type { ChatService } from '../modules/chat/chat.service';
+import type { EnquiriesService } from '../modules/enquiries/enquiries.service';
 import type { BusinessesService } from '../modules/businesses/businesses.service';
 import type { CategoriesService } from '../modules/categories/categories.service';
 import type { CommentsService } from '../modules/comments/comments.service';
@@ -43,6 +46,9 @@ declare module 'fastify' {
       saves: SavesService;
       follows: FollowsService;
       feed: FeedService;
+      blocks: BlocksService;
+      chat: ChatService;
+      enquiries: EnquiriesService;
     };
   }
 

@@ -62,18 +62,24 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  city      City?          @relation(fields: [cityId], references: [id], onDelete: SetNull)
-  sessions  Session[]
-  devices   Device[]
-  consents  Consent[]
-  interests UserInterest[]
-  business  Business?
-  uploads   Upload[]
-  comments  Comment[]
-  likes     Like[]
-  saves     Save[]
-  follows   Follow[]
-  feedSeen  FeedSeen[]
+  city           City?           @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  sessions       Session[]
+  devices        Device[]
+  consents       Consent[]
+  interests      UserInterest[]
+  business       Business?
+  uploads        Upload[]
+  comments       Comment[]
+  likes          Like[]
+  saves          Save[]
+  follows        Follow[]
+  feedSeen       FeedSeen[]
+  conversations  Conversation[]
+  sentMessages   Message[]
+  hiddenMessages MessageHidden[]
+  enquiries      Enquiry[]
+  blocksMade     Block[]         @relation("Blocker")
+  blocksReceived Block[]         @relation("Blocked")
 
   @@map("users")
 }
@@ -244,6 +250,7 @@ model City {
   state      State      @relation(fields: [stateId], references: [id], onDelete: Restrict)
   users      User[]
   businesses Business[]
+  enquiries  Enquiry[]
 
   @@unique([stateId, name], map: "uq_cities_state_id_name")
   @@map("cities")
@@ -311,17 +318,19 @@ model Business {
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  owner       User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  category    Category  @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
-  subcategory Category? @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
-  city        City      @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  state       State     @relation(fields: [stateId], references: [id], onDelete: Restrict)
-  logo        Upload?   @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
-  cover       Upload?   @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
-  products    Product[]
-  posts       Post[]
-  followers   Follow[]
-  services    Service[]
+  owner         User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  category      Category       @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory   Category?      @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
+  city          City           @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  state         State          @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  logo          Upload?        @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
+  cover         Upload?        @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
+  products      Product[]
+  posts         Post[]
+  followers     Follow[]
+  services      Service[]
+  conversations Conversation[]
+  enquiries     Enquiry[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
   @@index([subcategoryId], map: "idx_businesses_subcategory_id")
@@ -353,10 +362,12 @@ model Product {
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  media    ListingMedia[]
-  posts    Post[]
+  business  Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category  Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media     ListingMedia[]
+  posts     Post[]
+  enquiries Enquiry[]
+  messages  Message[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_products_business_id_status_id")
@@ -385,10 +396,12 @@ model Service {
   createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  media    ListingMedia[]
-  posts    Post[]
+  business  Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category  Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media     ListingMedia[]
+  posts     Post[]
+  enquiries Enquiry[]
+  messages  Message[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_services_business_id_status_id")
@@ -430,11 +443,12 @@ model Upload {
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listingMedia  ListingMedia?
   postMedia     PostMedia?
-  businessLogo  Business?     @relation("BusinessLogo")
-  businessCover Business?     @relation("BusinessCover")
+  businessLogo  Business?          @relation("BusinessLogo")
+  businessCover Business?          @relation("BusinessCover")
+  attachment    MessageAttachment?
 
   @@index([userId, createdAt], map: "idx_uploads_user_id_created_at")
   @@index([status, createdAt], map: "idx_uploads_status_created_at")
@@ -637,4 +651,184 @@ model FeedSeen {
   @@unique([userId, postId], map: "uq_feed_seen_user_id_post_id")
   @@index([postId], map: "idx_feed_seen_post_id")
   @@map("feed_seen")
+}
+
+enum ChatSide {
+  user
+  business
+
+  @@map("chat_side")
+}
+
+enum MessageType {
+  text
+  image
+  file
+  listing_card
+  enquiry
+
+  @@map("message_type")
+}
+
+enum EnquiryStatus {
+  new
+  responded
+  closed
+
+  @@map("enquiry_status")
+}
+
+/// One thread per (user, business). The business side is answered by the owner of the business.
+model Conversation {
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  businessId    String   @map("business_id") @db.Uuid
+  /// Time of the newest message (or of creation), for ordering the inbox.
+  lastMessageAt DateTime @default(now()) @map("last_message_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business  Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  states    ConversationState[]
+  enquiries Enquiry[]
+
+  @@unique([userId, businessId], map: "uq_conversations_user_id_business_id")
+  @@index([userId, lastMessageAt, id], map: "idx_conversations_user_id_last_message_at_id")
+  @@index([businessId, lastMessageAt, id], map: "idx_conversations_business_id_last_message_at_id")
+  @@map("conversations")
+}
+
+/// Per-side read pointer and controls. Rows are created on first use.
+model ConversationState {
+  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  conversationId    String   @map("conversation_id") @db.Uuid
+  side              ChatSide
+  lastReadMessageId String?  @map("last_read_message_id") @db.Uuid
+  muted             Boolean  @default(false)
+  hidden            Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, side], map: "uq_conversation_state_conversation_id_side")
+  @@map("conversation_state")
+}
+
+model Message {
+  id             String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  conversationId String      @map("conversation_id") @db.Uuid
+  senderUserId   String      @map("sender_user_id") @db.Uuid
+  senderSide     ChatSide    @map("sender_side")
+  /// Client-generated UUID; unique per sender so a retried send is stored once.
+  clientId       String      @map("client_id") @db.Uuid
+  /// SHA-256 of the send payload, to tell a retry from a reused key with another body.
+  requestHash    String      @map("request_hash")
+  type           MessageType
+  body           String      @default("")
+  /// A listing_card message points at one product or service.
+  productId      String?     @map("product_id") @db.Uuid
+  serviceId      String?     @map("service_id") @db.Uuid
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  conversation Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+  product      Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  service      Service?            @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  attachments  MessageAttachment[]
+  hiddenFor    MessageHidden[]
+  enquiry      Enquiry?
+
+  @@unique([senderUserId, clientId], map: "uq_messages_sender_user_id_client_id")
+  @@index([conversationId, id], map: "idx_messages_conversation_id_id")
+  @@index([productId], map: "idx_messages_product_id", where: raw("product_id IS NOT NULL"))
+  @@index([serviceId], map: "idx_messages_service_id", where: raw("service_id IS NOT NULL"))
+  @@map("messages")
+}
+
+/// A chat upload attached to a message. Private: served only through signed URLs.
+model MessageAttachment {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  uploadId  String   @unique(map: "uq_message_attachments_upload_id") @map("upload_id") @db.Uuid
+  position  Int      @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  upload  Upload  @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([messageId, position], map: "idx_message_attachments_message_id_position")
+  @@map("message_attachments")
+}
+
+/// Delete for me: the message stays for the other person.
+model MessageHidden {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId], map: "uq_message_hidden_message_id_user_id")
+  @@index([userId], map: "idx_message_hidden_user_id")
+  @@map("message_hidden")
+}
+
+/// The structured first message (Contact Supplier); it shows in the enquiry list of the business.
+model Enquiry {
+  id              String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  businessId      String        @map("business_id") @db.Uuid
+  conversationId  String        @map("conversation_id") @db.Uuid
+  messageId       String        @unique(map: "uq_enquiries_message_id") @map("message_id") @db.Uuid
+  productId       String?       @map("product_id") @db.Uuid
+  serviceId       String?       @map("service_id") @db.Uuid
+  quantity        Int?
+  unit            String?
+  deliveryCityId  String?       @map("delivery_city_id") @db.Uuid
+  message         String
+  sharePhone      Boolean       @default(false) @map("share_phone")
+  status          EnquiryStatus @default(new)
+  /// When the owner first replied; response time and rate come from this.
+  firstResponseAt DateTime?     @map("first_response_at") @db.Timestamptz(6)
+  closedAt        DateTime?     @map("closed_at") @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business     Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  chatMessage  Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  product      Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  service      Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  deliveryCity City?        @relation(fields: [deliveryCityId], references: [id], onDelete: SetNull)
+
+  @@index([userId, id], map: "idx_enquiries_user_id_id")
+  @@index([businessId, status, id], map: "idx_enquiries_business_id_status_id")
+  @@index([conversationId, status], map: "idx_enquiries_conversation_id_status")
+  @@index([productId, createdAt], map: "idx_enquiries_product_id_created_at", where: raw("product_id IS NOT NULL"))
+  @@index([serviceId, createdAt], map: "idx_enquiries_service_id_created_at", where: raw("service_id IS NOT NULL"))
+  @@map("enquiries")
+}
+
+model Block {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId], map: "uq_blocks_blocker_id_blocked_id")
+  @@index([blockedId], map: "idx_blocks_blocked_id")
+  @@map("blocks")
 }
