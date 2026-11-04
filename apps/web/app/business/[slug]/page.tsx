@@ -12,7 +12,6 @@ import {
   Package,
   Phone,
   ShieldCheck,
-  Sparkles,
   Star,
   Wrench,
 } from 'lucide-react';
@@ -27,6 +26,11 @@ import { JsonLd } from '@/components/catalog/json-ld';
 import { PageSkeleton } from '@/components/catalog/page-skeleton';
 import { ListingCard } from '@/components/catalog/listing-card';
 import { getPublicBusiness, listBusinessProducts, listBusinessServices } from '@/dal/catalog';
+import { getMyBusiness } from '@/dal/my-business';
+import { getSession } from '@/dal/session';
+import { isFollowingBusiness, listBusinessPosts } from '@/dal/social';
+import { BusinessPosts } from '@/features/social/business-posts';
+import { FollowButton } from '@/features/social/follow-button';
 import { serverEnv } from '@/dal/config';
 import { BUSINESS_TYPE_LABELS, businessAddress, openingHoursLines } from '@/lib/catalog/format';
 import {
@@ -60,10 +64,15 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
   const business = await getPublicBusiness((await params).slug);
   if (!business) notFound();
 
-  const [products, services] = await Promise.all([
+  const [products, services, posts, session] = await Promise.all([
     listBusinessProducts(business.id),
     listBusinessServices(business.id),
+    listBusinessPosts(business.id),
+    getSession(),
   ]);
+  const myBusiness = session ? await getMyBusiness() : null;
+  const isOwner = myBusiness?.id === business.id;
+  const isFollowing = session && !isOwner ? await isFollowingBusiness(business.id) : false;
   const origin = serverEnv.APP_ORIGIN;
 
   return (
@@ -120,13 +129,21 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                 </div>
               </div>
 
-              <ContactActions
-                layout="row"
-                subject={`General enquiry for ${business.name}`}
-                businessName={business.name}
-                businessId={business.id}
-                shareUrl={`${origin}${businessPath(business.slug)}`}
-              />
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                <FollowButton
+                  businessId={business.id}
+                  initial={{ isFollowing, followerCount: business.followerCount }}
+                  mode={!session ? 'guest' : isOwner ? 'owner' : 'viewer'}
+                  returnTo={businessPath(business.slug)}
+                />
+                <ContactActions
+                  layout="row"
+                  subject={`General enquiry for ${business.name}`}
+                  businessName={business.name}
+                  businessId={business.id}
+                  shareUrl={`${origin}${businessPath(business.slug)}`}
+                />
+              </div>
             </div>
 
             {business.contactPhone && (
@@ -167,7 +184,7 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                 Services ({tabCount(services)})
               </TabsTrigger>
               <TabsTrigger value="posts" className="py-3">
-                Posts
+                Posts{posts.data.length > 0 ? ` (${tabCount(posts)})` : ''}
               </TabsTrigger>
               <TabsTrigger value="reviews" className="py-3">
                 Reviews
@@ -211,10 +228,10 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
         </TabsContent>
 
         <TabsContent value="posts" forceMount className="data-[state=inactive]:hidden">
-          <EmptyPanel
-            icon={Sparkles}
-            title="No posts yet"
-            description="Updates from this business will show here."
+          <BusinessPosts
+            businessId={business.id}
+            initialPage={posts}
+            isSignedIn={session !== null}
           />
         </TabsContent>
 
