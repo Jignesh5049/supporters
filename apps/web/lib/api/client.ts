@@ -7,6 +7,8 @@ export interface RequestOptions {
   method?: Method;
   body?: unknown;
   signal?: AbortSignal;
+  /** Extra headers such as `idempotency-key`. The client's own headers win over these. */
+  headers?: Record<string, string>;
 }
 
 export interface ApiClientDeps {
@@ -34,8 +36,8 @@ export function createApiClient(deps: ApiClientDeps) {
     return refreshing;
   }
 
-  function send(path: string, { method = 'GET', body, signal }: RequestOptions) {
-    const headers: Record<string, string> = { accept: 'application/json' };
+  function send(path: string, { method = 'GET', body, signal, headers: extra }: RequestOptions) {
+    const headers: Record<string, string> = { ...extra, accept: 'application/json' };
     if (body !== undefined) headers['content-type'] = 'application/json';
     if (method !== 'GET') {
       const csrf = deps.readCookie(SESSION_COOKIE.csrf);
