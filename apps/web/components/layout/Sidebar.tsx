@@ -36,6 +36,7 @@ function SidebarInner() {
     { label: 'Home', href: '/', icon: Home },
     { label: 'Discover', href: '/discover', icon: Compass },
     { label: 'Saved', href: '/saved', icon: Bookmark },
+    { label: 'Sent enquiries', href: '/enquiries', icon: FileQuestion },
     {
       label: 'Messages',
       href: '/messages',

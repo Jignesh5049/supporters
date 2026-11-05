@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import type { ListingRef } from '@supporters/shared';
 import { z } from 'zod';
 import { chatApi } from '@/features/messaging/chat-api';
 import { errorMessage } from '@/lib/api/errors';
@@ -50,11 +51,20 @@ export interface DraftListing {
   updatedAt?: string;
 }
 
+interface EnquiryInfo {
+  title: string;
+  businessName: string;
+  businessId?: string;
+  listing?: ListingRef;
+}
+
 interface EnquiryTarget {
   isOpen: boolean;
   targetTitle?: string;
   targetBusinessName?: string;
   targetBusinessId?: string;
+  /** The product or service to enquire about; without it the form offers the business's listings. */
+  targetListing?: ListingRef;
 }
 
 interface ConfirmationState {
@@ -116,7 +126,7 @@ interface AppContextType {
 
   // Enquiry Modal
   enquiryState: EnquiryTarget;
-  openEnquiryModal: (info: { title: string; businessName: string; businessId?: string }) => void;
+  openEnquiryModal: (info: EnquiryInfo) => void;
   closeEnquiryModal: () => void;
 
   // Referral & Wallet
@@ -487,12 +497,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
 
-  const openEnquiryModal = (info: { title: string; businessName: string; businessId?: string }) => {
+  const openEnquiryModal = (info: EnquiryInfo) => {
     setEnquiryState({
       isOpen: true,
       targetTitle: info.title,
       targetBusinessName: info.businessName,
       targetBusinessId: info.businessId,
+      targetListing: info.listing,
     });
   };
 
