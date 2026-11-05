@@ -1,0 +1,27 @@
+appId: com.supporters.app
+---
+# Flow 1: Sign up and OTP Verification (mobile spec line 182)
+- launchApp
+- assertVisible: 'Supporters'
+- tapOn: 'Sign In'
+- assertVisible: 'Sign in to Supporters'
+- tapOn: 'Create New Account'
+- assertVisible: 'Create your account'
+
+# Fill registration details
+- tapOn: 'Full Name'
+- inputText: 'Maestro Test User'
+- tapOn: '10-digit mobile number'
+- inputText: '9876543210'
+- tapOn: 'Create password'
+- inputText: 'Secur3P@ssw0rd'
+- hideKeyboard
+- tapOn: 'I agree to Supporters Terms & Privacy'
+- tapOn: 'Send OTP'
+
+# OTP verification screen
+- assertVisible: 'Enter the code'
+- assertVisible: 'One-time code'
+- tapOn: 'One-time code'
+- inputText: '123456'
+- tapOn: 'Verify'

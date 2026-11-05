@@ -1,0 +1,26 @@
+appId: com.supporters.app
+---
+# Flow 2: Follow a business and send an enquiry (mobile spec line 182)
+- launchApp
+- assertVisible: 'Supporters'
+
+# Navigate to Discover and find business
+- tapOn: 'Discover'
+- assertVisible: 'Explore B2B Directory'
+- tapOn: 'Surat Silk Craft'
+- assertVisible: 'Products'
+
+# Follow business
+- tapOn: 'Follow'
+- assertVisible: 'Following'
+
+# Send enquiry
+- tapOn: 'Services'
+- tapOn: 'Custom Jacquard Weaving'
+- assertVisible: 'Request Quotation'
+- tapOn: 'Request Quotation'
+- assertVisible: 'Quantity Required'
+- tapOn: 'Detailed Specifications / Notes'
+- inputText: 'Need 200 meters of raw silk for festive delivery.'
+- hideKeyboard
+- tapOn: 'Send Quotation Enquiry'

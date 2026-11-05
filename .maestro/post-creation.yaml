@@ -1,0 +1,17 @@
+appId: com.supporters.app
+---
+# Flow 5: Create a post (mobile spec line 182)
+- launchApp
+- assertVisible: 'Supporters'
+
+# Tap Create
+- tapOn: 'Create'
+- assertVisible: 'Create Listing or Post'
+- tapOn: 'Share an Update'
+- assertVisible: 'Publish Post'
+
+# Enter post content
+- tapOn: 'Share business updates, factory dispatch, or news...'
+- inputText: 'New festive collection launched with fast courier delivery across India!'
+- hideKeyboard
+- tapOn: 'Publish Post'

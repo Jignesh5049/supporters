@@ -1,0 +1,22 @@
+appId: com.supporters.app
+---
+# Flow 4: Request payout and biometric confirmation (mobile spec line 182)
+- launchApp
+- assertVisible: 'Supporters'
+
+# Open Drawer and Wallet
+- tapOn: 'Open Navigation Menu'
+- tapOn: 'App Wallet'
+- assertVisible: 'Wallet Balance'
+
+# Initiate withdrawal
+- tapOn: 'Withdraw Funds'
+- assertVisible: 'Withdraw Money'
+- tapOn: 'Enter amount (₹)'
+- inputText: '500'
+- hideKeyboard
+- tapOn: 'Proceed to Review'
+- assertVisible: 'Review Withdrawal'
+
+# Confirm with Biometrics
+- tapOn: 'Authorize Payout'

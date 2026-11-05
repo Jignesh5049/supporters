@@ -1,0 +1,16 @@
+appId: com.supporters.app
+---
+# Flow 3: Open conversation and send direct message (mobile spec line 182)
+- launchApp
+- assertVisible: 'Supporters'
+
+# Open Messages Tab
+- tapOn: 'Messages'
+- assertVisible: 'Direct Messages'
+
+# Select active conversation
+- tapOn: 'Surat Silk Craft'
+- assertVisible: 'Surat Silk Craft'
+- tapOn: 'Type a message...'
+- inputText: 'Namaste, can you confirm wholesale delivery to Ahmedabad?'
+- tapOn: 'Send'
