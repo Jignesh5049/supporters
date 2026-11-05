@@ -10,6 +10,7 @@ import { Text } from '@supporters/ui-native/components/text';
 import { EmptyState } from '@supporters/ui-native/patterns';
 import { useApp } from '../context/AppContext';
 import { messageForError } from '../lib/api';
+import { MyEnquiriesList } from '../features/enquiries/components/MyEnquiriesList';
 import { ActionSheet, ConversationListItem } from '../features/messages/components';
 import {
   useConversations,
@@ -17,7 +18,7 @@ import {
 } from '../features/messages/hooks/use-conversations';
 import { useViewerId } from '../features/social/use-viewer';
 
-type InboxTab = 'chats' | 'hidden';
+type InboxTab = 'chats' | 'enquiries' | 'hidden';
 
 /** Waits until typing pauses before searching. */
 function useDebounced(value: string, ms: number) {
@@ -109,22 +110,25 @@ export function MessagesScreen() {
     <View className="bg-background flex-1">
       <View className="border-border bg-card gap-3 border-b px-4 pb-3 pt-3">
         <Text className="text-lg font-bold">Messages</Text>
-        <View className="bg-muted flex-row items-center gap-2 rounded-xl px-3">
-          <Icon as={Search} size={16} className="text-muted-foreground" />
-          <Input
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search by name"
-            maxLength={CHAT_LIMITS.searchQueryMax}
-            className="flex-1 border-0 bg-transparent"
-            accessibilityLabel="Search conversations by name"
-            returnKeyType="search"
-          />
-        </View>
+        {tab !== 'enquiries' ? (
+          <View className="bg-muted flex-row items-center gap-2 rounded-xl px-3">
+            <Icon as={Search} size={16} className="text-muted-foreground" />
+            <Input
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search by name"
+              maxLength={CHAT_LIMITS.searchQueryMax}
+              className="flex-1 border-0 bg-transparent"
+              accessibilityLabel="Search conversations by name"
+              returnKeyType="search"
+            />
+          </View>
+        ) : null}
         <View className="flex-row gap-2">
           {(
             [
               ['chats', 'Chats'],
+              ['enquiries', 'My enquiries'],
               ['hidden', 'Hidden'],
             ] as const
           ).map(([value, label]) => (
@@ -141,53 +145,59 @@ export function MessagesScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={conversations}
-        keyExtractor={(conversation) => conversation.id}
-        renderItem={({ item }) => (
-          <ConversationListItem
-            conversation={item}
-            viewerId={viewerId}
-            onOpen={(conversation) => router.push(`/messages/${conversation.id}`)}
-            onLongPress={setSelected}
-          />
-        )}
-        onEndReached={() => inbox.hasNextPage && !inbox.isFetchingNextPage && inbox.fetchNextPage()}
-        onEndReachedThreshold={0.5}
-        refreshing={inbox.isRefetching && !inbox.isFetchingNextPage}
-        onRefresh={() => inbox.refetch()}
-        ListFooterComponent={
-          inbox.isFetchingNextPage ? <ActivityIndicator className="my-4" /> : undefined
-        }
-        ListEmptyComponent={
-          inbox.isPending ? (
-            <ActivityIndicator className="mt-10" />
-          ) : inbox.isError ? (
-            <View className="items-center gap-3 py-10">
-              <Text className="text-center">{messageForError(inbox.error)}</Text>
-              <Button variant="outline" onPress={() => inbox.refetch()}>
-                <Text>Try again</Text>
-              </Button>
-            </View>
-          ) : (
-            <View className="items-center gap-2 px-6 py-16">
-              <Icon as={MessageSquare} size={36} className="text-muted-foreground" />
-              <Text className="text-base font-bold">
-                {q
-                  ? 'No conversations match'
-                  : tab === 'hidden'
-                    ? 'Nothing hidden'
-                    : 'No conversations yet'}
-              </Text>
-              <Text variant="muted" className="text-center text-sm">
-                {tab === 'hidden'
-                  ? 'Conversations you hide appear here.'
-                  : 'Message a business or send an enquiry from a product page to start.'}
-              </Text>
-            </View>
-          )
-        }
-      />
+      {tab === 'enquiries' ? (
+        <MyEnquiriesList />
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(conversation) => conversation.id}
+          renderItem={({ item }) => (
+            <ConversationListItem
+              conversation={item}
+              viewerId={viewerId}
+              onOpen={(conversation) => router.push(`/messages/${conversation.id}`)}
+              onLongPress={setSelected}
+            />
+          )}
+          onEndReached={() =>
+            inbox.hasNextPage && !inbox.isFetchingNextPage && inbox.fetchNextPage()
+          }
+          onEndReachedThreshold={0.5}
+          refreshing={inbox.isRefetching && !inbox.isFetchingNextPage}
+          onRefresh={() => inbox.refetch()}
+          ListFooterComponent={
+            inbox.isFetchingNextPage ? <ActivityIndicator className="my-4" /> : undefined
+          }
+          ListEmptyComponent={
+            inbox.isPending ? (
+              <ActivityIndicator className="mt-10" />
+            ) : inbox.isError ? (
+              <View className="items-center gap-3 py-10">
+                <Text className="text-center">{messageForError(inbox.error)}</Text>
+                <Button variant="outline" onPress={() => inbox.refetch()}>
+                  <Text>Try again</Text>
+                </Button>
+              </View>
+            ) : (
+              <View className="items-center gap-2 px-6 py-16">
+                <Icon as={MessageSquare} size={36} className="text-muted-foreground" />
+                <Text className="text-base font-bold">
+                  {q
+                    ? 'No conversations match'
+                    : tab === 'hidden'
+                      ? 'Nothing hidden'
+                      : 'No conversations yet'}
+                </Text>
+                <Text variant="muted" className="text-center text-sm">
+                  {tab === 'hidden'
+                    ? 'Conversations you hide appear here.'
+                    : 'Message a business or send an enquiry from a product page to start.'}
+                </Text>
+              </View>
+            )
+          }
+        />
+      )}
       <ConversationActions conversation={selected} onClose={() => setSelected(null)} />
     </View>
   );
