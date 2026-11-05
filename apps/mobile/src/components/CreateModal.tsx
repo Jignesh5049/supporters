@@ -8,12 +8,14 @@ import {
   TouchableWithoutFeedback,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { X, ChevronRight, FileText, Package, Wrench, Megaphone, Tag } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function CreateModal() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { createModalOpen, setCreateModalOpen, navigate } = useApp();
 
@@ -21,8 +23,10 @@ export function CreateModal() {
     setCreateModalOpen(false);
     if (tab === 'requirement') {
       navigate('home', { openRequirement: true });
+      router.push('/requirements/new');
     } else {
       navigate('create', { initialTab: tab });
+      router.push('/(tabs)/create');
     }
   };
 
@@ -34,7 +38,7 @@ export function CreateModal() {
       badgeBg: '#FEF3C7',
       badgeColor: '#D97706',
       desc: 'Looking for products or materials? Post requirements for sellers to reach out',
-      icon: 'document-text-outline' as const,
+      Icon: FileText,
       iconBg: '#F59E0B',
     },
     {
@@ -44,7 +48,7 @@ export function CreateModal() {
       badgeBg: '#EEF2FF',
       badgeColor: '#4338CA',
       desc: 'Showcase physical items, wholesale inventory, MOQ & specs',
-      icon: 'cube-outline' as const,
+      Icon: Package,
       iconBg: colors.primary,
     },
     {
@@ -54,7 +58,7 @@ export function CreateModal() {
       badgeBg: '#E0F7FE',
       badgeColor: '#0284C7',
       desc: 'Highlight bespoke manufacturing, repairs, consulting or turnkey work',
-      icon: 'construct-outline' as const,
+      Icon: Wrench,
       iconBg: colors.accentCyan,
     },
     {
@@ -64,7 +68,7 @@ export function CreateModal() {
       badgeBg: '#F3E8FF',
       badgeColor: '#7E22CE',
       desc: 'Post factory dispatch, milestones, photos or attach catalog items',
-      icon: 'megaphone-outline' as const,
+      Icon: Megaphone,
       iconBg: '#6366F1',
     },
     {
@@ -74,7 +78,7 @@ export function CreateModal() {
       badgeBg: colors.accentMagentaLight,
       badgeColor: colors.accentMagenta,
       desc: 'Promote clearance discounts, festive wholesale lots or flash offers',
-      icon: 'pricetag-outline' as const,
+      Icon: Tag,
       iconBg: colors.accentMagenta,
     },
   ];
@@ -103,37 +107,42 @@ export function CreateModal() {
               </Text>
             </View>
             <TouchableOpacity onPress={() => setCreateModalOpen(false)} style={styles.closeBtn}>
-              <Feather name="x" size={20} color="#667085" />
+              <X size={20} color="#667085" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.optionsList}>
-            {options.map((opt) => (
-              <TouchableOpacity
-                key={opt.id}
-                onPress={() => handleSelectOption(opt.id)}
-                style={styles.optionCard}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: opt.iconBg }]}>
-                  <Ionicons name={opt.icon} size={22} color="#FFFFFF" />
-                </View>
-
-                <View style={styles.optionDetails}>
-                  <View style={styles.titleRow}>
-                    <Text style={styles.optionTitle}>{opt.title}</Text>
-                    <View style={[styles.badgeContainer, { backgroundColor: opt.badgeBg }]}>
-                      <Text style={[styles.badgeText, { color: opt.badgeColor }]}>{opt.badge}</Text>
-                    </View>
+            {options.map((opt) => {
+              const OptIcon = opt.Icon;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  onPress={() => handleSelectOption(opt.id)}
+                  style={styles.optionCard}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.iconContainer, { backgroundColor: opt.iconBg }]}>
+                    <OptIcon size={22} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.optionDesc} numberOfLines={2}>
-                    {opt.desc}
-                  </Text>
-                </View>
 
-                <Feather name="chevron-right" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.optionDetails}>
+                    <View style={styles.titleRow}>
+                      <Text style={styles.optionTitle}>{opt.title}</Text>
+                      <View style={[styles.badgeContainer, { backgroundColor: opt.badgeBg }]}>
+                        <Text style={[styles.badgeText, { color: opt.badgeColor }]}>
+                          {opt.badge}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.optionDesc} numberOfLines={2}>
+                      {opt.desc}
+                    </Text>
+                  </View>
+
+                  <ChevronRight size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </View>

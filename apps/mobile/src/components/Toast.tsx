@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { CheckCircle2, AlertCircle, Info } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -17,11 +17,13 @@ export function Toast() {
   return (
     <View style={[styles.container, { top: insets.top + 58 }]}>
       <View style={[styles.toastBox, isSuccess && styles.successBox, isError && styles.errorBox]}>
-        <Feather
-          name={isSuccess ? 'check-circle' : isError ? 'alert-circle' : 'info'}
-          size={16}
-          color="#FFFFFF"
-        />
+        {isSuccess ? (
+          <CheckCircle2 size={16} color="#FFFFFF" />
+        ) : isError ? (
+          <AlertCircle size={16} color="#FFFFFF" />
+        ) : (
+          <Info size={16} color="#FFFFFF" />
+        )}
         <Text style={styles.messageText} numberOfLines={2}>
           {toast.message}
         </Text>

@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Sparkles, X, Check } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -34,7 +34,7 @@ export function SuggestedBusinessesWidget() {
       {/* Instagram-style Header */}
       <View style={styles.headerRow}>
         <View style={styles.titleWithIcon}>
-          <Ionicons name="sparkles" size={14} color={colors.primary} />
+          <Sparkles size={14} color={colors.primary} />
           <Text style={styles.sectionTitle}>Suggested for you</Text>
         </View>
 
@@ -64,7 +64,7 @@ export function SuggestedBusinessesWidget() {
                 style={styles.dismissBtn}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Feather name="x" size={13} color="#94A3B8" />
+                <X size={13} color="#94A3B8" />
               </TouchableOpacity>
 
               {/* Avatar with Verified Badge */}
@@ -76,7 +76,7 @@ export function SuggestedBusinessesWidget() {
                 <Image source={{ uri: biz.avatar }} style={styles.avatar} />
                 {biz.verified && (
                   <View style={styles.verifiedDot}>
-                    <Ionicons name="checkmark" size={8} color="#FFFFFF" />
+                    <Check size={8} color="#FFFFFF" strokeWidth={3} />
                   </View>
                 )}
               </TouchableOpacity>

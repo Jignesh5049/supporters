@@ -11,7 +11,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { MessageSquare, X, ShieldCheck, Send } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -61,7 +61,7 @@ export function EnquiryModal() {
           <View style={styles.dialogHeader}>
             <View style={styles.headerTitleContainer}>
               <View style={styles.iconCircle}>
-                <Ionicons name="chatbubbles-outline" size={18} color={colors.primary} />
+                <MessageSquare size={18} color={colors.primary} />
               </View>
               <View>
                 <Text style={styles.dialogTitle}>Request Quotation</Text>
@@ -71,7 +71,7 @@ export function EnquiryModal() {
               </View>
             </View>
             <TouchableOpacity onPress={closeEnquiryModal} style={styles.closeBtn}>
-              <Feather name="x" size={20} color="#667085" />
+              <X size={20} color="#667085" />
             </TouchableOpacity>
           </View>
 
@@ -134,7 +134,7 @@ export function EnquiryModal() {
             </View>
 
             <View style={styles.privacyNote}>
-              <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+              <ShieldCheck size={14} color="#10B981" />
               <Text style={styles.privacyText}>
                 Your contact details are shared strictly with verified sellers on Supporters.
               </Text>
@@ -148,7 +148,7 @@ export function EnquiryModal() {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} activeOpacity={0.85}>
-              <Feather name="send" size={14} color="#FFFFFF" />
+              <Send size={14} color="#FFFFFF" />
               <Text style={styles.submitText}>Send Quotation Enquiry</Text>
             </TouchableOpacity>
           </View>

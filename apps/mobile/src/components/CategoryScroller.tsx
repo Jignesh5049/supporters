@@ -1,6 +1,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import {
+  Layers,
+  Tv,
+  Tag,
+  Coffee,
+  Home,
+  Truck,
+  Sun,
+  Wrench,
+  Star,
+  Cpu,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { CATEGORIES } from '../../mock';
 import { colors } from '../styles/theme';
 
@@ -9,17 +21,17 @@ interface CategoryScrollerProps {
   onSelectCategory: (id: string) => void;
 }
 
-const ICON_MAP: Record<string, keyof typeof Feather.glyphMap> = {
-  layers: 'layers',
-  tv: 'tv',
-  tag: 'tag',
-  coffee: 'coffee',
-  home: 'home',
-  truck: 'truck',
-  sun: 'sun',
-  tool: 'tool',
-  star: 'star',
-  cpu: 'cpu',
+const ICON_MAP: Record<string, LucideIcon> = {
+  layers: Layers,
+  tv: Tv,
+  tag: Tag,
+  coffee: Coffee,
+  home: Home,
+  truck: Truck,
+  sun: Sun,
+  tool: Wrench,
+  star: Star,
+  cpu: Cpu,
 };
 
 export function CategoryScroller({ selectedCategory, onSelectCategory }: CategoryScrollerProps) {
@@ -32,7 +44,7 @@ export function CategoryScroller({ selectedCategory, onSelectCategory }: Categor
       >
         {CATEGORIES.map((cat) => {
           const isSelected = selectedCategory === cat.id;
-          const iconName = ICON_MAP[cat.iconName] || 'layers';
+          const IconComponent = ICON_MAP[cat.iconName] || Layers;
 
           return (
             <TouchableOpacity
@@ -44,7 +56,7 @@ export function CategoryScroller({ selectedCategory, onSelectCategory }: Categor
               ]}
               activeOpacity={0.75}
             >
-              <Feather name={iconName} size={13} color={isSelected ? '#FFFFFF' : '#667085'} />
+              <IconComponent size={13} color={isSelected ? '#FFFFFF' : '#667085'} />
               <Text
                 style={[
                   styles.categoryText,

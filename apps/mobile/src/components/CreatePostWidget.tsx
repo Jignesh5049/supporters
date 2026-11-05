@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Platform } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Megaphone, Package, Wrench, Tag } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -69,7 +69,7 @@ export function CreatePostWidget() {
             onPress={() => setCreateModalOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="megaphone-outline" size={15} color={colors.primary} />
+            <Megaphone size={15} color={colors.primary} />
             <Text style={styles.actionText}>Update</Text>
           </TouchableOpacity>
 
@@ -78,7 +78,7 @@ export function CreatePostWidget() {
             onPress={() => setCreateModalOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="cube-outline" size={15} color={colors.accentCyan} />
+            <Package size={15} color={colors.accentCyan} />
             <Text style={styles.actionText}>Product</Text>
           </TouchableOpacity>
 
@@ -87,7 +87,7 @@ export function CreatePostWidget() {
             onPress={() => setCreateModalOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="construct-outline" size={15} color="#10B981" />
+            <Wrench size={15} color="#10B981" />
             <Text style={styles.actionText}>Service</Text>
           </TouchableOpacity>
 
@@ -96,7 +96,7 @@ export function CreatePostWidget() {
             onPress={() => setCreateModalOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="pricetag-outline" size={15} color={colors.accentMagenta} />
+            <Tag size={15} color={colors.accentMagenta} />
             <Text style={[styles.actionText, { color: colors.accentMagenta }]}>Offer</Text>
           </TouchableOpacity>
         </View>

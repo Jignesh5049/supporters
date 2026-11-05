@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ShieldCheck } from 'lucide-react-native';
 import { colors } from '../styles/theme';
 
 interface BrandLogoProps {
@@ -30,7 +30,7 @@ export function BrandLogo({
           },
         ]}
       >
-        <Ionicons name="shield-checkmark" size={iconSize} color={colors.accentCyan} />
+        <ShieldCheck size={iconSize} color={colors.accentCyan} />
       </View>
       <View style={styles.textColumn}>
         <Text style={[styles.brandName, { fontSize: titleFontSize }]}>Supporters</Text>

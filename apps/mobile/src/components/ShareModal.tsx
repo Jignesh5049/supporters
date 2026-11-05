@@ -9,7 +9,7 @@ import {
   Share,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons, FontAwesome } from '@expo/vector-icons';
+import { X, MessageCircle, Globe, Copy, Share2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -55,7 +55,7 @@ export function ShareModal() {
           <View style={styles.headerRow}>
             <Text style={styles.sheetTitle}>Share Listing</Text>
             <TouchableOpacity onPress={closeShareModal} style={styles.closeBtn}>
-              <Feather name="x" size={20} color="#667085" />
+              <X size={20} color="#667085" />
             </TouchableOpacity>
           </View>
 
@@ -70,7 +70,7 @@ export function ShareModal() {
               activeOpacity={0.7}
             >
               <View style={[styles.shareIconBox, { backgroundColor: '#25D366' }]}>
-                <FontAwesome name="whatsapp" size={24} color="#FFFFFF" />
+                <MessageCircle size={22} color="#FFFFFF" />
               </View>
               <Text style={styles.shareLabel}>WhatsApp</Text>
             </TouchableOpacity>
@@ -81,14 +81,14 @@ export function ShareModal() {
               activeOpacity={0.7}
             >
               <View style={[styles.shareIconBox, { backgroundColor: '#0A66C2' }]}>
-                <FontAwesome name="linkedin" size={22} color="#FFFFFF" />
+                <Globe size={22} color="#FFFFFF" />
               </View>
               <Text style={styles.shareLabel}>LinkedIn</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleCopyLink} style={styles.shareItem} activeOpacity={0.7}>
               <View style={[styles.shareIconBox, { backgroundColor: '#4B5563' }]}>
-                <Feather name="copy" size={20} color="#FFFFFF" />
+                <Copy size={20} color="#FFFFFF" />
               </View>
               <Text style={styles.shareLabel}>Copy Link</Text>
             </TouchableOpacity>
@@ -99,7 +99,7 @@ export function ShareModal() {
               activeOpacity={0.7}
             >
               <View style={[styles.shareIconBox, { backgroundColor: colors.primary }]}>
-                <Feather name="share-2" size={20} color="#FFFFFF" />
+                <Share2 size={20} color="#FFFFFF" />
               </View>
               <Text style={styles.shareLabel}>More Apps</Text>
             </TouchableOpacity>
