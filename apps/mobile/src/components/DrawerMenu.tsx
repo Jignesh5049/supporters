@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   X,
   CheckCircle2,
@@ -28,12 +29,28 @@ import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function DrawerMenu() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { drawerOpen, setDrawerOpen, currentUser, navigate, signOut } = useApp();
 
   const handleNavigate = (route: any, params?: any) => {
     setDrawerOpen(false);
     navigate(route, params);
+
+    const ROUTE_MAP: Record<string, string> = {
+      profile: '/(tabs)/profile',
+      saved: '/saved',
+      requirements: '/requirements',
+      wallet: '/wallet',
+      referral: '/referral',
+      business_hub: '/hub',
+      subscription: '/hub/premium',
+      settings: '/settings',
+    };
+
+    if (ROUTE_MAP[route]) {
+      router.push(ROUTE_MAP[route] as any);
+    }
   };
 
   const handleLogout = () => {

@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Menu, Bell, ShieldCheck } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function Header() {
+  const router = useRouter();
   const {
     unreadNotificationsCount,
     currentUser,
@@ -59,7 +61,10 @@ export function Header() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => navigate('home')}
+          onPress={() => {
+            navigate('home');
+            router.push('/(tabs)');
+          }}
           style={styles.brandContainer}
           activeOpacity={0.8}
         >
@@ -77,7 +82,10 @@ export function Header() {
       <View style={styles.rightSection}>
         {currentRoute !== 'notifications' && (
           <TouchableOpacity
-            onPress={() => navigate('notifications')}
+            onPress={() => {
+              navigate('notifications');
+              router.push('/notifications');
+            }}
             style={styles.iconButton}
             activeOpacity={0.7}
             accessibilityLabel="Notifications"

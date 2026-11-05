@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Bookmark, Share2 } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
@@ -14,6 +15,8 @@ import {
 import type { Product } from '../../mock';
 
 export function ProductDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const {
     products,
     businesses,
@@ -26,7 +29,7 @@ export function ProductDetailScreen() {
     goBack,
   } = useApp();
 
-  const productId = routeParams?.productId || 'p-1';
+  const productId = id || routeParams?.productId || 'p-1';
   const product = products.find((p) => p.id === productId) || products[0];
   const business = businesses.find((b) => b.id === product?.businessId) || businesses[0];
 

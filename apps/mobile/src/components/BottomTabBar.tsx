@@ -1,13 +1,45 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useRouter, usePathname } from 'expo-router';
 import { Home, Compass, Plus, MessageSquare, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
 export function BottomTabBar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { currentRoute, navigate, unreadMessagesCount, setCreateModalOpen } = useApp();
+
+  const handleTabPress = (key: string) => {
+    navigate(key as any);
+    if (key === 'home') router.push('/(tabs)');
+    else if (key === 'discover') router.push('/(tabs)/discover');
+    else if (key === 'messages') router.push('/(tabs)/messages');
+    else if (key === 'profile') router.push('/(tabs)/profile');
+  };
+
+  const isTabActive = (key: string) => {
+    if (key === 'home') {
+      return (
+        pathname === '/' ||
+        pathname === '/(tabs)' ||
+        pathname === '/(tabs)/index' ||
+        currentRoute === 'home'
+      );
+    }
+    if (key === 'discover') {
+      return pathname.includes('discover') || currentRoute === 'discover';
+    }
+    if (key === 'messages') {
+      return pathname.includes('messages') || currentRoute === 'messages';
+    }
+    if (key === 'profile') {
+      return pathname.includes('profile') || currentRoute === 'profile';
+    }
+    return currentRoute === key;
+  };
 
   const tabs = [
     { key: 'home', label: 'Home', Icon: Home },
@@ -42,13 +74,13 @@ export function BottomTabBar() {
             );
           }
 
-          const isActive = currentRoute === tab.key;
+          const isActive = isTabActive(tab.key);
           const TabIcon = tab.Icon;
 
           return (
             <TouchableOpacity
               key={tab.key}
-              onPress={() => navigate(tab.key as any)}
+              onPress={() => handleTabPress(tab.key)}
               style={styles.tabButton}
               activeOpacity={0.7}
             >
