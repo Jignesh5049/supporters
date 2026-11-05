@@ -4,6 +4,13 @@
     "slug": "supporters",
     "scheme": "supporters",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c22125f1-cdea-411e-894e-49a50e37257a",
+      "checkAutomatically": "ON_LOAD"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +27,7 @@
     },
     "android": {
       "package": "com.supporters.app",
+      "usesCleartextTraffic": false,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -61,6 +69,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-updates",
       "expo-secure-store",
       "expo-notifications",
       [

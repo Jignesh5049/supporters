@@ -20,6 +20,7 @@ allowBuilds:
   prisma: false
   protobufjs: false
   ssh2: false
+  '@sentry/cli': false
 
 auditConfig:
   ignoreGhsas:
