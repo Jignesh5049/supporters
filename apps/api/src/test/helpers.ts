@@ -85,11 +85,30 @@ export async function createTestApp(
   return { app, sms, env };
 }
 
-/** Tests share one database: empty it (keeping reference data), and Valkey, before each test. */
+const TRUNCATE_ALL =
+  'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen CASCADE';
+
+/** PostgreSQL `deadlock_detected` (SQLSTATE 40P01), as Prisma's pg adapter reports it. */
+const isDeadlock = (error: unknown) => /40P01|deadlock detected/.test(String(error));
+
+/**
+ * Tests share one database: empty it (keeping reference data), and Valkey, before each test.
+ *
+ * TRUNCATE locks every table, while server-side socket handlers from the previous test (for
+ * example a burst of `message:send`) can still be finishing writes after the client disconnects.
+ * When the two collide, PostgreSQL aborts one of them with a deadlock. Retry the reset until those
+ * stray writes have finished; this only happens in tests, which are the only code that truncates.
+ */
 export async function resetState() {
-  await prisma.$executeRawUnsafe(
-    'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen CASCADE',
-  );
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await prisma.$executeRawUnsafe(TRUNCATE_ALL);
+      break;
+    } catch (error) {
+      if (!isDeadlock(error) || attempt >= 5) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+    }
+  }
   await valkey.flushdb();
 }
 
