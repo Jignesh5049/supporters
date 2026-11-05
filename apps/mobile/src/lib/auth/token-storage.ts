@@ -15,6 +15,24 @@ const KEYS = { access: 'auth.access-token', refresh: 'auth.refresh-token' } as c
 /** In-memory copy of the access token so each request skips a Keychain read. */
 let cachedAccessToken: string | null | undefined;
 
+type AccessTokenListener = (accessToken: string | null) => void;
+const listeners = new Set<AccessTokenListener>();
+
+/**
+ * Called after every refresh or sign-in with the new access token, and with null on sign-out,
+ * so the realtime socket can send `auth:renew` (mobile spec, Realtime).
+ */
+export function onAccessTokenChange(listener: AccessTokenListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notify(accessToken: string | null) {
+  for (const listener of listeners) listener(accessToken);
+}
+
 export const secureTokenStore: TokenStore = {
   async getAccessToken() {
     if (cachedAccessToken === undefined) {
@@ -27,6 +45,7 @@ export const secureTokenStore: TokenStore = {
     cachedAccessToken = tokens.accessToken;
     await SecureStore.setItemAsync(KEYS.refresh, tokens.refreshToken, OPTIONS);
     await SecureStore.setItemAsync(KEYS.access, tokens.accessToken, OPTIONS);
+    notify(tokens.accessToken);
   },
   async clear() {
     cachedAccessToken = null;
@@ -34,5 +53,6 @@ export const secureTokenStore: TokenStore = {
       SecureStore.deleteItemAsync(KEYS.access, OPTIONS),
       SecureStore.deleteItemAsync(KEYS.refresh, OPTIONS),
     ]);
+    notify(null);
   },
 };

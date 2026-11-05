@@ -15,7 +15,7 @@ import {
   registerForPushNotificationsAsync,
   handleNotificationResponse,
 } from '../src/lib/push/notifications';
-import { disconnectSocket } from '../src/lib/socket/socketClient';
+import { RealtimeBridge } from '../src/features/messages/components/RealtimeBridge';
 
 export default function RootLayout() {
   useEffect(() => {
@@ -27,7 +27,6 @@ export default function RootLayout() {
 
     return () => {
       subResponse.remove();
-      disconnectSocket();
     };
   }, []);
 
@@ -35,6 +34,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AppProvider>
+          <RealtimeBridge />
           <StatusBar style="dark" />
           <Stack
             screenOptions={{

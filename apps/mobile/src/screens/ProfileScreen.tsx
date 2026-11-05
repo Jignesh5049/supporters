@@ -59,12 +59,7 @@ export function ProfileScreen() {
           postActions={postActions}
           products={myProducts}
           onOpenProduct={(productId) => navigate('product_detail', { productId })}
-          onContactProductSupplier={(p) =>
-            openConversationWithBusiness(p.businessId, {
-              initialMessage: `Namaste! I am interested in "${p.title}" (₹${p.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
-              attachedProduct: p,
-            })
-          }
+          onContactProductSupplier={(p) => openConversationWithBusiness(p.businessId)}
           onEditProfile={() => setIsEditModalOpen(true)}
         />
       </ScrollView>
