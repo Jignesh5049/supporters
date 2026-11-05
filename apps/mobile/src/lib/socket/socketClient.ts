@@ -1,3 +1,4 @@
+import { AppState, type AppStateStatus } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 import { API_URL } from '../api/config';
 import { getAccessToken } from '../storage/secureStore';
@@ -8,6 +9,7 @@ export interface ChatMessagePayload {
   senderName: string;
   text: string;
   timestamp: string;
+  clientId?: string;
   attachedProduct?: {
     id: string;
     title: string;
@@ -37,9 +39,14 @@ export interface ReadReceiptPayload {
 }
 
 let socket: Socket | null = null;
+let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+
+// Local queue for messages sent while offline/reconnecting (spec line 126)
+const unsentQueue: ChatMessagePayload[] = [];
 
 /**
  * Initializes and connects the Socket.IO client with authenticated handshake.
+ * Connects to /v1/ws per mobile spec line 125.
  */
 export async function getSocket(): Promise<Socket> {
   if (socket && socket.connected) {
@@ -50,6 +57,7 @@ export async function getSocket(): Promise<Socket> {
   const baseUrl = API_URL.replace(/\/v1$/, '');
 
   socket = io(baseUrl, {
+    path: '/v1/ws',
     transports: ['websocket'],
     autoConnect: true,
     reconnection: true,
@@ -61,14 +69,45 @@ export async function getSocket(): Promise<Socket> {
   });
 
   socket.on('connect', () => {
-    // Connected to realtime server
+    // Flush queued messages upon reconnect
+    flushUnsentMessages();
   });
 
   socket.on('connect_error', (err) => {
     console.warn('Realtime socket connection error:', err.message);
   });
 
+  setupSocketLifecycle();
+
   return socket;
+}
+
+/**
+ * Disconnects socket when app moves to background; reconnects on foreground (spec line 125).
+ */
+export function setupSocketLifecycle() {
+  if (appStateSubscription) return;
+
+  appStateSubscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+    if (nextState === 'background' || nextState === 'inactive') {
+      disconnectSocket();
+    } else if (nextState === 'active') {
+      getSocket().catch(() => {});
+    }
+  });
+}
+
+/**
+ * Flushes unsent messages queued during disconnect.
+ */
+function flushUnsentMessages() {
+  if (!socket?.connected || unsentQueue.length === 0) return;
+  while (unsentQueue.length > 0) {
+    const msg = unsentQueue.shift();
+    if (msg) {
+      socket.emit('message:send', msg);
+    }
+  }
 }
 
 /**
@@ -90,11 +129,17 @@ export function leaveConversation(conversationId: string) {
 }
 
 /**
- * Sends a chat message through the realtime channel.
+ * Sends a chat message through the realtime channel, queuing locally if disconnected.
  */
 export function sendSocketMessage(payload: ChatMessagePayload) {
+  const clientId =
+    payload.clientId || `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const messageWithId = { ...payload, clientId };
+
   if (socket?.connected) {
-    socket.emit('message:send', payload);
+    socket.emit('message:send', messageWithId);
+  } else {
+    unsentQueue.push(messageWithId);
   }
 }
 
@@ -117,12 +162,14 @@ export function sendReadReceipt(payload: ReadReceiptPayload) {
 }
 
 /**
- * Subscribes to incoming messages.
+ * Subscribes to incoming messages (supporting both message:new and message:received).
  */
 export function onSocketMessage(callback: (message: ChatMessagePayload) => void) {
   if (!socket) return () => {};
+  socket.on('message:new', callback);
   socket.on('message:received', callback);
   return () => {
+    socket?.off('message:new', callback);
     socket?.off('message:received', callback);
   };
 }

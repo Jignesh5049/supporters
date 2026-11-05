@@ -89,6 +89,17 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 }
 
 /**
+ * Prompts for push notification permissions contextually
+ * (after first DM or quotation enquiry, not on cold start) per mobile spec line 130.
+ */
+let hasPromptedPush = false;
+export async function requestPushPermissionOnInteraction(): Promise<string | null> {
+  if (hasPromptedPush) return null;
+  hasPromptedPush = true;
+  return registerForPushNotificationsAsync();
+}
+
+/**
  * Handles incoming push notification taps and routes the user to the target screen.
  */
 export function handleNotificationResponse(response: Notifications.NotificationResponse) {

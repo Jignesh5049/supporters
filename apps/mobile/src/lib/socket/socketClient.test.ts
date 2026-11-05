@@ -78,7 +78,7 @@ describe('socketClient', () => {
       timestamp: new Date().toISOString(),
     };
     sendSocketMessage(payload);
-    expect(mockSocket.emit).toHaveBeenCalledWith('message:send', payload);
+    expect(mockSocket.emit).toHaveBeenCalledWith('message:send', expect.objectContaining(payload));
   });
 
   it('emits typing:update status', async () => {

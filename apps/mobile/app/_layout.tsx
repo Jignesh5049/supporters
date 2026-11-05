@@ -11,16 +11,18 @@ import { DrawerMenu } from '../src/components/DrawerMenu';
 import { CreateModal } from '../src/components/CreateModal';
 import { EnquiryModal } from '../src/components/EnquiryModal';
 import { ShareModal } from '../src/components/ShareModal';
-import {
-  registerForPushNotificationsAsync,
-  handleNotificationResponse,
-} from '../src/lib/push/notifications';
-import { disconnectSocket } from '../src/lib/socket/socketClient';
+import { handleNotificationResponse } from '../src/lib/push/notifications';
+import { disconnectSocket, setupSocketLifecycle } from '../src/lib/socket/socketClient';
+import { initSentry } from '../src/lib/monitoring/sentry';
+
+// Initialize Sentry crash reporting
+initSentry();
 
 export default function RootLayout() {
   useEffect(() => {
-    registerForPushNotificationsAsync().catch(() => {});
+    setupSocketLifecycle();
 
+    // Listen for notification responses (push permission requested contextually after DM/enquiry)
     const subResponse = Notifications.addNotificationResponseReceivedListener(
       handleNotificationResponse,
     );
