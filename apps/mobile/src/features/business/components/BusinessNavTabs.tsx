@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing } from '../../../styles/theme';
 
-export type BusinessTabType = 'products' | 'services' | 'posts' | 'about';
+export type BusinessTabType = 'products' | 'services' | 'posts' | 'reviews' | 'about';
 
 interface BusinessNavTabsProps {
   activeTab: BusinessTabType;
@@ -10,6 +10,7 @@ interface BusinessNavTabsProps {
   productsCount: number;
   servicesCount: number;
   postsCount: number;
+  reviewsCount?: number;
 }
 
 export function BusinessNavTabs({
@@ -18,11 +19,13 @@ export function BusinessNavTabs({
   productsCount,
   servicesCount,
   postsCount,
+  reviewsCount = 3,
 }: BusinessNavTabsProps) {
   const tabs: Array<{ key: BusinessTabType; label: string; count?: number }> = [
     { key: 'products', label: 'Products', count: productsCount },
     { key: 'services', label: 'Services', count: servicesCount },
     { key: 'posts', label: 'Updates', count: postsCount },
+    { key: 'reviews', label: 'Reviews', count: reviewsCount },
     { key: 'about', label: 'About' },
   ];
 

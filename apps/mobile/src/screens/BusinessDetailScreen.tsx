@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Share2, Settings, ChevronRight } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors, spacing } from '../styles/theme';
@@ -9,9 +10,12 @@ import { BusinessProductsTab } from '../features/business/components/BusinessPro
 import { BusinessServicesTab } from '../features/business/components/BusinessServicesTab';
 import { BusinessPostsTab } from '../features/business/components/BusinessPostsTab';
 import { BusinessAboutTab } from '../features/business/components/BusinessAboutTab';
+import { BusinessReviewsTab } from '../features/business/components/BusinessReviewsTab';
 import { FollowersModal } from '../features/business/components/FollowersModal';
 
 export function BusinessDetailScreen() {
+  const router = useRouter();
+  const { slug } = useLocalSearchParams<{ slug?: string }>();
   const {
     businesses,
     products,
@@ -32,8 +36,9 @@ export function BusinessDetailScreen() {
   const [activeTab, setActiveTab] = useState<BusinessTabType>('products');
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
-  const businessId = routeParams?.businessId || 'b-1';
-  const business = businesses.find((b) => b.id === businessId) || businesses[0];
+  const businessId = slug || routeParams?.businessId || 'b-1';
+  const business =
+    businesses.find((b) => b.id === businessId || (b as any).slug === businessId) || businesses[0];
 
   const isOwner = currentUser?.businessId === business?.id;
 
@@ -149,6 +154,8 @@ export function BusinessDetailScreen() {
         )}
 
         {activeTab === 'posts' && <BusinessPostsTab posts={businessPosts} />}
+
+        {activeTab === 'reviews' && <BusinessReviewsTab businessName={business.name} />}
 
         {activeTab === 'about' && <BusinessAboutTab business={business} />}
       </ScrollView>

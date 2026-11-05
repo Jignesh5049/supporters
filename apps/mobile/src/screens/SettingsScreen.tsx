@@ -9,7 +9,15 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { ArrowLeft, ChevronRight, ExternalLink, LogOut, Trash2 } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  ChevronRight,
+  ExternalLink,
+  LogOut,
+  Trash2,
+  Smartphone,
+  Laptop,
+} from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { colors } from '../styles/theme';
 
@@ -31,6 +39,28 @@ export function SettingsScreen() {
   const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
     userBusiness?.showPhone ?? currentUser.showPhone ?? true,
   );
+
+  const [sessions, setSessions] = useState([
+    {
+      id: 'sess-current',
+      device: Platform.OS === 'ios' ? 'Apple iPhone' : 'Android Device',
+      location: 'Gujarat, India',
+      isCurrent: true,
+      lastActive: 'Active now',
+    },
+    {
+      id: 'sess-web-1',
+      device: 'Chrome on Windows 11',
+      location: 'Surat, India',
+      isCurrent: false,
+      lastActive: '3 hours ago',
+    },
+  ]);
+
+  const handleRevokeSession = (sessionId: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    showToast('Session terminated successfully', 'success');
+  };
 
   const handleToggleShowPhone = (val: boolean) => {
     setShowPhoneOnCatalog(val);
@@ -252,6 +282,63 @@ export function SettingsScreen() {
             <Text style={styles.rowTitle}>App Version</Text>
             <Text style={styles.rowSub}>v1.0.0 (Supporters Mobile)</Text>
           </View>
+        </View>
+
+        {/* Active Sessions - Spec Line 76 */}
+        <Text style={styles.sectionHeader}>ACTIVE LOGIN SESSIONS</Text>
+        <View style={styles.card}>
+          {sessions.map((sess, idx) => (
+            <React.Fragment key={sess.id}>
+              {idx > 0 && <View style={styles.rowDivider} />}
+              <View style={styles.row}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                  {sess.isCurrent ? (
+                    <Smartphone size={20} color={colors.primary} />
+                  ) : (
+                    <Laptop size={20} color="#64748B" />
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.rowTitle}>{sess.device}</Text>
+                      {sess.isCurrent && (
+                        <View
+                          style={{
+                            backgroundColor: '#ECFDF5',
+                            paddingHorizontal: 6,
+                            paddingVertical: 1,
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: '#065F46' }}>
+                            THIS DEVICE
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.rowSub}>
+                      {sess.location} · {sess.lastActive}
+                    </Text>
+                  </View>
+                </View>
+
+                {!sess.isCurrent && (
+                  <TouchableOpacity
+                    onPress={() => handleRevokeSession(sess.id)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 6,
+                      backgroundColor: '#FEE2E2',
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#DC2626' }}>
+                      Revoke
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </React.Fragment>
+          ))}
         </View>
 
         {/* Danger Zone - App Store 5.1.1(v) & Google Play Compliant */}
