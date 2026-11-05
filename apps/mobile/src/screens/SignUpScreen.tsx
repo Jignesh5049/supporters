@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { AlertCircle, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../styles/theme';
@@ -21,104 +24,73 @@ import { SignUpFormFields, TermsModal, TermsCheckbox } from '../features/auth/co
 
 const PASSWORD = ACCOUNT_LIMITS.password;
 
+const signUpFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Full Name is required')
+      .refine(validateName, 'Please enter a valid full name'),
+    phone: z
+      .string()
+      .trim()
+      .min(1, 'Mobile number is required')
+      .refine((val) => !!toE164Phone(val), 'Enter a 10-digit Indian mobile number'),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    referralCode: z.string().optional(),
+    agreedToTerms: z
+      .boolean()
+      .refine((val) => val === true, 'You must accept the Terms and Conditions to proceed'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+type SignUpFormValues = z.infer<typeof signUpFormSchema>;
+
 export function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const { requestOtp, navigate } = useApp();
 
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [termsModalVisible, setTermsModalVisible] = useState(false);
-
-  // Error states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-  const [termsError, setTermsError] = useState<string | null>(null);
 
-  const handleNameChange = (val: string) => {
-    setName(val);
-    if (nameError) setNameError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
+  const {
+    watch,
+    setValue,
+    handleSubmit,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpFormSchema),
+    defaultValues: {
+      name: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+      referralCode: '',
+      agreedToTerms: false as any,
+    },
+    mode: 'onBlur',
+  });
 
-  const handlePhoneChange = (val: string) => {
-    setPhone(val);
-    if (phoneError) setPhoneError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
+  const formValues = watch();
 
-  const handlePasswordChange = (val: string) => {
-    setPassword(val);
-    if (passwordError) setPasswordError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
-
-  const handleConfirmPasswordChange = (val: string) => {
-    setConfirmPassword(val);
-    if (confirmPasswordError) setConfirmPasswordError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: SignUpFormValues) => {
     Keyboard.dismiss();
     setErrorMessage(null);
 
-    let hasError = false;
-    const cleanName = name.trim();
-    const e164Phone = toE164Phone(phone);
+    const cleanName = data.name.trim();
+    const e164Phone = toE164Phone(data.phone);
 
-    if (!cleanName) {
-      setNameError('Full Name is required');
-      hasError = true;
-    } else if (!validateName(cleanName)) {
-      setNameError('Please enter a valid full name');
-      hasError = true;
-    }
-
-    if (!phone.trim()) {
-      setPhoneError('Mobile number is required');
-      hasError = true;
-    } else if (!e164Phone) {
-      setPhoneError('Enter a 10-digit Indian mobile number');
-      hasError = true;
-    }
-
-    if (!password) {
-      setPasswordError('Password is required');
-      hasError = true;
-    } else if (!passwordSchema.safeParse(password).success) {
-      setPasswordError(`Use ${PASSWORD.min} to ${PASSWORD.max} characters`);
-      hasError = true;
-    }
-
-    if (!confirmPassword) {
-      setConfirmPasswordError('Please confirm your password');
-      hasError = true;
-    } else if (password !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match');
-      hasError = true;
-    }
-
-    if (!agreedToTerms) {
-      setTermsError('You must accept the Terms and Conditions to proceed');
-      hasError = true;
-    }
-
-    if (hasError || !e164Phone) {
+    if (!e164Phone) {
       return;
     }
 
-    setLoading(true);
     try {
       const result = await requestOtp(OtpPurpose.Signup, e164Phone);
       if (!result.success) {
@@ -128,14 +100,12 @@ export function SignUpScreen() {
           purpose: OtpPurpose.Signup,
           phone: e164Phone,
           name: cleanName,
-          password,
-          referralCode: referralCode.trim() || undefined,
+          password: data.password,
+          referralCode: data.referralCode?.trim() || undefined,
         });
       }
     } catch {
       setErrorMessage('A network error occurred. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -166,44 +136,64 @@ export function SignUpScreen() {
             )}
 
             <SignUpFormFields
-              name={name}
-              onNameChange={handleNameChange}
-              nameError={nameError}
-              phone={phone}
-              onPhoneChange={handlePhoneChange}
-              phoneError={phoneError}
-              password={password}
-              onPasswordChange={handlePasswordChange}
-              passwordError={passwordError}
+              name={formValues.name}
+              onNameChange={(val) => {
+                setValue('name', val);
+                clearErrors('name');
+                if (errorMessage) setErrorMessage(null);
+              }}
+              nameError={errors.name?.message}
+              phone={formValues.phone}
+              onPhoneChange={(val) => {
+                setValue('phone', val);
+                clearErrors('phone');
+                if (errorMessage) setErrorMessage(null);
+              }}
+              phoneError={errors.phone?.message}
+              password={formValues.password}
+              onPasswordChange={(val) => {
+                setValue('password', val);
+                clearErrors('password');
+                if (errorMessage) setErrorMessage(null);
+              }}
+              passwordError={errors.password?.message}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
-              confirmPassword={confirmPassword}
-              onConfirmPasswordChange={handleConfirmPasswordChange}
-              confirmPasswordError={confirmPasswordError}
+              confirmPassword={formValues.confirmPassword}
+              onConfirmPasswordChange={(val) => {
+                setValue('confirmPassword', val);
+                clearErrors('confirmPassword');
+                if (errorMessage) setErrorMessage(null);
+              }}
+              confirmPasswordError={errors.confirmPassword?.message}
               showConfirmPassword={showConfirmPassword}
               setShowConfirmPassword={setShowConfirmPassword}
-              referralCode={referralCode}
-              onReferralCodeChange={setReferralCode}
-              loading={loading}
+              referralCode={formValues.referralCode || ''}
+              onReferralCodeChange={(val) => setValue('referralCode', val)}
+              loading={isSubmitting}
             />
 
             <TermsCheckbox
-              agreed={agreedToTerms}
+              agreed={formValues.agreedToTerms === true}
               onToggle={() => {
-                setAgreedToTerms(!agreedToTerms);
-                if (termsError) setTermsError(null);
+                setValue('agreedToTerms', !formValues.agreedToTerms as any, {
+                  shouldValidate: true,
+                });
+                if (errorMessage) setErrorMessage(null);
               }}
               onOpenTerms={() => setTermsModalVisible(true)}
-              error={termsError}
+              error={errors.agreedToTerms?.message}
             />
 
             <TouchableOpacity
-              style={[styles.primaryButton, loading && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
+              style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+              onPress={() => handleSubmit(onSubmit)()}
+              disabled={isSubmitting}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Proceed to OTP Verification"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <View style={styles.buttonLoadingRow}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
                   <Text style={styles.primaryButtonText}>Sending OTP...</Text>

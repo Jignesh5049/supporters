@@ -9,67 +9,59 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
-  TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
 import { User, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../styles/theme';
 import { toLoginIdentifier } from '../services/authService';
 
+const loginFormSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(1, 'Mobile number or email is required')
+    .refine(
+      (val) => !!toLoginIdentifier(val),
+      'Enter a 10-digit mobile number or an email address',
+    ),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
+
 export function SignInScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, navigate, showToast } = useApp();
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [identifierError, setIdentifierError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const handleIdentifierChange = (val: string) => {
-    setIdentifier(val);
-    if (identifierError) setIdentifierError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+    mode: 'onBlur',
+  });
 
-  const handlePasswordChange = (val: string) => {
-    setPassword(val);
-    if (passwordError) setPasswordError(null);
-    if (errorMessage) setErrorMessage(null);
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: LoginFormValues) => {
     Keyboard.dismiss();
     setErrorMessage(null);
 
-    let hasValidationError = false;
-    const cleanIdentifier = identifier.trim();
-
-    if (!cleanIdentifier) {
-      setIdentifierError('Mobile number or email is required');
-      hasValidationError = true;
-    } else if (!toLoginIdentifier(cleanIdentifier)) {
-      setIdentifierError('Enter a 10-digit mobile number or an email address');
-      hasValidationError = true;
-    }
-
-    if (!password) {
-      setPasswordError('Password is required');
-      hasValidationError = true;
-    }
-
-    if (hasValidationError) {
-      return;
-    }
-
-    setLoading(true);
     try {
-      const result = await signIn({ identifier: cleanIdentifier, password });
+      const cleanIdentifier = data.identifier.trim();
+      const result = await signIn({ identifier: cleanIdentifier, password: data.password });
 
       if (!result.success) {
         setErrorMessage(result.error || 'Authentication failed. Please verify credentials.');
@@ -78,8 +70,6 @@ export function SignInScreen() {
       }
     } catch {
       setErrorMessage('A network error occurred. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -115,30 +105,47 @@ export function SignInScreen() {
             {/* Mobile Number or Email Input Field */}
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>Mobile Number or Email</Text>
-              <View
-                style={[styles.inputWrapper, identifierError ? styles.inputWrapperError : null]}
-              >
-                <User
-                  size={16}
-                  color={identifierError ? colors.danger : '#667085'}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={identifier}
-                  onChangeText={handleIdentifierChange}
-                  placeholder="98765 43210 or name@business.com"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  textContentType="username"
-                  autoComplete="username"
-                  accessibilityLabel="Mobile number or email"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-              {identifierError && <Text style={styles.fieldErrorText}>{identifierError}</Text>}
+              <Controller
+                control={control}
+                name="identifier"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <View
+                    style={[
+                      styles.inputWrapper,
+                      errors.identifier ? styles.inputWrapperError : null,
+                    ]}
+                  >
+                    <User
+                      size={16}
+                      color={errors.identifier ? colors.danger : '#667085'}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.textInput}
+                      value={value}
+                      onChangeText={(val) => {
+                        onChange(val);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
+                      onBlur={onBlur}
+                      placeholder="98765 43210 or name@business.com"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="email-address"
+                      textContentType="username"
+                      autoComplete="username"
+                      accessibilityLabel="Mobile number or email"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!isSubmitting}
+                    />
+                  </View>
+                )}
+              />
+              {errors.identifier && (
+                <Text style={styles.fieldErrorText} accessibilityRole="alert">
+                  {errors.identifier.message}
+                </Text>
+              )}
             </View>
 
             {/* Password Input Field */}
@@ -153,49 +160,67 @@ export function SignInScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.inputWrapper, passwordError ? styles.inputWrapperError : null]}>
-                <Lock
-                  size={16}
-                  color={passwordError ? colors.danger : '#667085'}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#9CA3AF"
-                  secureTextEntry={!showPassword}
-                  textContentType="password"
-                  autoComplete="current-password"
-                  accessibilityLabel="Password"
-                  autoCapitalize="none"
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIconBtn}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? (
-                    <EyeOff size={18} color="#667085" />
-                  ) : (
-                    <Eye size={18} color="#667085" />
-                  )}
-                </TouchableOpacity>
-              </View>
-              {passwordError && <Text style={styles.fieldErrorText}>{passwordError}</Text>}
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <View
+                    style={[styles.inputWrapper, errors.password ? styles.inputWrapperError : null]}
+                  >
+                    <Lock
+                      size={16}
+                      color={errors.password ? colors.danger : '#667085'}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.textInput}
+                      value={value}
+                      onChangeText={(val) => {
+                        onChange(val);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
+                      onBlur={onBlur}
+                      placeholder="Enter your password"
+                      placeholderTextColor="#9CA3AF"
+                      secureTextEntry={!showPassword}
+                      textContentType="password"
+                      autoComplete="current-password"
+                      accessibilityLabel="Password"
+                      autoCapitalize="none"
+                      editable={!isSubmitting}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.eyeIconBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={18} color="#667085" />
+                      ) : (
+                        <Eye size={18} color="#667085" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+              {errors.password && (
+                <Text style={styles.fieldErrorText} accessibilityRole="alert">
+                  {errors.password.message}
+                </Text>
+              )}
             </View>
 
             {/* Primary Sign In Button */}
             <TouchableOpacity
-              style={[styles.primaryButton, loading && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
+              style={[styles.primaryButton, isSubmitting && styles.buttonDisabled]}
+              onPress={() => handleSubmit(onSubmit)()}
+              disabled={isSubmitting}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <View style={styles.buttonLoadingRow}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
                   <Text style={styles.primaryButtonText}>Signing In...</Text>
