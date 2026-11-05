@@ -6,7 +6,9 @@ import {
   type Message,
   RATE_LIMITS,
   SocketAuthError,
+  NotificationSocketEvent,
   SocketEvent,
+  notificationNewEventSchema,
   authRenewSchema,
   presenceQuerySchema,
   readEventSchema,
@@ -17,11 +19,12 @@ import {
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Server, type Socket } from 'socket.io';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { AppError, ErrorCode, rateLimited } from '../lib/errors';
 import { SESSION_REVOKED_CHANNEL, revokedSessionKey } from '../modules/auth/auth.constants';
 import { COOKIE } from '../modules/auth/auth.cookies';
 import type { ChatEvents, ConversationRef } from '../modules/chat/chat.service';
+import { NOTIFICATIONS_CHANNEL } from '../modules/notifications/delivery';
 
 export const WS_PATH = '/v1/ws';
 
@@ -146,12 +149,31 @@ export const realtimePlugin = fp(
     }
 
     // A revoked session disconnects at once, on whichever instance holds the socket.
-    void revocations.subscribe(SESSION_REVOKED_CHANNEL);
-    revocations.on('message', (_channel: string, sessionId: string) => {
-      for (const socket of bySession.get(sessionId) ?? []) {
+    // The worker publishes badge counts; every instance emits to its own sockets only
+    // (io.local), since each one receives the same message.
+    void revocations.subscribe(SESSION_REVOKED_CHANNEL, NOTIFICATIONS_CHANNEL);
+    revocations.on('message', (channel: string, message: string) => {
+      if (channel === NOTIFICATIONS_CHANNEL) {
+        emitNotification(message);
+        return;
+      }
+      for (const socket of bySession.get(message) ?? []) {
         end(socket, AuthExpiredReason.SessionRevoked);
       }
     });
+
+    function emitNotification(message: string) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(message);
+      } catch {
+        return;
+      }
+      const event = notificationNewEventSchema.extend({ userId: z.uuid() }).safeParse(parsed);
+      if (!event.success) return;
+      const { userId, ...payload } = event.data;
+      io.local.to(userRoom(userId)).emit(NotificationSocketEvent.New, payload);
+    }
 
     // Presence: a sorted set of live sockets per account, scored by expiry. Online means
     // at least one unexpired member; the heartbeat renews it, so a crash ages out in 60 s.

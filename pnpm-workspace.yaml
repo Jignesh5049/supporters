@@ -20,6 +20,9 @@ allowBuilds:
   prisma: false
   protobufjs: false
   ssh2: false
+  # apps/api (bullmq): msgpackr-extract is an optional native speed-up; msgpackr falls back to
+  # its pure-JS codec, so the build script is not needed.
+  msgpackr-extract: false
 
 auditConfig:
   ignoreGhsas:

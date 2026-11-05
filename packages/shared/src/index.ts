@@ -10,6 +10,7 @@ export * from './schemas/listings';
 export * from './schemas/notifications';
 export * from './schemas/places';
 export * from './schemas/posts';
+export * from './schemas/push';
 export * from './schemas/realtime';
 export * from './schemas/social';
 export * from './schemas/uploads';
