@@ -207,7 +207,15 @@ export async function buildApp(options: BuildAppOptions) {
     enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
     notifications: new NotificationsService(app.prisma),
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
-    requirements: new RequirementsService(app.prisma, businesses, categories, places, uploads),
+    requirements: new RequirementsService(
+      app.prisma,
+      businesses,
+      categories,
+      places,
+      uploads,
+      chat,
+      blocks,
+    ),
   });
 
   await app.register(realtimePlugin);

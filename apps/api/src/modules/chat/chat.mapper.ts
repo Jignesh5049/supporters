@@ -17,6 +17,7 @@ export const messageInclude = {
   attachments: { orderBy: { position: 'asc' }, include: { upload: true } },
   ...listingCardInclude,
   enquiry: { select: { id: true, status: true, quantity: true, unit: true } },
+  quote: { select: { id: true, requirementId: true, pricePaise: true } },
 } satisfies Prisma.MessageInclude;
 export type MessageRow = Prisma.MessageGetPayload<{ include: typeof messageInclude }>;
 
@@ -65,6 +66,13 @@ export function toMessage(row: MessageRow, mediaUrl: MediaUrl): Message {
     })),
     listing: toListingCard(row, mediaUrl),
     enquiry: row.enquiry,
+    quote: row.quote
+      ? {
+          id: row.quote.id,
+          requirementId: row.quote.requirementId,
+          price: { amountPaise: Number(row.quote.pricePaise), currency: 'INR' },
+        }
+      : null,
     createdAt: row.createdAt.toISOString(),
   };
 }

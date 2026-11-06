@@ -42,6 +42,10 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'New buyer requirement',
     body: () => 'A buyer needs something your business offers',
   },
+  [NotificationType.RequirementQuoted]: {
+    title: 'New quote',
+    body: () => 'A business quoted on your requirement',
+  },
   [NotificationType.SecurityLogin]: {
     title: 'New sign-in',
     body: () => "Your account was just signed in to. If this wasn't you, reset your password.",
@@ -77,7 +81,9 @@ export function emailCopy(type: NotificationType, appOrigin: string) {
   const link =
     type === NotificationType.EnquiryNew
       ? `${appOrigin}/business/enquiries`
-      : `${appOrigin}/settings`;
+      : type === NotificationType.RequirementQuoted
+        ? `${appOrigin}/requirements/mine`
+        : `${appOrigin}/settings`;
   return {
     subject: `Supporters: ${title}`,
     text: `${body}\n\nOpen Supporters: ${link}\n\nYou can't reply to this email.`,
