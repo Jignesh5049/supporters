@@ -184,3 +184,24 @@ export const NOTIFICATION_LIMITS = {
   pushTokensPerUser: 10,
   webPushSubscriptionsPerUser: 10,
 } as const;
+
+/** Business verification (product spec, "Verification"). */
+export const VERIFICATION_LIMITS = {
+  /** Front and back of the owner's photo ID. */
+  ownerIdFiles: { min: 1, max: 2 },
+  /** Shown to the owner when an admin rejects a request. */
+  rejectionReason: { min: 10, max: 500 },
+  /** Admins decide within this many working days (shown to the owner). */
+  reviewWorkingDays: 2,
+} as const;
+
+/** Reports and moderation (product spec, "Feed and social: Moderation"). */
+export const REPORT_LIMITS = {
+  details: { max: 500 },
+  /** Content is hidden for review once this many different people have open reports on it. */
+  autoHideDistinctReporters: 5,
+  /** Characters of reported content shown in the admin queue. */
+  excerpt: { max: 280 },
+  /** An admin's note when resolving a report. */
+  note: { max: 500 },
+} as const;

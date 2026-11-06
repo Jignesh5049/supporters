@@ -12,5 +12,7 @@ export * from './schemas/places';
 export * from './schemas/posts';
 export * from './schemas/push';
 export * from './schemas/realtime';
+export * from './schemas/reports';
 export * from './schemas/social';
 export * from './schemas/uploads';
+export * from './schemas/verification';
