@@ -271,6 +271,7 @@ function AttachmentCard({ view }: { view: PostView }) {
               title: attachment.title,
               businessName: view.business.name,
               businessId: view.business.id,
+              listing: { type: attachment.kind, id: attachment.id },
             })
           }
         >

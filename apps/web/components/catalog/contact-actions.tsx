@@ -51,7 +51,7 @@ export function ContactActions({
       <Button
         type="button"
         className={layout === 'stack' ? 'w-full' : undefined}
-        onClick={() => openEnquiryModal({ title: subject, businessName, businessId })}
+        onClick={() => openEnquiryModal({ title: subject, businessName, businessId, listing })}
       >
         <Send aria-hidden />
         Contact supplier

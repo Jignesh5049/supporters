@@ -22,6 +22,7 @@ export interface PostView {
   offer: { tag: string; endsLabel: string | null; isEnded: boolean } | null;
   media: { kind: 'video'; url: string } | { kind: 'images'; urls: string[] } | null;
   attachment: {
+    id: string;
     kind: 'product' | 'service';
     title: string;
     href: string;
@@ -89,6 +90,7 @@ export function toPostView(post: Post, now: Date = new Date()): PostView {
         : null,
     attachment: attachment
       ? {
+          id: attachment.id,
           kind: attachment.type,
           title: attachment.title,
           href:
