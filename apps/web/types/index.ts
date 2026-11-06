@@ -126,42 +126,6 @@ export interface FeedPost {
   postStatus?: 'Published' | 'Draft' | 'Archived';
 }
 
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  senderName: string;
-  text: string;
-  timestamp: string;
-  isMe: boolean;
-  attachedProduct?: {
-    id: string;
-    title: string;
-    price: number;
-    image: string;
-  };
-  attachedService?: {
-    id: string;
-    title: string;
-    startingPrice: number;
-    image: string;
-  };
-}
-
-export interface Conversation {
-  id: string;
-  businessId: string;
-  businessName: string;
-  businessAvatar: string;
-  businessVerified: boolean;
-  businessCity: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  online: boolean;
-  messages: Message[];
-}
-
 export type NotificationCategory =
   'All' | 'Business' | 'Messages' | 'Enquiries' | 'Referrals' | 'Subscription';
 

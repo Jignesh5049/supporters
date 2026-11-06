@@ -25,10 +25,12 @@ import {
 } from 'lucide-react';
 
 import { Suspense } from 'react';
+import { useUnreadCount } from '@/features/messaging/use-chat';
 
 function SidebarInner() {
   const pathname = usePathname();
-  const { unreadNotificationsCount, unreadMessagesCount } = useApp();
+  const { unreadNotificationsCount } = useApp();
+  const unreadMessagesCount = useUnreadCount();
 
   const mainLinks = [
     { label: 'Home', href: '/', icon: Home },

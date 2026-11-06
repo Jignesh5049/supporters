@@ -6,10 +6,12 @@ import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Home, Compass, Plus, MessageSquare, User } from 'lucide-react';
 import { Suspense } from 'react';
+import { useUnreadCount } from '@/features/messaging/use-chat';
 
 function MobileNavigationInner() {
   const pathname = usePathname();
-  const { unreadMessagesCount, openMobileCreateModal } = useApp();
+  const { openMobileCreateModal } = useApp();
+  const unreadMessagesCount = useUnreadCount();
 
   const navItems = [
     { label: 'Home', href: '/', icon: Home },

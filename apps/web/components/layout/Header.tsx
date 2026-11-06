@@ -34,12 +34,7 @@ export interface HeaderViewer {
 export function Header({ viewer }: { viewer: HeaderViewer | null }) {
   const router = useRouter();
   const pathname = usePathname();
-  const {
-    unreadNotificationsCount,
-    unreadMessagesCount,
-    openConfirmationModal,
-    openMobileCreateModal,
-  } = useApp();
+  const { unreadNotificationsCount, openConfirmationModal, openMobileCreateModal } = useApp();
 
   const logout = useLogout();
   const viewerName = viewer?.name ?? 'Guest';

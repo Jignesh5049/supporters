@@ -113,17 +113,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </Link>
           <button
             type="button"
-            onClick={() =>
-              openConversationWithBusiness(product.businessId, {
-                initialMessage: `Namaste! I am interested in "${product.title}" (₹${product.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
-                attachedProduct: {
-                  id: product.id,
-                  title: product.title,
-                  price: product.price,
-                  image: product.images[0],
-                },
-              })
-            }
+            onClick={() => openConversationWithBusiness(product.businessId)}
             className="flex-1 py-2 px-2 text-center text-xs font-semibold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs flex items-center justify-center gap-1.5 min-w-0"
           >
             <MessageSquare className="w-3.5 h-3.5 shrink-0" />
