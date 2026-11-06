@@ -12,6 +12,7 @@ import type { CommentsService } from '../modules/comments/comments.service';
 import type { FeedService } from '../modules/feed/feed.service';
 import type { FollowsService } from '../modules/follows/follows.service';
 import type { NotificationsService } from '../modules/notifications/notifications.service';
+import type { PushDevicesService } from '../modules/notifications/push-devices.service';
 import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
@@ -51,6 +52,7 @@ declare module 'fastify' {
       chat: ChatService;
       enquiries: EnquiriesService;
       notifications: NotificationsService;
+      pushDevices: PushDevicesService;
     };
   }
 

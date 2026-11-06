@@ -41,6 +41,13 @@ const secretBytes = (minBytes: number) =>
 /** SMS providers that print codes instead of sending them. */
 const DEV_ONLY_SMS_PROVIDERS: ReadonlySet<string> = new Set(['console']);
 
+/** An unpadded base64url key of exactly `bytes` bytes (VAPID). */
+const base64urlKey = (bytes: number) =>
+  z
+    .string()
+    .regex(/^[\w-]+$/)
+    .refine((value) => Buffer.from(value, 'base64url').length === bytes, `must be ${bytes} bytes`);
+
 const booleanString = z.enum(['true', 'false']).transform((value) => value === 'true');
 
 const envSchema = z
@@ -89,6 +96,20 @@ const envSchema = z
     S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     /** Base URL that serves the public/ prefix, e.g. https://media.<domain>. */
     MEDIA_PUBLIC_URL: z.url().transform((value) => value.replace(/\/+$/, '')),
+    /** Web Push (VAPID). Unset: web push is off and subscribing is refused. */
+    VAPID_PUBLIC_KEY: base64urlKey(65).optional(),
+    VAPID_PRIVATE_KEY: base64urlKey(32).optional(),
+    /** A mailto: or https: contact for push services. */
+    VAPID_SUBJECT: z
+      .string()
+      .regex(/^(mailto:|https:\/\/)/)
+      .optional(),
+    /** Expo enhanced push security; optional. */
+    EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
+    EMAIL_PROVIDER: z.enum(['console', 'ses']).default('console'),
+    /** Sender address on a domain verified in SES. */
+    EMAIL_FROM: z.email().optional(),
+    SES_REGION: z.string().min(1).default('ap-south-1'),
   })
   .superRefine((env, ctx) => {
     const isDeployed = env.NODE_ENV === 'staging' || env.NODE_ENV === 'production';
@@ -97,6 +118,20 @@ const envSchema = z
     }
     if (env.NODE_ENV === 'production' && env.CORS_ORIGINS.length > 0) {
       ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'is staging-only' });
+    }
+    if (isDeployed && env.EMAIL_PROVIDER === 'console') {
+      ctx.addIssue({ code: 'custom', path: ['EMAIL_PROVIDER'], message: 'console is dev-only' });
+    }
+    if (env.EMAIL_PROVIDER === 'ses' && !env.EMAIL_FROM) {
+      ctx.addIssue({ code: 'custom', path: ['EMAIL_FROM'], message: 'is required for ses' });
+    }
+    const vapid = [env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY, env.VAPID_SUBJECT];
+    if (vapid.some(Boolean) && !vapid.every(Boolean)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['VAPID_PRIVATE_KEY'],
+        message: 'set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT, or none',
+      });
     }
     if (isDeployed && DEV_ONLY_SMS_PROVIDERS.has(env.SMS_PROVIDER)) {
       ctx.addIssue({ code: 'custom', path: ['SMS_PROVIDER'], message: 'console is dev-only' });
