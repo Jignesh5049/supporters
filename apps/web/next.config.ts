@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return isDev ? [{ source: '/v1/:path*', destination: `${apiInternalUrl}/v1/:path*` }] : [];
   },
+  async redirects() {
+    return [
+      {
+        source: '/subscription',
+        destination: '/business/premium',
+        permanent: true,
+      },
+    ];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

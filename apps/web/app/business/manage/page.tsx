@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { FollowListModal } from '@/components/common/FollowListModal';
 import {
+  Crown,
   Building2,
   Package,
   Wrench,
@@ -39,6 +40,8 @@ function BusinessNavHeaderInner() {
     { label: 'Services', href: '/business/services', icon: Wrench },
     { label: 'Received Enquiries', href: '/business/enquiries', icon: FileQuestion },
     { label: 'Trade Analytics', href: '/business/analytics', icon: BarChart3 },
+    { label: 'Verification', href: '/business/verification', icon: ShieldCheck },
+    { label: 'Premium Plan', href: '/business/premium', icon: Crown },
   ];
 
   return (
