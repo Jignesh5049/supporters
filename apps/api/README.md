@@ -53,3 +53,9 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - Web: `__Host-at` (15 min EdDSA JWT), `__Host-rt` (opaque refresh, rotated on every use) and `__Host-csrf` cookies. Writes echo the CSRF cookie in `x-csrf-token`. `GET /v1/auth/csrf` reissues it.
 - Mobile: send `X-Client: mobile`. Login, register and refresh return `{ accessToken, refreshToken, expiresIn }`; send `Authorization: Bearer`.
 - Reusing a refresh token more than 10 s after it was rotated revokes the whole session family.
+
+## Notifications in short
+
+- Domain events (`enquiry.created`, `enquiry.replied`, `message.created`, `follow.created`, `post.liked`, `comment.created`, `security.login`, `security.password_changed`) are written to `outbox_events` in the same transaction as the change (`recordEvent` in `src/modules/notifications/outbox.ts`). Payloads hold ids only.
+- `NotificationFanout` turns an event into in-app rows and a delivery plan, in one transaction that marks the event processed, so a retried job never doubles a notification. Likes, comments, replies and follows grow one unread row per post or business for 10 minutes; messages grow one row per thread.
+- `GET /v1/notifications` (cursor, optional `category`, plus `unreadCount`), `POST /v1/notifications/read` (`{ ids }` or `{ all: true }`), `GET/PUT /v1/me/notification-prefs` (push and email per category; `account` is locked on).

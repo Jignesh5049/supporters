@@ -169,3 +169,18 @@ export const ENQUIRY_LIMITS = {
   /** Stats show on the business page from this many enquiries. */
   statsMinEnquiries: 5,
 } as const;
+
+/** Notifications (product spec, Notifications; backend spec, Realtime, jobs and notifications). */
+export const NOTIFICATION_LIMITS = {
+  /** In-app items are deleted after this many days. */
+  retentionDays: 90,
+  /** Likes, comments and follows on one post or business collapse into one item in this window. */
+  batchWindowSec: 10 * 60,
+  /** No non-urgent push from 22:00 to 08:00 IST. */
+  quietHours: { startHour: 22, endHour: 8, timeZone: 'Asia/Kolkata' },
+  /** Ids per `POST /notifications/read` call. */
+  readIdsMax: 100,
+  /** Expo push tokens and web push subscriptions kept per account; the oldest goes first. */
+  pushTokensPerUser: 10,
+  webPushSubscriptionsPerUser: 10,
+} as const;

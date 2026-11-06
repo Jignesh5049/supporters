@@ -30,6 +30,7 @@ import {
 import { listingCardInclude, messageInclude, toListingCard } from '../chat/chat.mapper';
 import { type ChatService, blockedError, keyReusedError, requestHash } from '../chat/chat.service';
 import { PUBLIC_LISTING } from '../listings/listings.service';
+import { recordEvent } from '../notifications/outbox';
 import { toCity } from '../places/places.service';
 
 const DAY_SEC = 24 * 60 * 60;
@@ -140,6 +141,7 @@ export class EnquiriesService {
           },
           include: enquiryInclude,
         });
+        await recordEvent(tx, 'enquiry.created', { enquiryId: enquiry.id });
         return { enquiry, messageId: message.id };
       });
       const stored = await this.prisma.message.findUniqueOrThrow({

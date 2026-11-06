@@ -8,6 +8,7 @@ import {
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { AppError, ErrorCode, invalidField, notFound, rateLimited } from '../../lib/errors';
 import { pageArgs, splitPage } from '../../lib/pagination';
+import { recordEvent } from '../notifications/outbox';
 import type { SlidingWindowLimiter } from '../../lib/sliding-window';
 import { PUBLIC_POST, type PostsService } from '../posts/posts.service';
 
@@ -95,6 +96,7 @@ export class CommentsService {
         include: commentInclude,
       });
       await this.posts.adjustCounter(tx, postId, 'commentCount', 1);
+      await recordEvent(tx, 'comment.created', { commentId: comment.id });
       return comment;
     });
     return toComment(row);

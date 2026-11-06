@@ -7,6 +7,7 @@ export * from './schemas/chat';
 export * from './schemas/common';
 export * from './schemas/enquiries';
 export * from './schemas/listings';
+export * from './schemas/notifications';
 export * from './schemas/places';
 export * from './schemas/posts';
 export * from './schemas/realtime';

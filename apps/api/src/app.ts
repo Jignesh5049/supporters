@@ -38,6 +38,8 @@ import { followsRoutes } from './modules/follows/follows.routes';
 import { FollowsService } from './modules/follows/follows.service';
 import { healthRoutes } from './modules/health/health.routes';
 import { ListingWriter } from './modules/listings/listings.service';
+import { notificationsRoutes } from './modules/notifications/notifications.routes';
+import { NotificationsService } from './modules/notifications/notifications.service';
 import { placesRoutes } from './modules/places/places.routes';
 import { PlacesService } from './modules/places/places.service';
 import { postsRoutes } from './modules/posts/posts.routes';
@@ -199,6 +201,7 @@ export async function buildApp(options: BuildAppOptions) {
     blocks,
     chat,
     enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
+    notifications: new NotificationsService(app.prisma),
   });
 
   await app.register(realtimePlugin);
@@ -221,6 +224,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(chatRoutes);
       await v1.register(enquiriesRoutes);
       await v1.register(blocksRoutes);
+      await v1.register(notificationsRoutes);
     },
     { prefix: '/v1' },
   );

@@ -29,6 +29,7 @@ import {
   toBusinessSummary,
 } from '../businesses/businesses.service';
 import { PUBLIC_LISTING } from '../listings/listings.service';
+import { recordEvent, recordEvents } from '../notifications/outbox';
 import type { ObjectStorage } from '../uploads/storage';
 import type { UploadsService } from '../uploads/uploads.service';
 import { type MessageRow, messageInclude, toMessage } from './chat.mapper';
@@ -432,7 +433,8 @@ export class ChatService {
    * Writes the message and what follows from it, in one transaction: the
    * thread moves to the top of both inboxes, a hidden thread reappears for the
    * recipient, the sender has read everything so far, and an owner reply
-   * answers the open enquiries of the thread.
+   * answers the open enquiries of the thread. The notification events go
+   * into the outbox with it (an enquiry message is announced as the enquiry).
    */
   async append(tx: Prisma.TransactionClient, input: AppendMessage): Promise<MessageRow> {
     const row = await tx.message.create({
@@ -455,6 +457,9 @@ export class ChatService {
       },
       include: messageInclude,
     });
+    if (input.type !== 'enquiry') {
+      await recordEvent(tx, 'message.created', { messageId: row.id });
+    }
     await tx.conversation.update({
       where: { id: input.conversation.id },
       data: { lastMessageAt: row.createdAt },
@@ -475,14 +480,20 @@ export class ChatService {
       update: { lastReadMessageId: row.id },
     });
     if (input.senderSide === 'business') {
-      await tx.enquiry.updateMany({
+      const answered = await tx.enquiry.updateManyAndReturn({
         where: {
           conversationId: input.conversation.id,
           status: 'new',
           createdAt: { lt: row.createdAt },
         },
         data: { status: 'responded', firstResponseAt: row.createdAt },
+        select: { id: true },
       });
+      await recordEvents(
+        tx,
+        'enquiry.replied',
+        answered.map((enquiry) => ({ enquiryId: enquiry.id, messageId: row.id })),
+      );
     }
     return row;
   }

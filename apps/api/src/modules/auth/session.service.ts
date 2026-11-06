@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
-import type { PrismaClient } from '../../generated/prisma/client';
+import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { openWith, randomToken, sealWith, sha256 } from '../../lib/crypto';
 import { AppError, ErrorCode } from '../../lib/errors';
 import {
@@ -40,14 +40,16 @@ export class SessionService {
     private readonly log: FastifyBaseLogger,
   ) {}
 
+  /** `db` lets a caller create the session inside its own transaction. */
   async create(
     user: { id: string; role: 'user' | 'admin' },
     meta: ClientMeta,
+    db: Prisma.TransactionClient = this.prisma,
   ): Promise<IssuedSession> {
     const refreshToken = randomToken();
     const now = new Date();
     const absoluteExpiresAt = addSeconds(now, REFRESH_TOKEN_ABSOLUTE_TTL_SEC);
-    const session = await this.prisma.session.create({
+    const session = await db.session.create({
       data: {
         userId: user.id,
         familyId: randomUUID(),

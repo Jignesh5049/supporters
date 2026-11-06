@@ -8,6 +8,7 @@ import type {
 import type { PrismaClient } from '../../generated/prisma/client';
 import { invalidField } from '../../lib/errors';
 import { pageArgs, splitPage } from '../../lib/pagination';
+import { recordEvent } from '../notifications/outbox';
 import {
   type BusinessesService,
   PUBLIC_OWNER,
@@ -43,6 +44,9 @@ export class FollowsService {
       const { count } = isFollowing
         ? await tx.follow.createMany({ data: [{ userId, businessId }], skipDuplicates: true })
         : await tx.follow.deleteMany({ where: { userId, businessId } });
+      if (count > 0 && isFollowing) {
+        await recordEvent(tx, 'follow.created', { userId, businessId });
+      }
       const followerCount =
         count > 0
           ? await this.businesses.adjustFollowerCount(tx, businessId, isFollowing ? 1 : -1)
