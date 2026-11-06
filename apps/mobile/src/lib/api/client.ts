@@ -22,17 +22,24 @@ export interface ApiClientOptions {
 }
 
 export interface RequestOptions<T> {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Parses a JSON response. Without one the response body is ignored. */
   schema?: z.ZodType<T>;
   /** Send the access token and refresh it on a 401. Defaults to true. */
   auth?: boolean;
+  /** Extra headers such as `Idempotency-Key`. They never replace the client's own headers. */
+  headers?: Record<string, string>;
   signal?: AbortSignal;
 }
 
 export interface ApiClient {
   request<T = void>(path: string, options?: RequestOptions<T>): Promise<T>;
+  /**
+   * Follows a signed-in redirect (a private chat file) with a HEAD request and resolves the
+   * URL it ends at, without downloading the file.
+   */
+  resolveRedirect(path: string): Promise<string>;
   /** Exchanges the stored refresh token for new tokens. Resolves false when there's no session. */
   refreshSession(): Promise<boolean>;
 }
@@ -49,6 +56,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     accessToken: string | null,
   ): Promise<Response> {
     const headers: Record<string, string> = {
+      ...init.headers,
       Accept: 'application/json',
       'X-Client': 'mobile',
       'X-App-Version': appVersion,
@@ -136,8 +144,28 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     return parse(response, init.schema);
   }
 
+  async function resolveRedirect(path: string): Promise<string> {
+    const head: RequestOptions<unknown> = { method: 'HEAD' };
+    let response = await send(path, head, await tokens.getAccessToken());
+    if (response.status === 401) {
+      const fresh = await sharedRefresh();
+      if (!fresh) {
+        await expireSession();
+        throw await toApiError(response);
+      }
+      response = await send(path, head, fresh);
+    }
+    // Only the API's own answer counts: storage may refuse a HEAD on a link signed for GET.
+    if (!response.url || response.url === `${baseUrl}${path}`) {
+      if (!response.ok) throw await toApiError(response);
+      throw new ApiError(response.status, ApiErrorCode.InvalidResponse);
+    }
+    return response.url;
+  }
+
   return {
     request,
+    resolveRedirect,
     refreshSession: async () => {
       const fresh = await sharedRefresh();
       if (!fresh) await tokens.clear();

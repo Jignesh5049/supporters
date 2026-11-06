@@ -69,6 +69,7 @@ export function ServiceDetailScreen() {
             title: data.title,
             businessName: data.business.name,
             businessId: data.business.id,
+            listing: { type: 'service', id: data.id },
           }),
         )
       }

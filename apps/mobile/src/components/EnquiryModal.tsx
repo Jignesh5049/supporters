@@ -1,316 +1,310 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { randomUUID } from 'expo-crypto';
+import { Check, X } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
+import { LISTING_LIMITS, PRODUCT_UNITS, type ListingRef } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Input } from '@supporters/ui-native/components/input';
+import { Text } from '@supporters/ui-native/components/text';
+import { Textarea } from '@supporters/ui-native/components/textarea';
+import { cn } from '@supporters/ui-native/lib/utils';
+import { useApp, type EnquiryTarget } from '../context/AppContext';
+import { unitOptionLabel } from '../features/catalog/labels';
+import { useBusinessProducts, useBusinessServices } from '../features/catalog/hooks';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-} from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useApp } from '../context/AppContext';
-import { colors } from '../styles/theme';
+  createKeyRing,
+  emptyEnquiryForm,
+  ENQUIRY_MESSAGE,
+  enquiryErrorMessage,
+  toEnquiryDraft,
+  type EnquiryField,
+  type EnquiryFormValues,
+  type ProductUnit,
+} from '../features/enquiries/enquiry-form';
+import { useCreateEnquiry } from '../features/enquiries/hooks';
+import { FormField } from '../features/hub/components/FormField';
+import { OptionPicker } from '../features/hub/components/OptionPicker';
+import { useCities, useStates } from '../features/places/hooks';
+import { useSessionStore } from '../stores/session-store';
 
-export function EnquiryModal() {
-  const { enquiryModal, closeEnquiryModal, showToast, openConversationWithBusiness } = useApp();
-  const [quantity, setQuantity] = useState('10');
-  const [phone, setPhone] = useState('+91 98795 23410');
-  const [message, setMessage] = useState('');
-  const [city, setCity] = useState('Ahmedabad');
+const UNIT_OPTIONS = PRODUCT_UNITS.map((unit) => ({ id: unit, label: unitOptionLabel(unit) }));
 
-  if (!enquiryModal.isOpen) return null;
+/** "+91 ••••• •3410": enough for the buyer to recognise the number being shared. */
+export function maskedPhone(phone: string | undefined): string {
+  if (!phone) return 'your verified number';
+  return `${phone.slice(0, 3)} ••••• •${phone.slice(-4)}`;
+}
+
+/** Picks one of the business's public listings when the form was opened from its page. */
+function ListingChoice({
+  businessId,
+  value,
+  onChange,
+}: {
+  businessId: string;
+  value: ListingRef | null;
+  onChange: (listing: ListingRef) => void;
+}) {
+  const isValidBusiness = z.uuid().safeParse(businessId).success;
+  const products = useBusinessProducts(isValidBusiness ? businessId : '');
+  const services = useBusinessServices(isValidBusiness ? businessId : '');
+  const options = [
+    ...(products.data?.pages ?? []).flatMap((page) =>
+      page.data.map((p) => ({ id: `product:${p.id}`, label: p.title })),
+    ),
+    ...(services.data?.pages ?? []).flatMap((page) =>
+      page.data.map((s) => ({ id: `service:${s.id}`, label: `${s.title} (service)` })),
+    ),
+  ];
+  if (!isValidBusiness) {
+    return (
+      <Text variant="muted" className="text-sm">
+        This business can't take enquiries yet.
+      </Text>
+    );
+  }
+  return (
+    <OptionPicker
+      title="Product or service"
+      placeholder="Choose what you are asking about"
+      options={options}
+      value={value ? `${value.type}:${value.id}` : null}
+      isLoading={products.isPending || services.isPending}
+      searchable
+      onChange={(id) => {
+        const [type, listingId] = id.split(':');
+        if ((type === 'product' || type === 'service') && listingId) {
+          onChange({ type, id: listingId });
+        }
+      }}
+    />
+  );
+}
+
+function EnquiryForm({ target, onClose }: { target: EnquiryTarget; onClose: () => void }) {
+  const router = useRouter();
+  const { showToast } = useApp();
+  const phone = useSessionStore((state) => state.user?.phone);
+  const create = useCreateEnquiry();
+  const keys = useRef(createKeyRing(randomUUID)).current;
+  const [values, setValues] = useState<EnquiryFormValues>(() =>
+    emptyEnquiryForm(target.targetListing ?? null),
+  );
+  const [errors, setErrors] = useState<Partial<Record<EnquiryField, string>>>({});
+  const [stateCode, setStateCode] = useState<string | null>(null);
+  const states = useStates();
+  const cities = useCities(stateCode);
+
+  const set = <K extends keyof EnquiryFormValues>(key: K, value: EnquiryFormValues[K]) => {
+    setValues((current) => ({ ...current, [key]: value }));
+    create.reset();
+  };
 
   const handleSubmit = () => {
-    const bizId = enquiryModal.targetBusinessId;
-    const bizName = enquiryModal.targetBusinessName || 'Supplier';
-    const targetTitle = enquiryModal.targetTitle || 'Business Quotation';
-
-    closeEnquiryModal();
-
-    if (bizId) {
-      const summaryMsg = `Quotation Request: ${targetTitle}\n• Required Quantity: ${quantity || '1'}\n• Delivery City: ${city}${phone ? `\n• Phone: ${phone}` : ''}${message ? `\n• Requirements: ${message}` : ''}`;
-      openConversationWithBusiness(bizId, {
-        initialMessage: summaryMsg,
-      });
-      showToast(`Enquiry sent directly to ${bizName}!`, 'success');
-    } else {
-      showToast(`Enquiry submitted to ${bizName}! They will respond shortly.`, 'success');
+    const result = toEnquiryDraft(values);
+    if (!result.ok) {
+      setErrors(result.errors);
+      return;
     }
+    setErrors({});
+    create.mutate(
+      { key: keys.keyFor(result.draft), draft: result.draft },
+      {
+        onSuccess: (enquiry) => {
+          keys.reset();
+          onClose();
+          showToast(`Enquiry sent to ${enquiry.business.name}`, 'success');
+          router.push(`/messages/${enquiry.conversationId}`);
+        },
+      },
+    );
   };
+
+  const messageLength = values.message.trim().length;
+  const businessName = target.targetBusinessName ?? 'this business';
+
+  return (
+    <SafeAreaView className="bg-background flex-1" edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View className="border-border flex-row items-center gap-2 border-b px-2 py-2">
+          <Button variant="ghost" size="icon" onPress={onClose} accessibilityLabel="Close">
+            <Icon as={X} size={20} />
+          </Button>
+          <View className="flex-1">
+            <Text className="text-base font-bold">Send enquiry</Text>
+            <Text variant="muted" className="text-xs" numberOfLines={1}>
+              To {businessName}
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView contentContainerClassName="gap-4 p-4" keyboardShouldPersistTaps="handled">
+          <FormField label="Product or service" error={errors.listing}>
+            {target.targetListing ? (
+              <View className="bg-muted rounded-lg p-3">
+                <Text className="text-sm font-semibold" numberOfLines={2}>
+                  {target.targetTitle}
+                </Text>
+              </View>
+            ) : (
+              <ListingChoice
+                businessId={target.targetBusinessId ?? ''}
+                value={values.listing}
+                onChange={(listing) => set('listing', listing)}
+              />
+            )}
+          </FormField>
+
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <FormField label="Quantity (optional)" error={errors.quantity}>
+                <Input
+                  value={values.quantity}
+                  onChangeText={(text) => set('quantity', text.replace(/[^0-9]/g, ''))}
+                  keyboardType="number-pad"
+                  maxLength={String(LISTING_LIMITS.maxMoq).length}
+                  placeholder="e.g. 500"
+                  accessibilityLabel="Quantity"
+                />
+              </FormField>
+            </View>
+            <View className="flex-1">
+              <FormField label="Unit (optional)">
+                <OptionPicker
+                  title="Unit"
+                  placeholder="Unit"
+                  options={UNIT_OPTIONS}
+                  value={values.unit}
+                  onChange={(unit) => set('unit', unit as ProductUnit)}
+                />
+              </FormField>
+            </View>
+          </View>
+
+          <FormField label="Delivery city (optional)">
+            <View className="gap-2">
+              <OptionPicker
+                title="State"
+                placeholder="Choose a state"
+                options={(states.data ?? []).map((state) => ({
+                  id: state.code,
+                  label: state.name,
+                }))}
+                value={stateCode}
+                isLoading={states.isPending}
+                searchable
+                onChange={(code) => {
+                  setStateCode(code);
+                  set('deliveryCityId', null);
+                }}
+              />
+              <OptionPicker
+                title="City"
+                placeholder={stateCode ? 'Choose a city' : 'Choose a state first'}
+                options={(cities.data ?? []).map((city) => ({ id: city.id, label: city.name }))}
+                value={values.deliveryCityId}
+                isLoading={Boolean(stateCode) && cities.isPending}
+                disabled={!stateCode}
+                searchable
+                onChange={(id) => set('deliveryCityId', id)}
+              />
+            </View>
+          </FormField>
+
+          <FormField
+            label="Message"
+            hint={`${messageLength} / ${ENQUIRY_MESSAGE.max} (at least ${ENQUIRY_MESSAGE.min})`}
+            error={errors.message}
+          >
+            <Textarea
+              value={values.message}
+              onChangeText={(text) => set('message', text)}
+              maxLength={ENQUIRY_MESSAGE.max}
+              numberOfLines={5}
+              placeholder="Quantity, specifications, delivery timeline, GST invoice…"
+              accessibilityLabel="Message"
+            />
+          </FormField>
+
+          <Pressable
+            onPress={() => set('sharePhone', !values.sharePhone)}
+            className="min-h-11 flex-row items-start gap-3"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: values.sharePhone }}
+            accessibilityLabel={`Share my phone number ${maskedPhone(phone)} with ${businessName}`}
+          >
+            <View
+              className={cn(
+                'border-input mt-0.5 size-5 items-center justify-center rounded border',
+                values.sharePhone && 'bg-primary border-primary',
+              )}
+            >
+              {values.sharePhone ? (
+                <Icon as={Check} size={14} className="text-primary-foreground" />
+              ) : null}
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm">
+                Share my phone number ({maskedPhone(phone)}) with {businessName}
+              </Text>
+              <Text variant="muted" className="text-xs">
+                Only this business sees it. Leave it unticked to talk in chat only.
+              </Text>
+            </View>
+          </Pressable>
+
+          {create.isError ? (
+            <Text className="text-destructive text-sm" role="alert">
+              {enquiryErrorMessage(create.error)}
+            </Text>
+          ) : null}
+        </ScrollView>
+
+        <View className="border-border flex-row gap-2 border-t p-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onPress={onClose}
+            disabled={create.isPending}
+          >
+            <Text>Cancel</Text>
+          </Button>
+          <Button className="flex-1" onPress={handleSubmit} disabled={create.isPending}>
+            <Text>{create.isPending ? 'Sending' : 'Send enquiry'}</Text>
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+/** Contact Supplier (product spec, Enquiries): POST /v1/enquiries, then opens the thread. */
+export function EnquiryModal() {
+  const { enquiryModal, closeEnquiryModal } = useApp();
+  // A fresh form (and Idempotency-Key) every time the modal opens.
+  const [session, setSession] = useState(0);
+  useEffect(() => {
+    if (enquiryModal.isOpen) setSession((n) => n + 1);
+  }, [enquiryModal.isOpen]);
+  const target = useMemo(() => enquiryModal, [enquiryModal]);
 
   return (
     <Modal
       visible={enquiryModal.isOpen}
-      transparent
-      animationType="fade"
+      animationType="slide"
+      presentationStyle="pageSheet"
       onRequestClose={closeEnquiryModal}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
-        <TouchableWithoutFeedback onPress={closeEnquiryModal}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
-
-        <View style={styles.dialogContainer}>
-          <View style={styles.dialogHeader}>
-            <View style={styles.headerTitleContainer}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="chatbubbles-outline" size={18} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.dialogTitle}>Request Quotation</Text>
-                <Text style={styles.dialogSubtitle} numberOfLines={1}>
-                  {enquiryModal.targetBusinessName || 'Direct Manufacturer Enquiry'}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={closeEnquiryModal} style={styles.closeBtn}>
-              <Feather name="x" size={20} color="#667085" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
-            {/* Target item indicator */}
-            <View style={styles.itemCard}>
-              <Text style={styles.itemLabel}>PRODUCT / REQUIREMENT</Text>
-              <Text style={styles.itemTitle} numberOfLines={2}>
-                {enquiryModal.targetTitle || 'Custom Commercial Requirement'}
-              </Text>
-            </View>
-
-            {/* Inputs */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Quantity Required</Text>
-              <TextInput
-                style={styles.textInput}
-                value={quantity}
-                onChangeText={setQuantity}
-                placeholder="e.g. 25 Units"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Delivery Location / City</Text>
-              <TextInput
-                style={styles.textInput}
-                value={city}
-                onChangeText={setCity}
-                placeholder="e.g. Surat or GIDC Vatva"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Contact Phone Number</Text>
-              <TextInput
-                style={styles.textInput}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="+91..."
-                placeholderTextColor="#9CA3AF"
-                keyboardType="phone-pad"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Detailed Specifications / Notes</Text>
-              <TextInput
-                style={[styles.textInput, styles.textArea]}
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Describe your delivery timeline, GST invoice requirement, or custom specs..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <View style={styles.privacyNote}>
-              <Ionicons name="shield-checkmark" size={14} color="#10B981" />
-              <Text style={styles.privacyText}>
-                Your contact details are shared strictly with verified sellers on Supporters.
-              </Text>
-            </View>
-          </ScrollView>
-
-          {/* Action buttons */}
-          <View style={styles.dialogActions}>
-            <TouchableOpacity onPress={closeEnquiryModal} style={styles.cancelBtn}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} activeOpacity={0.85}>
-              <Feather name="send" size={14} color="#FFFFFF" />
-              <Text style={styles.submitText}>Send Quotation Enquiry</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+      {enquiryModal.isOpen ? (
+        <EnquiryForm key={session} target={target} onClose={closeEnquiryModal} />
+      ) : null}
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  dialogContainer: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    maxHeight: '85%',
-  },
-  dialogHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dialogTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  dialogSubtitle: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  formScroll: {
-    padding: 16,
-  },
-  itemCard: {
-    backgroundColor: colors.background,
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 14,
-  },
-  itemLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.primary,
-    letterSpacing: 0.5,
-  },
-  itemTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 2,
-  },
-  inputGroup: {
-    marginBottom: 12,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  textInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  textArea: {
-    height: 72,
-    textAlignVertical: 'top',
-  },
-  privacyNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#ECFDF5',
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  privacyText: {
-    fontSize: 10,
-    color: '#065F46',
-    flex: 1,
-  },
-  dialogActions: {
-    flexDirection: 'row',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 8,
-  },
-  cancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  submitBtn: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  submitText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});

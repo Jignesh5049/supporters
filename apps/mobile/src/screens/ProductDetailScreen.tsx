@@ -75,6 +75,7 @@ export function ProductDetailScreen() {
             title: data.title,
             businessName: data.business.name,
             businessId: data.business.id,
+            listing: { type: 'product', id: data.id },
           }),
         )
       }

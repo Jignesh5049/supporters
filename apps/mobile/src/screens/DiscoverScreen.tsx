@@ -97,12 +97,7 @@ export function DiscoverScreen() {
               isSaved={savedProductIds.includes(p.id)}
               onToggleSave={toggleSaveProduct}
               onViewDetails={(id) => navigate('product_detail', { productId: id })}
-              onContactSupplier={(prod) =>
-                openConversationWithBusiness(prod.businessId, {
-                  initialMessage: `Namaste! I am interested in "${prod.title}" (₹${prod.price.toLocaleString('en-IN')}). Please share wholesale pricing and delivery schedule.`,
-                  attachedProduct: prod,
-                })
-              }
+              onContactSupplier={(prod) => openConversationWithBusiness(prod.businessId)}
             />
           ))}
         </View>

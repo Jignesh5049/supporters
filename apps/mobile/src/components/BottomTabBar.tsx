@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Home, Compass, Plus, MessageSquare, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { useUnreadMessagesCount } from '../features/messages/hooks/use-conversations';
 import { colors } from '../styles/theme';
 
 export function BottomTabBar() {
   const insets = useSafeAreaInsets();
-  const { currentRoute, navigate, unreadMessagesCount, setCreateModalOpen } = useApp();
+  const { currentRoute, navigate, setCreateModalOpen } = useApp();
+  const unreadMessagesCount = useUnreadMessagesCount();
 
   const tabs = [
     { key: 'home', label: 'Home', Icon: Home },

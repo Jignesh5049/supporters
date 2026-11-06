@@ -4,14 +4,12 @@ import {
   Product,
   Service,
   Business,
-  Conversation,
   NotificationItem,
   UserProfile,
   CURRENT_USER,
   MOCK_PRODUCTS,
   MOCK_SERVICES,
   MOCK_BUSINESSES,
-  MOCK_CONVERSATIONS,
   MOCK_NOTIFICATIONS,
   MOCK_REFERRAL_DATA,
   ReferralStat,
@@ -28,7 +26,12 @@ import {
   OtpPurposeValue,
   ResetPasswordData,
 } from '../services/authService';
+import { z } from 'zod';
+import type { ListingRef } from '@supporters/shared';
+import { chatApi, messageForError } from '../lib/api';
 import { restoreSession } from '../lib/auth/session';
+import { queryClient } from '../lib/query-client';
+import { chatKeys } from '../features/messages/query-keys';
 import { TAB_ROUTES, hrefForRoute, routeForPath } from '../lib/navigation/routes';
 import { SessionStatus, useSessionStore } from '../stores/session-store';
 
@@ -43,6 +46,15 @@ export interface EnquiryTarget {
   targetTitle?: string;
   targetBusinessName?: string;
   targetBusinessId?: string;
+  /** The product or service the form is about; without it the buyer picks one. */
+  targetListing?: ListingRef;
+}
+
+export interface EnquiryRequest {
+  title: string;
+  businessName: string;
+  businessId?: string;
+  listing?: ListingRef;
 }
 
 export interface ShareTarget {
@@ -123,24 +135,8 @@ interface AppContextType {
   toggleFollowBusiness: (businessId: string) => void;
 
   // Messaging
-  conversations: Conversation[];
-  activeConversationId: string;
-  setActiveConversationId: (id: string) => void;
-  sendMessage: (
-    conversationId: string,
-    text: string,
-    attachedProduct?: any,
-    attachedService?: any,
-  ) => void;
-  unreadMessagesCount: number;
-  openConversationWithBusiness: (
-    businessId: string,
-    options?: {
-      initialMessage?: string;
-      attachedProduct?: any;
-      attachedService?: any;
-    },
-  ) => void;
+  /** Opens (or starts) the thread with a business: POST /v1/conversations. */
+  openConversationWithBusiness: (businessId: string) => void;
 
   // Notifications
   notifications: NotificationItem[];
@@ -165,7 +161,7 @@ interface AppContextType {
 
   // Modals
   enquiryModal: EnquiryTarget;
-  openEnquiryModal: (info: { title: string; businessName: string; businessId?: string }) => void;
+  openEnquiryModal: (info: EnquiryRequest) => void;
   closeEnquiryModal: () => void;
 
   shareModal: ShareTarget;
@@ -207,8 +203,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products] = useState<Product[]>(MOCK_PRODUCTS);
   const [services] = useState<Service[]>(MOCK_SERVICES);
   const [businesses, setBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
-  const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
   const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
   const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
@@ -471,116 +465,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { success: true, message: 'Withdrawal request submitted successfully' };
   };
 
-  const sendMessage = (
-    conversationId: string,
-    text: string,
-    attachedProduct?: any,
-    attachedService?: any,
-  ) => {
-    const newMsg = {
-      id: `msg-${Date.now()}`,
-      conversationId,
-      senderId: 'user-me',
-      senderName: 'You',
-      text,
-      timestamp: 'Just now',
-      isMe: true,
-      attachedProduct,
-      attachedService,
-    };
-
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === conversationId) {
-          return {
-            ...c,
-            lastMessage: text,
-            lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      }),
-    );
-    showToast('Message sent', 'info');
-  };
-
   const openConversationWithBusiness = useCallback(
-    (
-      businessId: string,
-      options?: {
-        initialMessage?: string;
-        attachedProduct?: any;
-        attachedService?: any;
-      },
-    ) => {
-      // Find if a conversation already exists with this businessId
-      const existingConv = conversations.find((c) => c.businessId === businessId);
-
-      if (existingConv) {
-        setActiveConversationId(existingConv.id);
-        if (options?.initialMessage) {
-          sendMessage(
-            existingConv.id,
-            options.initialMessage,
-            options.attachedProduct,
-            options.attachedService,
-          );
-        }
-        navigate('messages', {
-          businessId,
-          conversationId: existingConv.id,
-          openChat: true,
-        });
+    (businessId: string) => {
+      if (sessionStatus !== SessionStatus.SignedIn) {
+        router.push('/sign-in');
         return;
       }
-
-      // If no existing conversation, create a new one for this business
-      const biz = businesses.find((b) => b.id === businessId);
-      const newConvId = `conv-${Date.now()}`;
-      const initialText = options?.initialMessage;
-
-      const initialMessages = initialText
-        ? [
-            {
-              id: `msg-${Date.now()}`,
-              conversationId: newConvId,
-              senderId: 'user-me',
-              senderName: 'You',
-              text: initialText,
-              timestamp: 'Just now',
-              isMe: true,
-              attachedProduct: options?.attachedProduct,
-              attachedService: options?.attachedService,
-            },
-          ]
-        : [];
-
-      const newConv: Conversation = {
-        id: newConvId,
-        businessId,
-        businessName: biz?.name || 'Verified Supplier',
-        businessAvatar:
-          biz?.avatar ||
-          'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=80',
-        businessVerified: biz?.verified ?? true,
-        businessCity: biz?.city || 'India',
-        lastMessage: initialText || 'Direct inquiry started',
-        lastMessageTime: 'Just now',
-        unreadCount: 0,
-        online: true,
-        messages: initialMessages,
-      };
-
-      setConversations((prev) => [newConv, ...prev]);
-      setActiveConversationId(newConvId);
-      navigate('messages', {
-        businessId,
-        conversationId: newConvId,
-        openChat: true,
-      });
+      if (!z.uuid().safeParse(businessId).success) {
+        showToast("This business can't be messaged yet.", 'error');
+        return;
+      }
+      chatApi.open(businessId).then(
+        (conversation) => {
+          queryClient.setQueryData(chatKeys.conversation(conversation.id), conversation);
+          router.push(`/messages/${conversation.id}`);
+        },
+        (error: unknown) => showToast(messageForError(error), 'error'),
+      );
     },
-    [conversations, businesses, navigate, sendMessage],
+    [sessionStatus, showToast],
   );
 
   const markNotificationAsRead = (id: string) => {
@@ -593,14 +496,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
-  const unreadMessagesCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
 
-  const openEnquiryModal = (info: { title: string; businessName: string; businessId?: string }) => {
+  const openEnquiryModal = (info: EnquiryRequest) => {
     setEnquiryModal({
       isOpen: true,
       targetTitle: info.title,
       targetBusinessName: info.businessName,
       targetBusinessId: info.businessId,
+      targetListing: info.listing,
     });
   };
 
@@ -649,12 +552,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleSaveBusiness,
         followedBusinessIds,
         toggleFollowBusiness,
-        conversations,
-        activeConversationId,
-        setActiveConversationId,
-        sendMessage,
         openConversationWithBusiness,
-        unreadMessagesCount,
         routeHistory,
         notifications,
         markNotificationAsRead,

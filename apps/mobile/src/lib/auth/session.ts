@@ -2,6 +2,7 @@ import type { AuthResponse, Me } from '@supporters/shared';
 import { useSessionStore } from '../../stores/session-store';
 import { ApiError, ApiErrorCode, apiClient, authApi } from '../api';
 import { queryClient } from '../query-client';
+import { wipeEncryptedStorage } from '../storage/encrypted-storage';
 import { secureTokenStore } from './token-storage';
 
 /**
@@ -44,6 +45,7 @@ export async function signOut(): Promise<void> {
     // Signing out must work offline; the server session expires on its own.
   }
   await secureTokenStore.clear();
+  await wipeEncryptedStorage();
   queryClient.clear();
   useSessionStore.getState().setGuest();
 }
