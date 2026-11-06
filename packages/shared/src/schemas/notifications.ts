@@ -38,6 +38,8 @@ export const NotificationType = {
   CommentReplied: 'comment.replied',
   /** A new buyer requirement matches the recipient's business (top 50 verified only). */
   RequirementMatched: 'requirement.matched',
+  /** A business quoted on the recipient's buyer requirement. */
+  RequirementQuoted: 'requirement.quoted',
   SecurityLogin: 'security.login',
   SecurityPasswordChanged: 'security.password_changed',
 } as const;

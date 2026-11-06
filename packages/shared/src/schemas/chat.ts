@@ -117,6 +117,14 @@ export const messageEnquirySchema = z.object({
   unit: z.string().nullable(),
 });
 
+/** The quote a `quote` message carries. */
+export const messageQuoteSchema = z.object({
+  id: z.uuid(),
+  requirementId: z.uuid(),
+  price: moneySchema,
+});
+export type MessageQuote = z.infer<typeof messageQuoteSchema>;
+
 export const messageSchema = z.object({
   id: z.uuid(),
   conversationId: z.uuid(),
@@ -128,6 +136,8 @@ export const messageSchema = z.object({
   attachments: z.array(chatAttachmentSchema),
   listing: listingCardSchema.nullable(),
   enquiry: messageEnquirySchema.nullable(),
+  /** Set on `quote` messages. Optional, so message fixtures written before quotes still type-check. */
+  quote: messageQuoteSchema.nullable().optional(),
   createdAt: z.iso.datetime(),
 });
 export type Message = z.infer<typeof messageSchema>;
