@@ -1,36 +1,62 @@
 import { MetadataRoute } from 'next';
 
 /**
- * Static pages only for now. Business, product and service URLs join once the
- * API has a paginated public index to build them from (web spec, SEO: sitemap
- * split by type); listing them from mock data would point crawlers at 404s.
+ * Public indexable pages only. Private app routes, auth pages, and admin pages
+ * are excluded per the web spec and robots.txt.
+ * Paginated business, product and requirement URLs join once the API provides
+ * their index.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://supporters.in';
 
   return [
-    '',
-    '/discover',
-    '/saved',
-    '/messages',
-    '/notifications',
-    '/profile',
-    '/create',
-    '/referral',
-    '/subscription',
-    '/settings',
-    '/help',
-    '/about',
-    '/privacy',
-    '/terms',
-    '/refund-policy',
-    '/community-guidelines',
-    '/login',
-    '/register',
-  ].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: route === '' ? 1.0 : 0.8,
-  }));
+    {
+      url: `${baseUrl}/`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/discover`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/help`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/refund-policy`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/community-guidelines`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+  ];
 }

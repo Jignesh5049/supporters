@@ -13,12 +13,13 @@
   },
   "dependencies": {
     "@hookform/resolvers": "6.0.2",
+    "@sentry/nextjs": "^11.10.0",
     "@supporters/design-tokens": "workspace:*",
     "@supporters/shared": "workspace:*",
     "@supporters/ui-web": "workspace:*",
     "@tanstack/react-query": "5.105.0",
     "lucide-react": "^1.52.0",
-    "next": "16.4.2",
+    "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "7.91.0",
@@ -32,7 +33,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "5.0.5"

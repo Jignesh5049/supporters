@@ -176,4 +176,29 @@ describe('token refresh', () => {
       ]),
     );
   });
+
+  it('attaches strict Content Security Policy with nonce and security headers', async () => {
+    const api = apiReturning(() => refreshed());
+    const response = await runProxy(request('/'), api);
+
+    const csp = response.headers.get('content-security-policy');
+    expect(csp).toBeTruthy();
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("'nonce-");
+    expect(csp).toContain("'strict-dynamic'");
+    expect(csp).toContain('https://checkout.razorpay.com');
+    expect(csp).toContain('https://media.supporters.in');
+    expect(csp).toContain("frame-ancestors 'none'");
+
+    expect(response.headers.get('strict-transport-security')).toBe(
+      'max-age=63072000; includeSubDomains; preload',
+    );
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin-allow-popups');
+    expect(response.headers.get('permissions-policy')).toContain(
+      'payment=(self "https://checkout.razorpay.com")',
+    );
+    expect(response.headers.get('reporting-endpoints')).toContain('csp-endpoint=');
+  });
 });

@@ -1,9 +1,12 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs/config';
 
 const isDev = process.env.NODE_ENV === 'development';
 const apiInternalUrl = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  productionBrowserSourceMaps: false,
   // Workspace packages ship TypeScript source; Next compiles them.
   transpilePackages: ['@supporters/ui-web', '@supporters/design-tokens', '@supporters/shared'],
   poweredByHeader: false,
@@ -12,8 +15,31 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return isDev ? [{ source: '/v1/:path*', destination: `${apiInternalUrl}/v1/:path*` }] : [];
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'media.supporters.in',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      ...(isDev
+        ? [
+            {
+              protocol: 'http' as const,
+              hostname: '127.0.0.1',
+            },
+            {
+              protocol: 'http' as const,
+              hostname: 'localhost',
+            },
+          ]
+        : []),
+    ],
+  },
   turbopack: {
     rules: {
       '*.css': {
@@ -23,8 +49,11 @@ const nextConfig: NextConfig = {
     },
   },
   experimental: {
-    agentUpgrade: 'security',
+    taint: true,
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+});
