@@ -18,6 +18,8 @@ const SIGNED_IN_PREFIXES = [
   '/business/products',
   '/business/services',
   '/business/settings',
+  '/business/verification',
+  '/business/premium',
   '/create',
   '/messages',
   '/notifications',
@@ -28,9 +30,11 @@ const SIGNED_IN_PREFIXES = [
   '/settings',
   '/subscription',
   '/wallet',
+  '/admin',
 ];
 
 export function isSignedInRoute(pathname: string): boolean {
+  if (pathname === '/admin/login') return false;
   return SIGNED_IN_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
