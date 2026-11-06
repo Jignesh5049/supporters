@@ -47,6 +47,9 @@ import { PlacesService } from './modules/places/places.service';
 import { postsRoutes } from './modules/posts/posts.routes';
 import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
+import { ReportTargets } from './modules/reports/report-targets';
+import { reportsRoutes } from './modules/reports/reports.routes';
+import { ReportsService } from './modules/reports/reports.service';
 import { ProductsService } from './modules/products/products.service';
 import { savesRoutes } from './modules/saves/saves.routes';
 import { SaveLookup, SavesService } from './modules/saves/saves.service';
@@ -57,6 +60,8 @@ import { uploadsRoutes } from './modules/uploads/uploads.routes';
 import { UploadsService } from './modules/uploads/uploads.service';
 import { ServicesService } from './modules/services/services.service';
 import { usersRoutes } from './modules/users/users.routes';
+import { verificationRoutes } from './modules/verification/verification.routes';
+import { VerificationService } from './modules/verification/verification.service';
 import { UsersService } from './modules/users/users.service';
 import { authPlugin } from './plugins/auth';
 import { csrfPlugin } from './plugins/csrf';
@@ -205,6 +210,8 @@ export async function buildApp(options: BuildAppOptions) {
     enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
     notifications: new NotificationsService(app.prisma),
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
+    verification: new VerificationService(app.prisma, businesses, uploads),
+    reports: new ReportsService(app.prisma, new ReportTargets(app.prisma), app.limiter),
   });
 
   await app.register(realtimePlugin);
@@ -229,6 +236,8 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(blocksRoutes);
       await v1.register(notificationsRoutes);
       await v1.register(pushDevicesRoutes);
+      await v1.register(verificationRoutes);
+      await v1.register(reportsRoutes);
     },
     { prefix: '/v1' },
   );

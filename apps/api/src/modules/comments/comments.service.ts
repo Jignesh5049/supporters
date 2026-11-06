@@ -53,6 +53,7 @@ export class CommentsService {
         postId,
         parentId: query.parentId ?? null,
         deletedAt: null,
+        hiddenAt: null,
         user: { status: 'active' },
       },
       include: commentInclude,
@@ -73,7 +74,7 @@ export class CommentsService {
 
     if (input.parentId) {
       const parent = await this.prisma.comment.findFirst({
-        where: { id: input.parentId, postId, deletedAt: null },
+        where: { id: input.parentId, postId, deletedAt: null, hiddenAt: null },
         select: { parentId: true },
       });
       if (!parent) throw invalidField('body.parentId', 'Unknown comment');

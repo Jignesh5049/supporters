@@ -233,6 +233,46 @@ export class NotificationFanout {
           },
         ];
       }
+      case 'business.verified':
+      case 'business.verification_rejected': {
+        const { verificationId } = payload as DomainEvents['business.verified'];
+        const verification = await tx.businessVerification.findUnique({
+          where: { id: verificationId },
+          select: { business: { select: { id: true, ownerUserId: true } } },
+        });
+        if (!verification) return [];
+        return [
+          {
+            userId: verification.business.ownerUserId,
+            type:
+              type === 'business.verified'
+                ? NotificationType.BusinessVerified
+                : NotificationType.BusinessVerificationRejected,
+            actorUserId: null,
+            targetType: NotificationTargetType.Business,
+            targetId: verification.business.id,
+            groupKey: null,
+          },
+        ];
+      }
+      case 'content.hidden':
+      case 'account.warned': {
+        // The hidden item is no longer public, so the notice opens the account screen.
+        const { userId } = payload as DomainEvents['account.warned'];
+        return [
+          {
+            userId,
+            type:
+              type === 'content.hidden'
+                ? NotificationType.ContentHidden
+                : NotificationType.AccountWarned,
+            actorUserId: null,
+            targetType: NotificationTargetType.Account,
+            targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
       default:
         return [];
     }

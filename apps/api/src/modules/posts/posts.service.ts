@@ -20,6 +20,7 @@ import {
 } from '../../lib/pagination';
 import {
   type BusinessesService,
+  PUBLIC_OWNER,
   postsPer7DaysLimit,
   toBusinessSummary,
 } from '../businesses/businesses.service';
@@ -41,13 +42,14 @@ export const postInclude = {
 
 export type PostRow = Prisma.PostGetPayload<{ include: typeof postInclude }>;
 
-/** Public reads: published, not deleted, and the business owner's account is active. */
+/** Public reads: published, not deleted or hidden, and the business itself is public. */
 export const PUBLIC_POST = {
   // Lets the planner use idx_posts_published_published_at_id (see its comment).
   publishedAt: { not: null },
   status: 'published',
   deletedAt: null,
-  business: { owner: { status: 'active' } },
+  hiddenAt: null,
+  business: PUBLIC_OWNER,
 } satisfies Prisma.PostWhereInput;
 
 /** Newest first by first publish time; ids break ties. */

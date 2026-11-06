@@ -333,7 +333,7 @@ export class ChatService {
     query: MessagesQuery,
   ): Promise<Page<Message>> {
     await this.requireMember(userId, conversationId);
-    const base = { conversationId, hiddenFor: { none: { userId } } };
+    const base = { conversationId, hiddenAt: null, hiddenFor: { none: { userId } } };
     const include = messageInclude;
     if (query.after) {
       const rows = await this.prisma.message.findMany({
@@ -572,6 +572,7 @@ export class ChatService {
         uploadId,
         upload: { purpose: 'chat', status: 'ready' },
         message: {
+          hiddenAt: null,
           hiddenFor: { none: { userId } },
           conversation: { OR: [{ userId }, { business: { ownerUserId: userId } }] },
         },
@@ -658,6 +659,7 @@ export class ChatService {
         SELECT DISTINCT ON (m.conversation_id) m.id
         FROM messages m
         WHERE m.conversation_id = ANY(${ids}::uuid[])
+          AND m.hidden_at IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM message_hidden h WHERE h.message_id = m.id AND h.user_id = ${userId}::uuid
           )

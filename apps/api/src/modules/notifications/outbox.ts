@@ -15,6 +15,12 @@ export interface DomainEvents {
   'comment.created': { commentId: string };
   'security.login': { userId: string; sessionId: string };
   'security.password_changed': { userId: string };
+  /** An admin approved a verification request. */
+  'business.verified': { verificationId: string };
+  'business.verification_rejected': { verificationId: string };
+  /** Moderation hid a post, comment, message or business page of `userId`. */
+  'content.hidden': { userId: string; targetType: string; targetId: string };
+  'account.warned': { userId: string; reportId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -27,6 +33,10 @@ export const DOMAIN_EVENT_TYPES = [
   'comment.created',
   'security.login',
   'security.password_changed',
+  'business.verified',
+  'business.verification_rejected',
+  'content.hidden',
+  'account.warned',
 ] as const satisfies readonly DomainEventType[];
 
 /**

@@ -33,8 +33,11 @@ export const summaryInclude = {
   city: { include: { state: true } },
 } satisfies Prisma.BusinessInclude;
 
-/** Only businesses whose owner is active are public. */
-export const PUBLIC_OWNER = { owner: { status: 'active' } } satisfies Prisma.BusinessWhereInput;
+/** Only businesses whose owner is active, and that moderation has not hidden, are public. */
+export const PUBLIC_OWNER = {
+  hiddenAt: null,
+  owner: { status: 'active' },
+} satisfies Prisma.BusinessWhereInput;
 
 const businessExists = () =>
   new AppError(409, ErrorCode.BusinessExists, 'You already have a business', {
