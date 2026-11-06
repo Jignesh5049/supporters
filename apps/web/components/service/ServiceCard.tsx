@@ -17,7 +17,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
   const isSaved = savedServiceIds.includes(service.id);
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs transition-all flex flex-col group">
+    <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-2xs hover:shadow-xs transition-all flex flex-col group">
       {/* Service Image */}
       <div className="relative aspect-16/10 w-full bg-gray-100 overflow-hidden">
         <Link href={`/service/${service.id}`} className="block w-full h-full relative">
@@ -37,7 +37,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             toggleSaveService(service.id);
           }}
           className={`absolute top-2.5 right-2.5 p-2 rounded-full backdrop-blur-xs transition-colors shadow-xs ${
-            isSaved ? 'bg-[#00AEEF] text-white' : 'bg-white/85 text-[#111111] hover:bg-white'
+            isSaved ? 'bg-info text-white' : 'bg-white/85 text-foreground hover:bg-white'
           }`}
           aria-label={isSaved ? 'Remove from saved' : 'Save service'}
         >
@@ -46,7 +46,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
         {/* Availability Badge */}
         <span className="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1">
-          <Clock className="w-3 h-3 text-[#00AEEF]" />
+          <Clock className="w-3 h-3 text-info" />
           <span>{service.availability}</span>
         </span>
       </div>
@@ -63,11 +63,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
           />
           <Link
             href={`/business/${service.businessId}`}
-            className="text-xs font-semibold text-[#667085] hover:text-[#00AEEF] truncate flex-1"
+            className="text-xs font-semibold text-muted-foreground hover:text-info truncate flex-1"
           >
             {service.businessName}
           </Link>
-          <span className="text-[10px] text-[#667085] flex items-center gap-0.5 shrink-0">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
             <MapPin className="w-3 h-3" />
             {service.businessCity}
           </span>
@@ -75,27 +75,27 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
         {/* Title */}
         <Link href={`/service/${service.id}`}>
-          <h3 className="text-sm font-bold text-[#111111] group-hover:text-[#00AEEF] transition-colors line-clamp-2 leading-snug">
+          <h3 className="text-sm font-bold text-foreground group-hover:text-info transition-colors line-clamp-2 leading-snug">
             {service.title}
           </h3>
         </Link>
 
         {/* Description snippet */}
-        <p className="text-xs text-[#667085] line-clamp-2 mt-2 leading-relaxed">
+        <p className="text-xs text-muted-foreground line-clamp-2 mt-2 leading-relaxed">
           {service.description}
         </p>
 
         {/* Price & Rating */}
-        <div className="mt-auto pt-3 border-t border-[#E5E7EB] flex items-baseline justify-between">
+        <div className="mt-auto pt-3 border-t border-border flex items-baseline justify-between">
           <div>
-            <span className="text-[11px] text-[#667085] block">Starting from</span>
-            <span className="text-base font-black text-[#2E3192]">
+            <span className="text-[11px] text-muted-foreground block">Starting from</span>
+            <span className="text-base font-black text-primary">
               ₹{service.startingPrice.toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] text-[#667085] ml-1">/{service.priceUnit}</span>
+            <span className="text-[10px] text-muted-foreground ml-1">/{service.priceUnit}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-bold text-[#111111]">
+          <div className="flex items-center gap-1 text-xs font-bold text-foreground">
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
             <span>{service.rating}</span>
           </div>
@@ -105,7 +105,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         <div className="mt-3 pt-2 flex items-center gap-2">
           <Link
             href={`/service/${service.id}`}
-            className="flex-1 py-2 text-center text-xs font-semibold text-[#00AEEF] bg-cyan-50/70 hover:bg-cyan-100/70 rounded-xl transition-colors"
+            className="flex-1 py-2 text-center text-xs font-semibold text-info bg-cyan-50/70 hover:bg-cyan-100/70 rounded-xl transition-colors"
           >
             View Scope
           </Link>
@@ -118,7 +118,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
                 businessId: service.businessId,
               })
             }
-            className="flex-1 py-2 text-center text-xs font-semibold text-white bg-[#00AEEF] hover:bg-[#0098d4] rounded-xl transition-colors shadow-2xs"
+            className="flex-1 py-2 text-center text-xs font-semibold text-white bg-info hover:bg-info rounded-xl transition-colors shadow-2xs"
           >
             Enquire Now
           </button>

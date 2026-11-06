@@ -41,7 +41,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 export function CategoryScroller({ selectedCategory, onSelectCategory }: CategoryScrollerProps) {
   return (
-    <div className="w-full bg-white border border-[#E5E7EB] rounded-2xl p-2.5 shadow-2xs">
+    <div className="w-full bg-white border border-border rounded-2xl p-2.5 shadow-2xs">
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
         {CATEGORIES.map((cat) => {
           const Icon = ICON_MAP[cat.iconName] || Layers;
@@ -53,14 +53,14 @@ export function CategoryScroller({ selectedCategory, onSelectCategory }: Categor
               onClick={() => onSelectCategory(cat.id)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                 isSelected
-                  ? 'bg-[#2E3192] text-white shadow-xs'
-                  : 'bg-[#F7F8FC] text-[#667085] hover:text-[#111111] hover:bg-gray-100 border border-transparent'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-background text-muted-foreground hover:text-foreground hover:bg-gray-100 border border-transparent'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-[#667085]'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-muted-foreground'}`} />
               <span>{cat.name}</span>
               {cat.trending && !isSelected && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#A3238E]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-highlight" />
               )}
             </button>
           );

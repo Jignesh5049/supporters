@@ -18,9 +18,9 @@ export function BackButton({ label = 'Back', href, className = '' }: BackButtonP
     return (
       <Link
         href={href}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#111111] bg-white hover:bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl shadow-2xs transition-colors shrink-0 group ${className}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-foreground bg-white hover:bg-background border border-border rounded-xl shadow-2xs transition-colors shrink-0 group ${className}`}
       >
-        <ArrowLeft className="w-3.5 h-3.5 text-[#667085] group-hover:text-[#2E3192] transition-colors" />
+        <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
         <span>{label}</span>
       </Link>
     );
@@ -36,9 +36,9 @@ export function BackButton({ label = 'Back', href, className = '' }: BackButtonP
           router.push('/');
         }
       }}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#111111] bg-white hover:bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl shadow-2xs transition-colors shrink-0 group ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-foreground bg-white hover:bg-background border border-border rounded-xl shadow-2xs transition-colors shrink-0 group ${className}`}
     >
-      <ArrowLeft className="w-3.5 h-3.5 text-[#667085] group-hover:text-[#2E3192] transition-colors" />
+      <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
       <span>{label}</span>
     </button>
   );

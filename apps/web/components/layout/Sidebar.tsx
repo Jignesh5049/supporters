@@ -39,14 +39,14 @@ function SidebarInner() {
       href: '/messages',
       icon: MessageSquare,
       badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
-      badgeColor: 'bg-[#00AEEF]',
+      badgeColor: 'bg-info',
     },
     {
       label: 'Notifications',
       href: '/notifications',
       icon: Bell,
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
-      badgeColor: 'bg-[#A3238E]',
+      badgeColor: 'bg-highlight',
     },
   ];
 
@@ -60,7 +60,7 @@ function SidebarInner() {
 
   const growthLinks = [
     { label: 'App Wallet', href: '/wallet', icon: Wallet, highlight: 'text-emerald-600 font-bold' },
-    { label: 'Refer & Earn', href: '/referral', icon: Gift, highlight: 'text-[#A3238E]' },
+    { label: 'Refer & Earn', href: '/referral', icon: Gift, highlight: 'text-highlight' },
     { label: 'Supporters Pro', href: '/subscription', icon: Crown, highlight: 'text-amber-500' },
   ];
 
@@ -75,19 +75,19 @@ function SidebarInner() {
         {/* User Mini Profile Card */}
         <Link
           href="/profile"
-          className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 border border-[#E5E7EB] rounded-2xl transition-all shadow-2xs group"
+          className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50 border border-border rounded-2xl transition-all shadow-2xs group"
         >
           <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="md" verified />
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-bold text-[#111111] group-hover:text-[#2E3192] transition-colors truncate">
+            <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
               {CURRENT_USER.name}
             </h4>
-            <p className="text-xs text-[#667085] truncate">@{CURRENT_USER.username}</p>
+            <p className="text-xs text-muted-foreground truncate">@{CURRENT_USER.username}</p>
           </div>
         </Link>
 
         {/* Main Navigation */}
-        <div className="bg-white border border-[#E5E7EB] rounded-2xl p-2 shadow-2xs">
+        <div className="bg-white border border-border rounded-2xl p-2 shadow-2xs">
           <nav className="space-y-1">
             {mainLinks.map((item) => {
               const Icon = item.icon;
@@ -98,17 +98,17 @@ function SidebarInner() {
                   href={item.href}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-[#2E3192] text-white font-semibold shadow-xs'
-                      : 'text-[#111111] hover:bg-[#F7F8FC] hover:text-[#2E3192]'
+                      ? 'bg-primary text-white font-semibold shadow-xs'
+                      : 'text-foreground hover:bg-background hover:text-primary'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#667085]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
                     <span
-                      className={`text-[11px] font-bold text-white px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-[#2E3192]'}`}
+                      className={`text-[11px] font-bold text-white px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-primary'}`}
                     >
                       {item.badge}
                     </span>
@@ -119,8 +119,8 @@ function SidebarInner() {
           </nav>
 
           {/* Business Section */}
-          <div className="pt-3 mt-3 border-t border-[#E5E7EB]">
-            <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-[#667085] mb-1">
+          <div className="pt-3 mt-3 border-t border-border">
+            <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
               Business Suite
             </p>
             <nav className="space-y-1">
@@ -133,11 +133,11 @@ function SidebarInner() {
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-[#2E3192] text-white font-semibold'
-                        : 'text-[#111111] hover:bg-[#F7F8FC] hover:text-[#2E3192]'
+                        ? 'bg-primary text-white font-semibold'
+                        : 'text-foreground hover:bg-background hover:text-primary'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#667085]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -146,8 +146,8 @@ function SidebarInner() {
           </div>
 
           {/* Referral & Subscription Section */}
-          <div className="pt-3 mt-3 border-t border-[#E5E7EB]">
-            <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-[#667085] mb-1">
+          <div className="pt-3 mt-3 border-t border-border">
+            <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
               Grow & Upgrade
             </p>
             <nav className="space-y-1">
@@ -160,8 +160,8 @@ function SidebarInner() {
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-[#2E3192] text-white font-semibold'
-                        : `text-[#111111] hover:bg-[#F7F8FC] ${item.highlight || ''}`
+                        ? 'bg-primary text-white font-semibold'
+                        : `text-foreground hover:bg-background ${item.highlight || ''}`
                     }`}
                   >
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
@@ -173,7 +173,7 @@ function SidebarInner() {
           </div>
 
           {/* Utility Section */}
-          <div className="pt-3 mt-3 border-t border-[#E5E7EB]">
+          <div className="pt-3 mt-3 border-t border-border">
             <nav className="space-y-1">
               {utilityLinks.map((item) => {
                 const Icon = item.icon;
@@ -184,8 +184,8 @@ function SidebarInner() {
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-[#2E3192] text-white font-semibold'
-                        : 'text-[#667085] hover:bg-[#F7F8FC] hover:text-[#111111]'
+                        ? 'bg-primary text-white font-semibold'
+                        : 'text-muted-foreground hover:bg-background hover:text-foreground'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -206,7 +206,7 @@ export function Sidebar() {
     <Suspense
       fallback={
         <aside className="w-64 shrink-0 hidden lg:block sticky top-20 self-start">
-          <div className="h-96 bg-white border border-[#E5E7EB] rounded-2xl animate-pulse" />
+          <div className="h-96 bg-white border border-border rounded-2xl animate-pulse" />
         </aside>
       }
     >

@@ -29,31 +29,31 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="bg-white rounded-2xl max-w-md w-full border border-[#E5E7EB] shadow-2xl p-6"
+        className="bg-white rounded-2xl max-w-md w-full border border-border shadow-2xl p-6"
         role="dialog"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-[#2E3192]" />
-            <h3 className="font-semibold text-[#111111]">Share on Supporters</h3>
+            <Share2 className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Share on Supporters</h3>
           </div>
-          <button onClick={onClose} className="text-[#667085] hover:text-[#111111] p-1 rounded-lg">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-sm text-[#667085] mt-3 mb-4 line-clamp-2">{title}</p>
+        <p className="text-sm text-muted-foreground mt-3 mb-4 line-clamp-2">{title}</p>
 
-        <div className="flex items-center gap-2 p-2 bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl mb-4">
+        <div className="flex items-center gap-2 p-2 bg-background border border-border rounded-xl mb-4">
           <input
             type="text"
             readOnly
             value={shareUrl}
-            className="bg-transparent text-xs text-[#111111] flex-1 px-2 focus:outline-none overflow-hidden text-ellipsis"
+            className="bg-transparent text-xs text-foreground flex-1 px-2 focus:outline-none overflow-hidden text-ellipsis"
           />
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#2E3192] text-white hover:bg-[#242775] transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors shrink-0"
           >
             {copied ? (
               <>
@@ -78,7 +78,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               );
               onClose();
             }}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-[#E5E7EB] hover:bg-emerald-50 hover:border-emerald-200 text-xs font-medium text-[#111111] transition-colors"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-border hover:bg-emerald-50 hover:border-emerald-200 text-xs font-medium text-foreground transition-colors"
           >
             <span className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
               WA
@@ -93,7 +93,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               );
               onClose();
             }}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-[#E5E7EB] hover:bg-blue-50 hover:border-blue-200 text-xs font-medium text-[#111111] transition-colors"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-border hover:bg-blue-50 hover:border-blue-200 text-xs font-medium text-foreground transition-colors"
           >
             <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
               in
@@ -108,7 +108,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               );
               onClose();
             }}
-            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-[#E5E7EB] hover:bg-gray-100 text-xs font-medium text-[#111111] transition-colors"
+            className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border border-border hover:bg-gray-100 text-xs font-medium text-foreground transition-colors"
           >
             <span className="w-7 h-7 rounded-full bg-gray-700 text-white flex items-center justify-center font-bold text-xs">
               @

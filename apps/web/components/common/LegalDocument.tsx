@@ -12,33 +12,33 @@ export function LegalDocument({ title, lastUpdated, sections }: LegalDocumentPro
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <nav className="flex items-center gap-2 text-xs text-[#667085]">
-          <Link href="/" className="hover:text-[#2E3192]">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Link href="/" className="hover:text-primary">
             Home
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-[#111111] font-medium">{title}</span>
+          <span className="text-foreground font-medium">{title}</span>
         </nav>
       </div>
 
-      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 sm:p-10 shadow-2xs space-y-6">
-        <div className="border-b border-[#E5E7EB] pb-5">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#2E3192] uppercase tracking-wider mb-1">
+      <div className="bg-white border border-border rounded-2xl p-6 sm:p-10 shadow-2xs space-y-6">
+        <div className="border-b border-border pb-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4" />
             <span>Supporters Legal & Compliance</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#111111]">{title}</h1>
-          <p className="text-xs text-[#667085] mt-1">Last Updated: {lastUpdated}</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground">{title}</h1>
+          <p className="text-xs text-muted-foreground mt-1">Last Updated: {lastUpdated}</p>
         </div>
 
-        <div className="space-y-6 text-xs sm:text-sm text-[#111111] leading-relaxed">
+        <div className="space-y-6 text-xs sm:text-sm text-foreground leading-relaxed">
           {sections.map((sec, idx) => (
             <div key={idx} className="space-y-2">
-              <h2 className="text-sm sm:text-base font-bold text-[#111111]">
+              <h2 className="text-sm sm:text-base font-bold text-foreground">
                 {idx + 1}. {sec.title}
               </h2>
               {sec.content.map((p, pIdx) => (
-                <p key={pIdx} className="text-[#667085] leading-relaxed">
+                <p key={pIdx} className="text-muted-foreground leading-relaxed">
                   {p}
                 </p>
               ))}

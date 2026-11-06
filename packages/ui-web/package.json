@@ -9,6 +9,8 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./components/*": "./src/components/*.tsx",
+    "./patterns": "./src/patterns/index.ts",
+    "./patterns/*": "./src/patterns/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts"
   },

@@ -68,20 +68,20 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-[#E5E7EB]/90 shadow-2xs">
+    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-border/ shadow-2xs">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Left: Brand Identity */}
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-[#667085] hover:text-[#111111] hover:bg-gray-100 rounded-lg"
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-gray-100 rounded-lg"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-[#2E3192] flex items-center justify-center text-white shadow-xs group-hover:bg-[#242775] transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-xs group-hover:bg-primary-hover transition-colors">
               {/* Custom Supporters Monogram Icon */}
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path
@@ -92,7 +92,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                 <circle cx="15" cy="8" r="1.5" fill="#A3238E" />
               </svg>
             </div>
-            <span className="text-xl font-black tracking-tight text-[#2E3192] group-hover:text-[#242775] transition-colors">
+            <span className="text-xl font-black tracking-tight text-primary group-hover:text-primary-hover transition-colors">
               Supporters
             </span>
           </Link>
@@ -101,13 +101,13 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
         {/* Center: Search Bar (Desktop) */}
         <div className="hidden md:flex flex-1 max-w-xl mx-2">
           <form onSubmit={handleSearchSubmit} className="w-full relative">
-            <Search className="w-4 h-4 text-[#667085] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products, services or businesses"
-              className="w-full pl-10 pr-4 py-2 bg-[#F7F8FC] border border-[#E5E7EB] rounded-full text-sm text-[#111111] placeholder-[#667085] focus:outline-none focus:bg-white focus:border-[#00AEEF] focus:ring-2 focus:ring-[#00AEEF]/20 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:bg-white focus:border-info focus:ring-2 focus:ring-info/20 transition-all"
             />
           </form>
         </div>
@@ -117,7 +117,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
           {/* Mobile search button */}
           <Link
             href="/discover"
-            className="md:hidden p-2 text-[#667085] hover:text-[#2E3192] hover:bg-gray-100 rounded-full transition-colors"
+            className="md:hidden p-2 text-muted-foreground hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
             aria-label="Search"
           >
             <Search className="w-5 h-5" />
@@ -127,12 +127,12 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
           {pathname !== '/notifications' && (
             <Link
               href="/notifications"
-              className="relative p-2 text-[#667085] hover:text-[#2E3192] hover:bg-gray-100 rounded-full transition-colors"
+              className="relative p-2 text-muted-foreground hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-[#A3238E] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                <span className="absolute top-1 right-1 w-4 h-4 bg-highlight text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -142,7 +142,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
           {/* Create Button */}
           <Link
             href="/create"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2E3192] hover:bg-[#242775] text-white text-xs font-semibold rounded-full shadow-xs transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-full shadow-xs transition-colors"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Create</span>
@@ -158,7 +158,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
           <div className="relative" hidden={!viewer}>
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="flex items-center gap-1.5 p-1 rounded-full hover:ring-2 hover:ring-[#2E3192]/20 transition-all focus:outline-none"
+              className="flex items-center gap-1.5 p-1 rounded-full hover:ring-2 hover:ring-primary/20 transition-all focus:outline-none"
               aria-expanded={userDropdownOpen}
               aria-label="User profile menu"
             >
@@ -168,31 +168,31 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
             {userDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-[#E5E7EB] shadow-xl z-50 py-2 animate-in fade-in duration-100">
-                  <div className="px-4 py-3 border-b border-[#E5E7EB]">
-                    <p className="text-sm font-bold text-[#111111] line-clamp-1">{viewerName}</p>
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-border shadow-xl z-50 py-2 animate-in fade-in duration-100">
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-bold text-foreground line-clamp-1">{viewerName}</p>
                   </div>
 
-                  <div className="py-1 text-sm text-[#111111]">
+                  <div className="py-1 text-sm text-foreground">
                     <Link
                       href="/profile"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5"
                     >
                       <span>View Profile</span>
                     </Link>
                     <Link
                       href="/business/manage"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5"
                     >
-                      <Building className="w-4 h-4 text-[#2E3192]" />
+                      <Building className="w-4 h-4 text-primary" />
                       <span>My Business Dashboard</span>
                     </Link>
                     <Link
                       href="/wallet"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5 text-emerald-600 font-bold"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5 text-emerald-600 font-bold"
                     >
                       <Wallet className="w-4 h-4 text-emerald-600" />
                       <span>App Wallet</span>
@@ -200,7 +200,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                     <Link
                       href="/referral"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5 text-[#A3238E]"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5 text-highlight"
                     >
                       <Gift className="w-4 h-4" />
                       <span>Refer & Earn (Up to ₹500)</span>
@@ -208,7 +208,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                     <Link
                       href="/subscription"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5"
                     >
                       <Crown className="w-4 h-4 text-amber-500" />
                       <span>Supporters Premium</span>
@@ -216,14 +216,14 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                     <Link
                       href="/settings"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5"
+                      className="flex items-center px-4 py-2 hover:bg-background gap-2.5"
                     >
-                      <Settings className="w-4 h-4 text-[#667085]" />
+                      <Settings className="w-4 h-4 text-muted-foreground" />
                       <span>Settings</span>
                     </Link>
                   </div>
 
-                  <div className="pt-1 border-t border-[#E5E7EB]">
+                  <div className="pt-1 border-t border-border">
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 gap-2.5 text-left font-medium"
@@ -243,20 +243,20 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex">
           <div className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="p-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#F7F8FC]">
+            <div className="p-4 border-b border-border flex items-center justify-between bg-background">
               <div className="flex items-center gap-2">
                 <Avatar name={viewerName} size="sm" />
-                <p className="text-sm font-bold text-[#111111]">{viewerName}</p>
+                <p className="text-sm font-bold text-foreground">{viewerName}</p>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 text-[#667085] hover:text-[#111111]"
+                className="p-1.5 text-muted-foreground hover:text-foreground"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 border-b border-[#E5E7EB]">
+            <div className="p-3 border-b border-border">
               <form
                 onSubmit={(e) => {
                   setMobileMenuOpen(false);
@@ -264,64 +264,64 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                 }}
               >
                 <div className="relative">
-                  <Search className="w-4 h-4 text-[#667085] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search Supporters..."
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-[#F7F8FC] border border-[#E5E7EB] rounded-lg"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg"
                   />
                 </div>
               </form>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-medium text-[#111111]">
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-medium text-foreground">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <span>Feed</span>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/discover"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
-                  <Compass className="w-4 h-4 text-[#00AEEF]" />
+                  <Compass className="w-4 h-4 text-info" />
                   <span>Discover</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/saved"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
-                  <Bookmark className="w-4 h-4 text-[#2E3192]" />
+                  <Bookmark className="w-4 h-4 text-primary" />
                   <span>Saved Items</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/business/manage"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
-                  <Building className="w-4 h-4 text-[#2E3192]" />
+                  <Building className="w-4 h-4 text-primary" />
                   <span>My Business</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/wallet"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC] text-emerald-600 font-bold"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background text-emerald-600 font-bold"
               >
                 <div className="flex items-center gap-2.5">
                   <Wallet className="w-4 h-4 text-emerald-600" />
@@ -332,57 +332,57 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
               <Link
                 href="/referral"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC] text-[#A3238E]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background text-highlight"
               >
                 <div className="flex items-center gap-2.5">
                   <Gift className="w-4 h-4" />
                   <span>Refer & Earn (Up to ₹500)</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#A3238E]" />
+                <ChevronRight className="w-4 h-4 text-highlight" />
               </Link>
               <Link
                 href="/subscription"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
                   <Crown className="w-4 h-4 text-amber-500" />
                   <span>Subscription</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/settings"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
-                  <Settings className="w-4 h-4 text-[#667085]" />
+                  <Settings className="w-4 h-4 text-muted-foreground" />
                   <span>Settings</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
               <Link
                 href="/help"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
+                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-background"
               >
                 <div className="flex items-center gap-2.5">
-                  <HelpCircle className="w-4 h-4 text-[#667085]" />
+                  <HelpCircle className="w-4 h-4 text-muted-foreground" />
                   <span>Help & Support</span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#667085]" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
             </div>
 
-            <div className="p-4 border-t border-[#E5E7EB]">
+            <div className="p-4 border-t border-border">
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   openMobileCreateModal();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#2E3192] text-white font-semibold rounded-xl text-sm active:scale-95 transition-transform shadow-xs"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white font-semibold rounded-xl text-sm active:scale-95 transition-transform shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create New Listing</span>

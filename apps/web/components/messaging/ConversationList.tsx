@@ -27,26 +27,26 @@ export function ConversationList({
   );
 
   return (
-    <div className="w-full md:w-80 lg:w-96 border-r border-[#E5E7EB] bg-white flex flex-col h-full shrink-0">
+    <div className="w-full md:w-80 lg:w-96 border-r border-border bg-white flex flex-col h-full shrink-0">
       {/* Header and Search */}
-      <div className="p-4 border-b border-[#E5E7EB]">
-        <h2 className="text-lg font-black text-[#111111] mb-3">Messages</h2>
+      <div className="p-4 border-b border-border">
+        <h2 className="text-lg font-black text-foreground mb-3">Messages</h2>
         <div className="relative">
-          <Search className="w-4 h-4 text-[#667085] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search suppliers & enquiries..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-xl focus:outline-none focus:border-primary"
           />
         </div>
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#E5E7EB]/60">
+      <div className="flex-1 overflow-y-auto divide-y divide-border/60">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-[#667085]">
+          <div className="p-8 text-center text-xs text-muted-foreground">
             No conversations match your search.
           </div>
         ) : (
@@ -57,7 +57,7 @@ export function ConversationList({
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
                 className={`w-full p-4 flex items-start gap-3 text-left transition-colors ${
-                  isActive ? 'bg-[#F7F8FC] border-l-4 border-l-[#2E3192]' : 'hover:bg-gray-50'
+                  isActive ? 'bg-background border-l-4 border-l-primary' : 'hover:bg-gray-50'
                 }`}
               >
                 <div className="relative shrink-0">
@@ -74,22 +74,22 @@ export function ConversationList({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-xs font-bold text-[#111111] truncate">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {conv.businessName}
                     </span>
-                    <span className="text-[10px] text-[#667085] shrink-0">
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {conv.lastMessageTime}
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#667085] line-clamp-1">{conv.lastMessage}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{conv.lastMessage}</p>
 
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] text-[#00AEEF] font-semibold">
+                    <span className="text-[10px] text-info font-semibold">
                       {conv.businessCity}
                     </span>
                     {conv.unreadCount > 0 && (
-                      <span className="bg-[#2E3192] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                      <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                         {conv.unreadCount}
                       </span>
                     )}

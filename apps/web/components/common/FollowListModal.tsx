@@ -85,13 +85,13 @@ export function FollowListModal({
 
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[85vh] z-10 animate-in zoom-in-95 duration-200">
         {/* Instagram-style Header */}
-        <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-white shrink-0">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-white shrink-0">
           <div className="flex-1 pr-2">
-            <h2 className="text-base sm:text-lg font-black text-[#111111] flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#2E3192]" />
+            <h2 className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
               <span>{title}</span>
             </h2>
-            {subtitle && <p className="text-xs text-[#667085] mt-0.5 truncate">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
@@ -103,15 +103,15 @@ export function FollowListModal({
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 py-2.5 bg-[#F7F8FC] border-b border-[#E5E7EB] shrink-0">
+        <div className="px-4 py-2.5 bg-background border-b border-border shrink-0">
           <div className="relative">
-            <Search className="w-4 h-4 text-[#667085] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${title.toLowerCase()}...`}
-              className="w-full pl-9 pr-8 py-2 bg-white border border-[#E5E7EB] rounded-xl text-xs text-[#111111] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#2E3192] transition-all"
+              className="w-full pl-9 pr-8 py-2 bg-white border border-border rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all"
             />
             {searchQuery && (
               <button
@@ -127,7 +127,7 @@ export function FollowListModal({
         {/* Followers / Following List */}
         <div className="flex-1 overflow-y-auto px-4 py-3 divide-y divide-gray-100 space-y-1">
           {filteredItems.length === 0 ? (
-            <div className="py-12 text-center text-xs text-[#667085]">
+            <div className="py-12 text-center text-xs text-muted-foreground">
               <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
               <p className="font-semibold text-gray-700">No {title.toLowerCase()} found</p>
               {searchQuery && (
@@ -154,14 +154,14 @@ export function FollowListModal({
                     <Avatar src={item.avatar} name={item.name} size="md" verified={item.verified} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs sm:text-sm font-bold text-[#111111] group-hover:text-[#2E3192] truncate transition-colors">
+                        <span className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary truncate transition-colors">
                           {item.name}
                         </span>
                         {item.verified && (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#00AEEF] fill-[#00AEEF]/20 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-info fill-info/20 shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-[#667085] truncate">
+                      <p className="text-[11px] text-muted-foreground truncate">
                         {item.category || item.businessType || 'B2B Enterprise'}
                         {item.city ? ` · ${item.city}` : ''}
                       </p>
@@ -176,7 +176,7 @@ export function FollowListModal({
                     <button
                       type="button"
                       onClick={() => handleMessage(item.id)}
-                      className="p-2 text-[#2E3192] bg-blue-50/80 hover:bg-blue-100 rounded-xl transition-colors"
+                      className="p-2 text-primary bg-blue-50/80 hover:bg-blue-100 rounded-xl transition-colors"
                       title={`Message ${item.name}`}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -188,7 +188,7 @@ export function FollowListModal({
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         isCurrentlyFollowing
                           ? 'bg-gray-100 text-gray-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-gray-200'
-                          : 'bg-[#2E3192] text-white hover:bg-[#242775] shadow-2xs'
+                          : 'bg-primary text-white hover:bg-primary-hover shadow-2xs'
                       }`}
                     >
                       {isCurrentlyFollowing ? 'Following' : '+ Follow'}
@@ -201,9 +201,9 @@ export function FollowListModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#E5E7EB] bg-[#F7F8FC] flex items-center justify-between text-[11px] text-[#667085] shrink-0">
+        <div className="px-5 py-3 border-t border-border bg-background flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
           <span>{filteredItems.length} accounts listed</span>
-          <button onClick={onClose} className="font-bold text-[#2E3192] hover:underline">
+          <button onClick={onClose} className="font-bold text-primary hover:underline">
             Done
           </button>
         </div>

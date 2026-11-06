@@ -43,7 +43,7 @@ export function MobileCreateModal() {
       badgeClass: 'bg-indigo-50 text-indigo-700 border border-indigo-100',
       description: 'Showcase physical items, wholesale inventory, MOQ & catalog specs',
       icon: Package,
-      iconBg: 'bg-gradient-to-br from-[#2E3192] to-[#4338CA]',
+      iconBg: 'bg-gradient-to-br from-primary to-primary-hover',
       path: '/create?tab=product',
     },
     {
@@ -52,7 +52,7 @@ export function MobileCreateModal() {
       badgeClass: 'bg-sky-50 text-sky-700 border border-sky-100',
       description: 'Highlight bespoke manufacturing, repairs, consulting or turnkey work',
       icon: Wrench,
-      iconBg: 'bg-gradient-to-br from-[#00AEEF] to-[#0284C7]',
+      iconBg: 'bg-gradient-to-br from-info to-info',
       path: '/create?tab=service',
     },
     {
@@ -61,7 +61,7 @@ export function MobileCreateModal() {
       badgeClass: 'bg-purple-50 text-purple-700 border border-purple-100',
       description: 'Post factory dispatch, milestones, photos, videos or attach catalog items',
       icon: Megaphone,
-      iconBg: 'bg-gradient-to-br from-[#4F46E5] to-[#6366F1]',
+      iconBg: 'bg-gradient-to-br from-primary to-accent',
       path: '/create?tab=post',
     },
     {
@@ -70,7 +70,7 @@ export function MobileCreateModal() {
       badgeClass: 'bg-pink-50 text-pink-700 border border-pink-100',
       description: 'Flash discounts, wholesale volume slabs, or seasonal clearance deals',
       icon: Percent,
-      iconBg: 'bg-gradient-to-br from-[#A3238E] to-[#BE185D]',
+      iconBg: 'bg-gradient-to-br from-highlight to-highlight-hover',
       path: '/create?tab=offer',
     },
   ];
@@ -98,14 +98,14 @@ export function MobileCreateModal() {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-xl font-black text-[#111111] tracking-tight">
+              <h2 className="text-xl font-black text-foreground tracking-tight">
                 Create on Supporters
               </h2>
-              <span className="w-6 h-6 rounded-full bg-blue-50 text-[#2E3192] flex items-center justify-center shadow-2xs">
-                <Zap className="w-3.5 h-3.5 fill-[#2E3192]" />
+              <span className="w-6 h-6 rounded-full bg-blue-50 text-primary flex items-center justify-center shadow-2xs">
+                <Zap className="w-3.5 h-3.5 fill-primary" />
               </span>
             </div>
-            <p className="text-xs text-[#667085] mt-1 leading-snug">
+            <p className="text-xs text-muted-foreground mt-1 leading-snug">
               Showcase your business to verified buyers and trade partners across India
             </p>
           </div>
@@ -121,16 +121,16 @@ export function MobileCreateModal() {
 
         {/* Unsaved Listing / Quick Resume Banner - ONLY rendered when draftListing is available */}
         {draftListing && (
-          <div className="mb-4 bg-[#F2F5FF] border border-[#D5E0FF] rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-200">
+          <div className="mb-4 bg-accent border border-accent rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-2xs animate-in fade-in duration-200">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-[#E0E8FF] text-[#2E3192] flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-accent text-primary flex items-center justify-center shrink-0 shadow-xs">
                 <FileEdit className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#2E3192] block leading-tight">
+                <span className="text-[10px] font-black uppercase tracking-wider text-primary block leading-tight">
                   UNSAVED LISTING
                 </span>
-                <p className="text-xs font-bold text-[#111111] truncate mt-0.5">
+                <p className="text-xs font-bold text-foreground truncate mt-0.5">
                   {draftListing.title || 'Untitled Draft'}
                 </p>
               </div>
@@ -145,7 +145,7 @@ export function MobileCreateModal() {
                       `/create?tab=${draftListing.type || 'product'}&draft=${draftListing.id}`,
                   )
                 }
-                className="px-3.5 py-1.5 bg-[#2E3192] hover:bg-[#242775] active:scale-95 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-xs transition-transform"
+                className="px-3.5 py-1.5 bg-primary hover:bg-primary-hover active:scale-95 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-xs transition-transform"
               >
                 <span>Resume</span>
                 <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -175,7 +175,7 @@ export function MobileCreateModal() {
               <button
                 key={option.title}
                 onClick={() => handleNavigate(option.path)}
-                className="w-full text-left p-3.5 bg-white hover:bg-gray-50/80 active:bg-gray-100/90 border border-[#E5E7EB] rounded-2xl flex items-start gap-3.5 shadow-2xs transition-all active:scale-[0.98] group"
+                className="w-full text-left p-3.5 bg-white hover:bg-gray-50/80 active:bg-gray-100/90 border border-border rounded-2xl flex items-start gap-3.5 shadow-2xs transition-all active:scale-[0.98] group"
               >
                 {/* Squircle Icon */}
                 <div
@@ -187,7 +187,7 @@ export function MobileCreateModal() {
                 {/* Content */}
                 <div className="flex-1 min-w-0 pt-0.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-[#111111] group-hover:text-[#2E3192] transition-colors">
+                    <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                       {option.title}
                     </span>
                     <span
@@ -196,7 +196,7 @@ export function MobileCreateModal() {
                       {option.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-[#667085] mt-1 leading-relaxed">
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     {option.description}
                   </p>
                 </div>
