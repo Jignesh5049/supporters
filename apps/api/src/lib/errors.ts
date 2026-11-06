@@ -28,6 +28,8 @@ export const ErrorCode = {
   SlugLocked: 'SLUG_LOCKED',
   ListingLimitReached: 'LISTING_LIMIT_REACHED',
   PostLimitReached: 'POST_LIMIT_REACHED',
+  RequirementLimitReached: 'REQUIREMENT_LIMIT_REACHED',
+  RequirementNotOpen: 'REQUIREMENT_NOT_OPEN',
   UploadIncomplete: 'UPLOAD_INCOMPLETE',
   UploadRejected: 'UPLOAD_REJECTED',
   Blocked: 'BLOCKED',
