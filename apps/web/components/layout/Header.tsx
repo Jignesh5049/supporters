@@ -50,9 +50,9 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/discover?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      router.push('/discover');
+      router.push('/search');
     }
   };
 
@@ -116,7 +116,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Mobile search button */}
           <Link
-            href="/discover"
+            href="/search"
             className="md:hidden p-2 text-[#667085] hover:text-[#2E3192] hover:bg-gray-100 rounded-full transition-colors"
             aria-label="Search"
           >
