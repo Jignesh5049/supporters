@@ -5,7 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLogout } from '@/features/auth/auth-api';
-import { CURRENT_USER } from '@/lib/mock-data';
+import { Button } from '@supporters/ui-web/components/button';
+import { Card } from '@supporters/ui-web/components/card';
+import { Badge } from '@supporters/ui-web/components/badge';
+import { Input } from '@supporters/ui-web/components/input';
+import { Label } from '@supporters/ui-web/components/label';
+import { Textarea } from '@supporters/ui-web/components/textarea';
 import {
   User,
   Shield,
@@ -23,6 +28,8 @@ import {
   Smartphone,
   Lock,
   Globe,
+  KeyRound,
+  Download,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -31,21 +38,21 @@ export default function SettingsPage() {
   const { openConfirmationModal, showToast, userBusiness, updateBusinessProfile } = useApp();
 
   const [activeSection, setActiveSection] = useState<
-    'account' | 'preferences' | 'privacy' | 'business' | 'subscription' | 'support' | 'legal'
+    'account' | 'preferences' | 'privacy' | 'security' | 'danger'
   >('account');
 
   // Form states
-  const [name, setName] = useState(CURRENT_USER.name);
-  const [email, setEmail] = useState(CURRENT_USER.email);
-  const [phone, setPhone] = useState(CURRENT_USER.phone);
-  const [bio, setBio] = useState(CURRENT_USER.bio);
+  const [name, setName] = useState('Jignesh Patel');
+  const [email, setEmail] = useState('jignesh@example.com');
+  const [phone, setPhone] = useState('+91 98765 43210');
+  const [bio, setBio] = useState('Founder & Industrial Manufacturer. Digital trade in India.');
   const [profileVisibility, setProfileVisibility] = useState('public');
   const [showPhoneOnCatalog, setShowPhoneOnCatalog] = useState(
-    userBusiness?.showPhone ?? CURRENT_USER.showPhone ?? true,
+    userBusiness?.showPhone ?? true,
   );
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [whatsappAlerts, setWhatsappAlerts] = useState(true);
-  const [language, setLanguage] = useState('English');
+  const [pushAlerts, setPushAlerts] = useState(true);
 
   const handleToggleShowPhone = (val: boolean) => {
     setShowPhoneOnCatalog(val);
@@ -60,7 +67,7 @@ export default function SettingsPage() {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Profile information updated successfully!', 'success');
+    showToast('Settings saved successfully!', 'success');
   };
 
   const handleLogout = () => {
@@ -88,420 +95,291 @@ export default function SettingsPage() {
   };
 
   const sections = [
-    { id: 'account', label: 'Account & Security', icon: User },
-    { id: 'preferences', label: 'Preferences & Alerts', icon: Bell },
+    { id: 'account', label: 'Account & Profile', icon: User },
+    { id: 'preferences', label: 'Alerts & Notifications', icon: Bell },
     { id: 'privacy', label: 'Privacy & Visibility', icon: Eye },
-    { id: 'business', label: 'Business Settings', icon: Building },
-    { id: 'subscription', label: 'Subscription & Billing', icon: Crown },
-    { id: 'support', label: 'Support & Assistance', icon: HelpCircle },
-    { id: 'legal', label: 'Legal & Policies', icon: FileText },
+    { id: 'security', label: 'Security & 2FA', icon: Lock },
+    { id: 'danger', label: 'Data & Account', icon: Shield },
   ];
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      {/* Header */}
-      <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-2xs space-y-3">
-        <div>
-          <h1 className="text-xl font-black text-[#111111]">Platform Settings</h1>
-          <p className="text-xs text-[#667085] mt-0.5">
-            Manage your account credentials, notifications, privacy preferences and business
-            parameters.
-          </p>
-        </div>
+    <div className="space-y-6 max-w-4xl mx-auto pb-16">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your personal profile, notification preferences, privacy, and account security.
+        </p>
       </div>
 
-      {/* 2-Column Settings Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        {/* Navigation Sidebar (4 cols) */}
-        <div className="md:col-span-4 bg-white border border-[#E5E7EB] rounded-2xl p-2 shadow-2xs space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Navigation Sidebar */}
+        <div className="space-y-1">
           {sections.map((s) => {
             const Icon = s.icon;
             const isActive = activeSection === s.id;
             return (
               <button
                 key={s.id}
-                onClick={() => setActiveSection(s.id as typeof activeSection)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                type="button"
+                onClick={() => setActiveSection(s.id as any)}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
                   isActive
-                    ? 'bg-[#2E3192] text-white shadow-xs'
-                    : 'text-[#111111] hover:bg-[#F7F8FC]'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#667085]'}`} />
-                  <span>{s.label}</span>
-                </div>
-                <ChevronRight
-                  className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#667085]'}`}
-                />
+                <Icon className="size-4 shrink-0" />
+                <span>{s.label}</span>
               </button>
             );
           })}
 
-          <div className="pt-2 mt-2 border-t border-[#E5E7EB]">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
+          <div className="pt-4 border-t border-border space-y-1">
+            <Link
+              href="/business/premium"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-primary hover:bg-muted transition-colors"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Log Out</span>
+              <div className="flex items-center gap-3">
+                <Crown className="size-4 text-primary" />
+                <span>Premium Plan</span>
+              </div>
+              <ChevronRight className="size-3 text-muted-foreground" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive-soft transition-colors cursor-pointer text-left"
+            >
+              <LogOut className="size-4" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
 
-        {/* Content Pane (8 cols) */}
-        <div className="md:col-span-8 bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-2xs space-y-6">
-          {/* SECTION 1: ACCOUNT */}
+        {/* Form Panel */}
+        <div className="md:col-span-3">
           {activeSection === 'account' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Account Information & Security
-              </h2>
+            <Card className="p-6 bg-card border-border rounded-2xl shadow-xs space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">Account Information</h2>
+                <p className="text-xs text-muted-foreground">Your primary contact and profile information.</p>
+              </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#111111] mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#111111] mb-1">
-                      Registered Phone
-                    </label>
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192]"
+                <div className="space-y-1.5">
+                  <Label htmlFor="sName" className="text-xs font-semibold">
+                    Full Name
+                  </Label>
+                  <Input
+                    id="sName"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">
-                    Professional Bio
-                  </label>
-                  <textarea
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sPhone" className="text-xs font-semibold">
+                      Mobile Number (Verified)
+                    </Label>
+                    <Input
+                      id="sPhone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      disabled
+                      className="opacity-70"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sEmail" className="text-xs font-semibold">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="sEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="sBio" className="text-xs font-semibold">
+                    Bio / About
+                  </Label>
+                  <Textarea
+                    id="sBio"
+                    rows={3}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    className="w-full px-3.5 py-2 text-xs border border-[#E5E7EB] rounded-xl focus:outline-none focus:border-[#2E3192] resize-none"
+                    maxLength={200}
                   />
                 </div>
 
                 <div className="pt-2 flex justify-end">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl shadow-xs transition-colors"
-                  >
+                  <Button type="submit" size="sm" className="shadow-xs">
                     Save Changes
-                  </button>
+                  </Button>
                 </div>
               </form>
-
-              {/* Password & 2FA */}
-              <div className="pt-4 border-t border-[#E5E7EB] space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#111111]">
-                  Security Credentials
-                </h3>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB]">
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-[#2E3192]" />
-                    <div>
-                      <p className="text-xs font-bold text-[#111111]">Account Password</p>
-                      <p className="text-[11px] text-[#667085]">Last modified 2 months ago</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => router.push('/forgot-password')}
-                    className="px-3 py-1.5 text-xs font-semibold text-[#2E3192] bg-white border border-[#E5E7EB] rounded-lg hover:bg-gray-50"
-                  >
-                    Change Password
-                  </button>
-                </div>
-              </div>
-
-              {/* Delete Account */}
-              <div className="pt-4 border-t border-rose-100 space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-700">
-                  Danger Zone
-                </h3>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-rose-50/50 border border-rose-200">
-                  <div>
-                    <p className="text-xs font-bold text-rose-900">Delete Account</p>
-                    <p className="text-[11px] text-rose-700">
-                      Permanently delete your profile and trade listings
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-2xs"
-                  >
-                    Delete Account
-                  </button>
-                </div>
-              </div>
-            </div>
+            </Card>
           )}
 
-          {/* SECTION 2: PREFERENCES */}
           {activeSection === 'preferences' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Preferences & Notifications
-              </h2>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-xs font-bold text-[#111111] mb-1">
-                    Platform Language
-                  </label>
-                  <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="w-full p-2 bg-[#F7F8FC] border border-[#E5E7EB] rounded-xl text-[#111111]"
-                  >
-                    <option value="English">English</option>
-                    <option value="Gujarati">Gujarati (ગુજરાતી)</option>
-                    <option value="Hindi">Hindi (हिन्दी)</option>
-                    <option value="Marathi">Marathi (मराठी)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <label className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
-                    <div>
-                      <span className="font-bold text-[#111111] block">Email Trade Digest</span>
-                      <span className="text-[#667085] text-[11px]">
-                        Receive daily enquiry summaries and verified quotes
-                      </span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailAlerts}
-                      onChange={(e) => setEmailAlerts(e.target.checked)}
-                      className="w-4 h-4 text-[#2E3192] rounded"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
-                    <div>
-                      <span className="font-bold text-[#111111] block">
-                        WhatsApp Immediate Lead Alerts
-                      </span>
-                      <span className="text-[#667085] text-[11px]">
-                        Instant notifications when buyers submit RFQ inquiries
-                      </span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={whatsappAlerts}
-                      onChange={(e) => setWhatsappAlerts(e.target.checked)}
-                      className="w-4 h-4 text-[#2E3192] rounded"
-                    />
-                  </label>
-                </div>
+            <Card className="p-6 bg-card border-border rounded-2xl shadow-xs space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">Alerts & Notifications</h2>
+                <p className="text-xs text-muted-foreground">Control how and when you receive buyer enquiry updates.</p>
               </div>
-            </div>
-          )}
 
-          {/* SECTION 3: PRIVACY */}
-          {activeSection === 'privacy' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Privacy & Discoverability
-              </h2>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <label className="block font-bold text-[#111111] mb-1">Profile Visibility</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 p-2.5 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value="public"
-                        checked={profileVisibility === 'public'}
-                        onChange={() => setProfileVisibility('public')}
-                      />
-                      <div>
-                        <span className="font-bold text-[#111111] block">Public (Recommended)</span>
-                        <span className="text-[#667085] text-[11px]">
-                          Visible to all buyers, search engines, and network members
-                        </span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center gap-2 p-2.5 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value="verified-only"
-                        checked={profileVisibility === 'verified-only'}
-                        onChange={() => setProfileVisibility('verified-only')}
-                      />
-                      <div>
-                        <span className="font-bold text-[#111111] block">
-                          Verified Businesses Only
-                        </span>
-                        <span className="text-[#667085] text-[11px]">
-                          Only KYC-verified companies can view your contact info
-                        </span>
-                      </div>
-                    </label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">WhatsApp Instant Alerts</p>
+                    <p className="text-[11px] text-muted-foreground">Receive new lead notifications immediately on WhatsApp.</p>
                   </div>
+                  <input
+                    type="checkbox"
+                    checked={whatsappAlerts}
+                    onChange={(e) => setWhatsappAlerts(e.target.checked)}
+                    className="size-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
                 </div>
 
-                <div className="pt-3 border-t border-[#E5E7EB]">
-                  <label className="flex items-center justify-between p-3.5 rounded-xl bg-[#F7F8FC] border border-[#E5E7EB] cursor-pointer">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#111111]">Show Number on Catalog</span>
-                        <span
-                          className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
-                            showPhoneOnCatalog
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-gray-200 text-gray-700'
-                          }`}
-                        >
-                          {showPhoneOnCatalog ? 'VISIBLE' : 'HIDDEN'}
-                        </span>
-                      </div>
-                      <span className="text-[#667085] text-[11px] block">
-                        Allow buyers to view your contact number ({phone || userBusiness?.phone})
-                        directly on your catalog storefront
-                      </span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={showPhoneOnCatalog}
-                      onChange={(e) => handleToggleShowPhone(e.target.checked)}
-                      className="w-4 h-4 text-[#2E3192] rounded cursor-pointer ml-3 shrink-0"
-                    />
-                  </label>
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">Push Notifications</p>
+                    <p className="text-[11px] text-muted-foreground">Browser web push alerts for new messages and quotes.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={pushAlerts}
+                    onChange={(e) => setPushAlerts(e.target.checked)}
+                    className="size-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">Email Summary & Invoices</p>
+                    <p className="text-[11px] text-muted-foreground">Weekly analytics digest and billing receipts.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={emailAlerts}
+                    onChange={(e) => setEmailAlerts(e.target.checked)}
+                    className="size-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
                 </div>
               </div>
-            </div>
+            </Card>
           )}
 
-          {/* SECTION 4: BUSINESS */}
-          {activeSection === 'business' && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Business Suite Configuration
-              </h2>
-              <p className="text-xs text-[#667085]">
-                Configure company legal info, GST credentials, manufacturing locations and bank
-                details for your supplier profile.
-              </p>
-              <Link
-                href="/business/manage"
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#2E3192] hover:bg-[#242775] rounded-xl transition-colors shadow-2xs"
-              >
-                <span>Open Dedicated Business Dashboard</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
-
-          {/* SECTION 5: SUBSCRIPTION */}
-          {activeSection === 'subscription' && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Supporters Premium
-              </h2>
-              <p className="text-xs text-[#667085]">
-                Your plan is currently active. Access invoice receipts and renewal settings.
-              </p>
-              <Link
-                href="/subscription"
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#00AEEF] hover:bg-[#0098d4] rounded-xl transition-colors shadow-2xs"
-              >
-                <span>View Full Subscription Portal</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
-
-          {/* SECTION 6: SUPPORT */}
-          {activeSection === 'support' && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Help & Assistance
-              </h2>
-              <div className="space-y-2">
-                <Link
-                  href="/help"
-                  className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 text-xs font-semibold text-[#111111]"
-                >
-                  <span>Help Center & FAQs</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
-                <Link
-                  href="/report-problem"
-                  className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 text-xs font-semibold text-rose-600"
-                >
-                  <span>Report a Problem or Abuse</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
+          {activeSection === 'privacy' && (
+            <Card className="p-6 bg-card border-border rounded-2xl shadow-xs space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">Privacy & Visibility</h2>
+                <p className="text-xs text-muted-foreground">Manage your contact disclosure and search indexation preferences.</p>
               </div>
-            </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">Show Phone on Storefront</p>
+                    <p className="text-[11px] text-muted-foreground">Allow prospective wholesale buyers to view and call directly.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showPhoneOnCatalog}
+                    onChange={(e) => handleToggleShowPhone(e.target.checked)}
+                    className="size-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">Search Engine Indexing</p>
+                    <p className="text-[11px] text-muted-foreground">Allow your business listing to be discovered on Google and Bing.</p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    Enabled for Listings
+                  </Badge>
+                </div>
+              </div>
+            </Card>
           )}
 
-          {/* SECTION 7: LEGAL */}
-          {activeSection === 'legal' && (
-            <div className="space-y-3">
-              <h2 className="text-base font-bold text-[#111111] pb-3 border-b border-[#E5E7EB]">
-                Legal & Governance Documents
-              </h2>
-              <div className="space-y-2 text-xs">
-                <Link
-                  href="/privacy"
-                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
-                >
-                  <span>Privacy Policy</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
-                <Link
-                  href="/terms"
-                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
-                >
-                  <span>Terms & Conditions</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
-                <Link
-                  href="/refund-policy"
-                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
-                >
-                  <span>Refund & Cancellation Policy</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
-                <Link
-                  href="/community-guidelines"
-                  className="flex justify-between p-3 border border-[#E5E7EB] rounded-xl hover:bg-gray-50 font-medium"
-                >
-                  <span>Community & Fair Trade Guidelines</span>
-                  <ChevronRight className="w-4 h-4 text-[#667085]" />
-                </Link>
+          {activeSection === 'security' && (
+            <Card className="p-6 bg-card border-border rounded-2xl shadow-xs space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">Security & Passwords</h2>
+                <p className="text-xs text-muted-foreground">Manage session security and two-factor authentication.</p>
               </div>
-            </div>
+
+              <div className="space-y-4">
+                <div className="p-4 border border-border rounded-xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="size-4 text-primary" />
+                    <h3 className="text-xs font-bold text-foreground">Two-Factor Authentication (TOTP)</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Add an extra layer of protection using authenticator apps like Google Authenticator or 1Password.
+                  </p>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => showToast('TOTP configuration initiated.', 'info')}>
+                    Enable Authenticator App
+                  </Button>
+                </div>
+
+                <div className="p-4 border border-border rounded-xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="size-4 text-info" />
+                    <h3 className="text-xs font-bold text-foreground">Active Session Devices</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    You are currently signed in from this browser. CloudFront security forwards verified HttpOnly tokens.
+                  </p>
+                  <Button variant="ghost" size="sm" className="text-xs text-destructive hover:bg-destructive-soft" onClick={handleLogout}>
+                    Sign Out All Other Sessions
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {activeSection === 'danger' && (
+            <Card className="p-6 bg-card border-border rounded-2xl shadow-xs space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">Data Export & Account Closure</h2>
+                <p className="text-xs text-muted-foreground">Exercise GDPR / DPDP rights to export your trade history or delete your account.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-xl">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-foreground">Download Account Data</p>
+                    <p className="text-[11px] text-muted-foreground">Receive a complete ZIP archive of your listings, orders, and chats.</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={() => showToast('Data export requested. You will receive an email download link within 24 hours.', 'info')}>
+                    <Download className="size-3.5" />
+                    <span>Request Data Export</span>
+                  </Button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-destructive/30 bg-destructive-soft rounded-xl">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-destructive">Permanently Delete Account</p>
+                    <p className="text-[11px] text-muted-foreground">Irreversibly delete your profile, listings, and all trade records.</p>
+                  </div>
+                  <Button variant="destructive" size="sm" className="gap-1.5 text-xs shrink-0" onClick={handleDeleteAccount}>
+                    <Trash2 className="size-3.5" />
+                    <span>Delete Account</span>
+                  </Button>
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       </div>
