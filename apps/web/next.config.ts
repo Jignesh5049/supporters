@@ -10,8 +10,17 @@ const nextConfig: NextConfig = {
   // Development only: serve the API on the app's origin, as CloudFront does in production
   // (`/v1/*` goes to the API), so the first-party `__Host-` cookies work on localhost.
   async rewrites() {
-    return isDev ? [{ source: '/v1/:path*', destination: `${apiInternalUrl}/v1/:path*` }] : [];
+    return isDev
+      ? [
+          // Socket.IO only answers on `/v1/ws/` (with the slash), which the catch-all drops.
+          { source: '/v1/ws/', destination: `${apiInternalUrl}/v1/ws/` },
+          { source: '/v1/:path*', destination: `${apiInternalUrl}/v1/:path*` },
+        ]
+      : [];
   },
+  // Development only, for the chat socket above: Next would 308 `/v1/ws/` to `/v1/ws` before
+  // any rewrite runs. In production `/v1/*` never reaches Next, so the default stays.
+  skipTrailingSlashRedirect: isDev,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

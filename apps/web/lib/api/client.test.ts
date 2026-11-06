@@ -40,6 +40,17 @@ describe('CSRF header', () => {
     expect(init?.body).toBe('{"a":1}');
   });
 
+  it('sends extra headers such as Idempotency-Key, but never lets them replace CSRF', async () => {
+    const { client, fetchMock } = setup(() => new Response(null, { status: 204 }));
+    await client.request('/v1/things', {
+      method: 'POST',
+      headers: { 'idempotency-key': 'key-1', 'x-csrf-token': 'forged' },
+    });
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(headerOf(init, 'idempotency-key')).toBe('key-1');
+    expect(headerOf(init, 'x-csrf-token')).toBe('csrf-1');
+  });
+
   it('does not send it on reads', async () => {
     const { client, fetchMock } = setup(() => json(200, { ok: true }));
     await expect(client.request('/v1/things')).resolves.toEqual({ ok: true });
