@@ -2,7 +2,10 @@ import type { Redis } from 'ioredis';
 import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
+import type { AdminCategoriesService } from '../modules/admin/admin-categories.service';
+import type { AdminReportsService } from '../modules/admin/admin-reports.service';
 import type { AdminUsersService } from '../modules/admin/admin-users.service';
+import type { AdminVerificationsService } from '../modules/admin/admin-verifications.service';
 import type { AuditLogService } from '../modules/admin/audit.service';
 import type { AuthService } from '../modules/auth/auth.service';
 import type { BlocksService } from '../modules/blocks/blocks.service';
@@ -65,6 +68,9 @@ declare module 'fastify' {
       admin: {
         users: AdminUsersService;
         auditLogs: AuditLogService;
+        verifications: AdminVerificationsService;
+        reports: AdminReportsService;
+        categories: AdminCategoriesService;
       };
     };
   }

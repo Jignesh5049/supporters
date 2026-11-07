@@ -1,4 +1,4 @@
-import type { ReportTargetType } from '@supporters/shared';
+import { REPORT_LIMITS, type ReportTargetType } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { PUBLIC_OWNER } from '../businesses/businesses.service';
 import { PUBLIC_POST } from '../posts/posts.service';
@@ -25,7 +25,23 @@ export interface ReportTarget {
   unhide(tx: Tx, id: string): Promise<boolean>;
   /** Hidden for review once enough different people report it (product spec, Moderation). */
   isAutoHidden: boolean;
+  /** What the admin queue shows for each id that still exists (deleted or hidden included). */
+  describe(ids: string[]): Promise<Map<string, TargetPreview>>;
 }
+
+/** The admin queue's view of a reported item. */
+export interface TargetPreview {
+  excerpt: string | null;
+  isHidden: boolean;
+  isDeleted: boolean;
+  postId: string | null;
+  businessSlug: string | null;
+}
+
+const excerpt = (text: string) => text.slice(0, REPORT_LIMITS.excerpt.max) || null;
+
+const byId = <Row extends { id: string }>(rows: Row[], toPreview: (row: Row) => TargetPreview) =>
+  new Map(rows.map((row) => [row.id, toPreview(row)]));
 
 /** Sets or clears `hidden_at` with a guard, so only the call that changes it counts. */
 const toggle = (
@@ -54,6 +70,26 @@ export class ReportTargets {
         });
         return post ? { subjectUserId: post.business.ownerUserId } : null;
       },
+      describe: async (ids) =>
+        byId(
+          await prisma.post.findMany({
+            where: { id: { in: ids } },
+            select: {
+              id: true,
+              body: true,
+              hiddenAt: true,
+              deletedAt: true,
+              business: { select: { slug: true } },
+            },
+          }),
+          (row) => ({
+            excerpt: excerpt(row.body),
+            isHidden: row.hiddenAt !== null,
+            isDeleted: row.deletedAt !== null,
+            postId: row.id,
+            businessSlug: row.business.slug,
+          }),
+        ),
       hide: (tx, id) => toggle((args) => tx.post.updateMany(args)).hide(id),
       unhide: (tx, id) => toggle((args) => tx.post.updateMany(args)).unhide(id),
     });
@@ -73,6 +109,27 @@ export class ReportTargets {
         });
         return comment ? { subjectUserId: comment.userId } : null;
       },
+      describe: async (ids) =>
+        byId(
+          await prisma.comment.findMany({
+            where: { id: { in: ids } },
+            select: {
+              id: true,
+              body: true,
+              postId: true,
+              hiddenAt: true,
+              deletedAt: true,
+              post: { select: { business: { select: { slug: true } } } },
+            },
+          }),
+          (row) => ({
+            excerpt: excerpt(row.body),
+            isHidden: row.hiddenAt !== null,
+            isDeleted: row.deletedAt !== null,
+            postId: row.postId,
+            businessSlug: row.post.business.slug,
+          }),
+        ),
       hide: (tx, id) => toggle((args) => tx.comment.updateMany(args)).hide(id),
       unhide: (tx, id) => toggle((args) => tx.comment.updateMany(args)).unhide(id),
     });
@@ -94,6 +151,21 @@ export class ReportTargets {
         });
         return message ? { subjectUserId: message.senderUserId } : null;
       },
+      // Admins read only the reported message, never the rest of the thread.
+      describe: async (ids) =>
+        byId(
+          await prisma.message.findMany({
+            where: { id: { in: ids } },
+            select: { id: true, body: true, hiddenAt: true },
+          }),
+          (row) => ({
+            excerpt: excerpt(row.body),
+            isHidden: row.hiddenAt !== null,
+            isDeleted: false,
+            postId: null,
+            businessSlug: null,
+          }),
+        ),
       hide: (tx, id) => toggle((args) => tx.message.updateMany(args)).hide(id),
       unhide: (tx, id) => toggle((args) => tx.message.updateMany(args)).unhide(id),
     });
@@ -108,6 +180,20 @@ export class ReportTargets {
         });
         return business ? { subjectUserId: business.ownerUserId } : null;
       },
+      describe: async (ids) =>
+        byId(
+          await prisma.business.findMany({
+            where: { id: { in: ids } },
+            select: { id: true, name: true, slug: true, hiddenAt: true },
+          }),
+          (row) => ({
+            excerpt: row.name,
+            isHidden: row.hiddenAt !== null,
+            isDeleted: false,
+            postId: null,
+            businessSlug: row.slug,
+          }),
+        ),
       hide: (tx, id) => toggle((args) => tx.business.updateMany(args)).hide(id),
       unhide: (tx, id) => toggle((args) => tx.business.updateMany(args)).unhide(id),
     });
