@@ -32,6 +32,8 @@ import {
 } from './modules/auth/passwords';
 import { SessionService } from './modules/auth/session.service';
 import { ConsoleSmsSender, type SmsSender } from './modules/auth/sms';
+import { discoverRoutes } from './modules/discover/discover.routes';
+import { DiscoverService } from './modules/discover/discover.service';
 import { feedRoutes } from './modules/feed/feed.routes';
 import { FeedService } from './modules/feed/feed.service';
 import { followsRoutes } from './modules/follows/follows.routes';
@@ -49,6 +51,10 @@ import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ProductsService } from './modules/products/products.service';
 import { savesRoutes } from './modules/saves/saves.routes';
+import { createMeili } from './modules/search/meili';
+import { SearchCards } from './modules/search/search.cards';
+import { searchRoutes } from './modules/search/search.routes';
+import { SearchService } from './modules/search/search.service';
 import { SaveLookup, SavesService } from './modules/saves/saves.service';
 import { servicesRoutes } from './modules/services/services.routes';
 import { type MediaProcessor, PassthroughMediaProcessor } from './modules/uploads/media-processor';
@@ -184,6 +190,7 @@ export async function buildApp(options: BuildAppOptions) {
   const services = new ServicesService(app.prisma, businesses, categories, places, listingWriter);
   const posts = new PostsService(app.prisma, businesses, uploads, new SaveLookup(app.prisma));
   const blocks = new BlocksService(app.prisma);
+  const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
@@ -205,6 +212,8 @@ export async function buildApp(options: BuildAppOptions) {
     enquiries: new EnquiriesService(app.prisma, businesses, chat, blocks, app.limiter, app.valkey),
     notifications: new NotificationsService(app.prisma),
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
+    search: new SearchService(createMeili(env.MEILI_URL, env.MEILI_SEARCH_KEY), searchCards),
+    discover: new DiscoverService(app.prisma, searchCards),
   });
 
   await app.register(realtimePlugin);
@@ -229,6 +238,8 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(blocksRoutes);
       await v1.register(notificationsRoutes);
       await v1.register(pushDevicesRoutes);
+      await v1.register(searchRoutes);
+      await v1.register(discoverRoutes);
     },
     { prefix: '/v1' },
   );
