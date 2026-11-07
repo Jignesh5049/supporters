@@ -17,7 +17,13 @@ import type { MediaProcessor } from './media-processor';
 import type { ObjectStorage } from './storage';
 
 /** Served by media.<domain>; chat/ and kyc/ never are (backend spec, Security: Uploads). */
-const PUBLIC_PURPOSES: ReadonlySet<UploadPurpose> = new Set(['avatar', 'cover', 'listing', 'post']);
+const PUBLIC_PURPOSES: ReadonlySet<UploadPurpose> = new Set([
+  'avatar',
+  'cover',
+  'listing',
+  'post',
+  'requirement',
+]);
 
 export type MediaUrl = (key: string) => string | null;
 
