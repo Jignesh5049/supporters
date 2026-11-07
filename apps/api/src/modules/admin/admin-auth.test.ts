@@ -1,7 +1,7 @@
 import { ADMIN_LIMITS, RATE_LIMITS } from '@supporters/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { codeAt, adminBrowser, enrolAdmin, freshCode } from '../../test/admin';
-import { type ReferenceData, call, referenceData, signUpOwner } from '../../test/catalog';
+import { type ReferenceData, referenceData, signUpOwner } from '../../test/catalog';
 import {
   Browser,
   PASSWORD,
