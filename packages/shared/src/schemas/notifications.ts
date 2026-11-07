@@ -36,6 +36,8 @@ export const NotificationType = {
   PostLiked: 'post.liked',
   PostCommented: 'post.commented',
   CommentReplied: 'comment.replied',
+  /** Someone reviewed the recipient's business (batched per business). */
+  ReviewNew: 'review.new',
   /** A new buyer requirement matches the recipient's business (top 50 verified only). */
   RequirementMatched: 'requirement.matched',
   /** A business quoted on the recipient's buyer requirement. */
