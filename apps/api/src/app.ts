@@ -10,6 +10,9 @@ import {
 import type { Redis } from 'ioredis';
 import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
+import { AdminUsersService } from './modules/admin/admin-users.service';
+import { adminRoutes } from './modules/admin/admin.routes';
+import { AuditLogService } from './modules/admin/audit.service';
 import { authRoutes } from './modules/auth/auth.routes';
 import { blocksRoutes } from './modules/blocks/blocks.routes';
 import { BlocksService } from './modules/blocks/blocks.service';
@@ -192,7 +195,15 @@ export async function buildApp(options: BuildAppOptions) {
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
-    auth: new AuthService(app.prisma, app.valkey, app.limiter, otp, sessions, breachChecker),
+    auth: new AuthService(
+      app.prisma,
+      app.valkey,
+      app.limiter,
+      otp,
+      sessions,
+      breachChecker,
+      env.TOTP_ENCRYPTION_KEY,
+    ),
     users: new UsersService(app.prisma),
     categories,
     places,
@@ -212,6 +223,10 @@ export async function buildApp(options: BuildAppOptions) {
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
     verification: new VerificationService(app.prisma, businesses, uploads),
     reports: new ReportsService(app.prisma, new ReportTargets(app.prisma), app.limiter),
+    admin: {
+      users: new AdminUsersService(app.prisma, sessions),
+      auditLogs: new AuditLogService(app.prisma),
+    },
   });
 
   await app.register(realtimePlugin);
@@ -238,6 +253,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(pushDevicesRoutes);
       await v1.register(verificationRoutes);
       await v1.register(reportsRoutes);
+      await v1.register(adminRoutes, { prefix: '/admin' });
     },
     { prefix: '/v1' },
   );

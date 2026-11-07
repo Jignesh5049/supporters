@@ -2,6 +2,8 @@ import type { Redis } from 'ioredis';
 import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
+import type { AdminUsersService } from '../modules/admin/admin-users.service';
+import type { AuditLogService } from '../modules/admin/audit.service';
 import type { AuthService } from '../modules/auth/auth.service';
 import type { BlocksService } from '../modules/blocks/blocks.service';
 import type { ChatService } from '../modules/chat/chat.service';
@@ -32,7 +34,10 @@ declare module 'fastify' {
     valkey: Redis;
     limiter: SlidingWindowLimiter;
     accessTokens: {
-      sign(claims: Pick<AccessClaims, 'sub' | 'sid' | 'role'>): string;
+      sign(
+        claims: Pick<AccessClaims, 'sub' | 'sid' | 'role'>,
+        options?: { expiresInSec?: number; mfa?: boolean },
+      ): string;
       verify(token: string): AccessClaims | null;
     };
     services: {
@@ -57,6 +62,10 @@ declare module 'fastify' {
       pushDevices: PushDevicesService;
       verification: VerificationService;
       reports: ReportsService;
+      admin: {
+        users: AdminUsersService;
+        auditLogs: AuditLogService;
+      };
     };
   }
 
@@ -68,7 +77,12 @@ declare module 'fastify' {
   }
 
   interface FastifyContextConfig {
-    /** `user`: reject guests with 401 before the body is parsed. */
-    auth?: 'user';
+    /**
+     * `user`: reject guests with 401 before the body is parsed. `admin`: an admin
+     * session that passed TOTP, or 404 (set on every `/v1/admin/*` route).
+     */
+    auth?: 'user' | 'admin';
+    /** The admin sign-in route, the one admin route open to guests. */
+    isAdminSignIn?: boolean;
   }
 }

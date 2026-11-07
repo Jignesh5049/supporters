@@ -2,7 +2,7 @@ import jwt from '@fastify/jwt';
 import type { FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { z } from 'zod';
-import { unauthenticated } from '../lib/errors';
+import { notFound, unauthenticated } from '../lib/errors';
 import { COOKIE, isHeaderMode } from '../modules/auth/auth.cookies';
 import { ACCESS_TOKEN_TTL_SEC, revokedSessionKey } from '../modules/auth/auth.constants';
 
@@ -10,6 +10,8 @@ const accessClaimsSchema = z.object({
   sub: z.uuid(),
   sid: z.uuid(),
   role: z.enum(['user', 'admin']),
+  /** Set only on admin tokens issued after password plus TOTP. */
+  mfa: z.literal(true).optional(),
   iat: z.number(),
   exp: z.number(),
 });
@@ -72,10 +74,41 @@ export const authPlugin = fp(
     }
 
     app.decorate('accessTokens', {
-      sign: (claims: { sub: string; sid: string; role: AccessClaims['role'] }) =>
-        app.jwt.sign(claims),
+      sign: (
+        claims: { sub: string; sid: string; role: AccessClaims['role'] },
+        options: { expiresInSec?: number; mfa?: boolean } = {},
+      ) =>
+        app.jwt.sign(
+          options.mfa ? { ...claims, mfa: true } : claims,
+          options.expiresInSec ? { expiresIn: options.expiresInSec } : {},
+        ),
       verify: verifyAccessToken,
     });
+
+    /**
+     * The separate admin guard (backend spec, OWASP API5): an admin token that
+     * passed TOTP, for a session still live in the database (8 h, not revoked)
+     * of an account that is still an active admin. Checked against the database
+     * on every admin request, so a revocation can't be outlived by Valkey.
+     * Anyone else gets a 404, so the admin surface doesn't reveal itself.
+     */
+    async function requireAdmin(request: FastifyRequest) {
+      const claims = request.accessClaims();
+      if (!request.auth || request.auth.role !== 'admin' || claims?.mfa !== true) {
+        throw notFound();
+      }
+      const session = await app.prisma.session.findFirst({
+        where: {
+          id: request.auth.sessionId,
+          userId: request.auth.userId,
+          revokedAt: null,
+          expiresAt: { gt: new Date() },
+          user: { role: 'admin', status: 'active' },
+        },
+        select: { id: true },
+      });
+      if (!session) throw notFound();
+    }
 
     app.decorateRequest('auth', null);
     app.decorateRequest('accessClaims', function (this: FastifyRequest) {
@@ -93,9 +126,11 @@ export const authPlugin = fp(
         request.auth = { userId: claims.sub, sessionId: claims.sid, role: claims.role };
         request.log = request.log.child({ userId: claims.sub });
       }
-      if (request.routeOptions.config.auth === 'user' && !request.auth) throw unauthenticated();
+      const required = request.routeOptions.config.auth;
+      if (required === 'user' && !request.auth) throw unauthenticated();
+      if (required === 'admin') await requireAdmin(request);
       return payload;
     });
   },
-  { name: 'auth', dependencies: ['env', 'valkey'] },
+  { name: 'auth', dependencies: ['env', 'valkey', 'prisma'] },
 );

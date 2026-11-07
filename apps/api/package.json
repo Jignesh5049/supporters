@@ -14,6 +14,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "keys:generate": "tsx scripts/generate-keys.ts",
+    "admin:create": "tsx --env-file=.env scripts/create-admin.ts",
     "storage:init": "tsx --env-file=.env scripts/init-storage.ts",
     "typecheck": "prisma generate && tsc --noEmit",
     "lint": "prisma generate && eslint .",

@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { ADMIN_LIMITS } from '@supporters/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { openWith, randomToken, sealWith, sha256 } from '../../lib/crypto';
 import { AppError, ErrorCode } from '../../lib/errors';
 import {
-  ACCESS_TOKEN_TTL_SEC,
   REFRESH_GRACE_SEC,
+  REVOKED_MARKER_TTL_SEC,
   REFRESH_TOKEN_ABSOLUTE_TTL_SEC,
   REFRESH_TOKEN_TTL_SEC,
   revokedSessionKey,
@@ -67,6 +68,33 @@ export class SessionService {
       refreshToken,
       refreshExpiresAt: session.expiresAt,
     };
+  }
+
+  /**
+   * An admin session (backend spec, Security: Admin): it ends 8 hours after
+   * sign-in and is never refreshed. Its refresh token hash is random and never
+   * handed out, so `rotate` can't extend it; the admin guard checks the row on
+   * every admin request.
+   */
+  async createAdmin(
+    user: { id: string },
+    meta: ClientMeta,
+    db: Prisma.TransactionClient,
+  ): Promise<{ sessionId: string; expiresAt: Date }> {
+    const expiresAt = addSeconds(new Date(), ADMIN_LIMITS.sessionTtlSec);
+    const session = await db.session.create({
+      data: {
+        userId: user.id,
+        familyId: randomUUID(),
+        refreshTokenHash: sha256(randomToken()),
+        expiresAt,
+        absoluteExpiresAt: expiresAt,
+        ip: meta.ip,
+        userAgent: meta.userAgent?.slice(0, 512) ?? null,
+      },
+      select: { id: true },
+    });
+    return { sessionId: session.id, expiresAt };
   }
 
   /**
@@ -233,8 +261,8 @@ export class SessionService {
   private async markRevoked(ids: string[]) {
     const pipeline = this.valkey.multi();
     for (const id of ids) {
-      // Outlives any access token issued for the session, plus clock-skew margin.
-      pipeline.set(revokedSessionKey(id), '1', 'EX', ACCESS_TOKEN_TTL_SEC + 60);
+      // Outlives any access token issued for the session, admin ones included.
+      pipeline.set(revokedSessionKey(id), '1', 'EX', REVOKED_MARKER_TTL_SEC);
       // Open sockets of the session disconnect at once (backend spec, Realtime chat).
       pipeline.publish(SESSION_REVOKED_CHANNEL, id);
     }

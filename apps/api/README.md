@@ -66,6 +66,13 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `POST /v1/reports` (`targetType` post, comment, message or business, `targetId`, `reason`, optional `details`), 20 a day. Reporting the same target again returns the first report (200). Messages can only be reported by the two ends of the thread, and nobody can report their own content. Review and requirement reports answer 404 until those modules register a target in `ReportTargets`.
 - Moderation hides by setting `hidden_at` on posts, comments, messages or businesses. Hidden rows drop out of every public read (`PUBLIC_POST`, `PUBLIC_OWNER`, `PUBLIC_LISTING`, comment lists, chat). A post or comment with 5 open reports from different people is hidden for admin review, and its author gets `content.hidden`.
 
+## Admin in short
+
+- Admins exist only through `pnpm admin:create --phone <+91...> --name <name>` (hidden password prompt). It prints a TOTP enrolment link once for the authenticator app; the secret is stored AES-256-GCM-encrypted with `TOTP_ENCRYPTION_KEY`. `--reset-totp --phone <+91...>` replaces a lost authenticator and signs the admin out everywhere. Admins use a separate account and can't sign in at `/v1/auth/login`.
+- `POST /v1/admin/auth/login` `{ identifier, password, code }` (web cookies only) gives an 8-hour `__Host-at` and no refresh token. Each code works once; failures count toward the normal login lockout.
+- Every other `/v1/admin/*` route is behind `auth: 'admin'`: a token that passed TOTP, for a session that is live in the database, of an active admin. Anyone else gets 404. Responses are `no-store` and `noindex`. Every admin action, and every admin read, is written to `audit_logs`, which is append-only (a trigger refuses UPDATE and DELETE).
+- Suspending a user revokes all their sessions at once (their access tokens stop working immediately) and takes their business, posts and listings out of public reads.
+
 ## Worker and delivery
 
 - `pnpm dev:worker` runs `src/worker.ts` (same image as the API, different command: `node dist/worker.js`). It relays the outbox to BullMQ on Valkey, runs the `notifications`, `push`, `email` and `cron` queues (5 attempts, exponential backoff, then the `dead-letter` queue), and cleans up nightly at 03:00 IST (notifications after 90 days, processed outbox rows after 7).

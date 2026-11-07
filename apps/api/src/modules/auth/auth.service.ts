@@ -1,4 +1,5 @@
 import {
+  type AdminLoginInput,
   CURRENT_POLICY_VERSION,
   type LoginInput,
   type Me,
@@ -13,6 +14,10 @@ import type { PrismaClient, User } from '../../generated/prisma/client';
 import { AppError, ErrorCode, isUniqueViolation, rateLimited } from '../../lib/errors';
 import type { SlidingWindowLimiter } from '../../lib/sliding-window';
 import type { Redis } from 'ioredis';
+import { openSecret } from '../../lib/secret-box';
+import { TOTP, matchTotp } from '../../lib/totp';
+import { writeAudit } from '../admin/audit.service';
+import { usedTotpKey } from './auth.constants';
 import { toMe } from '../users/users.service';
 import { recordEvent } from '../notifications/outbox';
 import type { OtpService } from './otp.service';
@@ -31,6 +36,9 @@ export interface SignedIn {
 
 const invalidCredentials = () =>
   new AppError(401, ErrorCode.InvalidCredentials, 'Incorrect mobile number, email or password');
+/** One answer for every admin sign-in failure, so none can be told apart. */
+const invalidAdminCredentials = () =>
+  new AppError(401, ErrorCode.InvalidCredentials, 'Incorrect sign-in details');
 
 export class AuthService {
   constructor(
@@ -40,6 +48,8 @@ export class AuthService {
     private readonly otp: OtpService,
     private readonly sessions: SessionService,
     private readonly breachChecker: BreachedPasswordChecker,
+    /** Opens admin TOTP secrets; admin sign-in is off without it. */
+    private readonly totpKey?: Buffer,
   ) {}
 
   /**
@@ -99,6 +109,82 @@ export class AuthService {
    * and the same lockout as real ones.
    */
   async login(input: LoginInput, meta: ClientMeta): Promise<SignedIn> {
+    const { user } = await this.checkPassword(input, meta);
+    if (user.status === 'suspended') {
+      throw new AppError(403, ErrorCode.AccountSuspended, 'This account is suspended');
+    }
+    if (user.role === 'admin') {
+      // Admins sign in only at /v1/admin/auth/login, with TOTP (backend spec, Security: Admin).
+      throw new AppError(403, ErrorCode.MfaRequired, 'Use the admin sign-in');
+    }
+
+    // The new-login security alert commits with the session (product spec, Notifications).
+    const session = await this.prisma.$transaction(async (tx) => {
+      const issued = await this.sessions.create(user, meta, tx);
+      await recordEvent(tx, 'security.login', { userId: user.id, sessionId: issued.sessionId });
+      return issued;
+    });
+    return { user: toMe(user), session };
+  }
+
+  /**
+   * Admin sign-in (backend spec, Security: Admin): password plus a TOTP code
+   * at every login, with the same per-IP limit and account lockout as `login`.
+   * A non-admin account, a wrong code and a reused code all get the same 401
+   * and count as a failure. The session lasts 8 hours and has no refresh.
+   */
+  async loginAdmin(
+    input: AdminLoginInput,
+    meta: ClientMeta,
+  ): Promise<{ user: Me; session: { sessionId: string; expiresAt: Date } }> {
+    if (!this.totpKey) {
+      throw new AppError(503, ErrorCode.ServiceUnavailable, 'Admin sign-in is not configured');
+    }
+    const { user, recordFailure } = await this.checkPassword(input, meta).catch(
+      (error: unknown) => {
+        throw error instanceof AppError && error.code === ErrorCode.InvalidCredentials
+          ? invalidAdminCredentials()
+          : error;
+      },
+    );
+    const secret =
+      user.role === 'admin' && user.totpSecret
+        ? openSecret(this.totpKey, user.totpSecret, user.id)
+        : null;
+    const step = secret ? matchTotp(secret, input.code) : null;
+    // A code works once: the step is claimed for longer than the ±1 step it stays valid.
+    const isFresh =
+      step !== null &&
+      (await this.valkey.set(usedTotpKey(user.id, step), '1', 'EX', TOTP.stepSec * 4, 'NX')) ===
+        'OK';
+    if (user.role !== 'admin' || !isFresh) {
+      await recordFailure();
+      throw invalidAdminCredentials();
+    }
+    if (user.status !== 'active') {
+      throw new AppError(403, ErrorCode.AccountSuspended, 'This account is suspended');
+    }
+
+    const session = await this.prisma.$transaction(async (tx) => {
+      const issued = await this.sessions.createAdmin(user, meta, tx);
+      await recordEvent(tx, 'security.login', { userId: user.id, sessionId: issued.sessionId });
+      await writeAudit(
+        tx,
+        { userId: user.id, ip: meta.ip, userAgent: meta.userAgent?.slice(0, 512) ?? null },
+        { action: 'admin.login', targetType: 'session', targetId: issued.sessionId },
+      );
+      return issued;
+    });
+    return { user: toMe(user), session };
+  }
+
+  /**
+   * 5 attempts per minute per IP; 10 failures per hour per account, then a 15
+   * minute lockout. Unknown accounts get the same error, the same argon2 work
+   * and the same lockout as real ones. Returns the user and a way to count a
+   * later failure (a wrong TOTP code) against the same account.
+   */
+  private async checkPassword(input: { identifier: string; password: string }, meta: ClientMeta) {
     const perIp = await this.limiter.hit(
       `login:ip:${meta.ip}`,
       RATE_LIMITS.loginPerIp.max,
@@ -120,25 +206,14 @@ export class AuthService {
       throw rateLimited(RATE_LIMITS.loginLockoutSec);
     }
 
-    if (!(await verifyPassword(user?.passwordHash, input.password)) || !user) {
+    const recordFailure = async () => {
       await this.limiter.hit(`login:fail:${accountKey}`, max, windowSec);
+    };
+    if (!(await verifyPassword(user?.passwordHash, input.password)) || !user) {
+      await recordFailure();
       throw invalidCredentials();
     }
-    if (user.status === 'suspended') {
-      throw new AppError(403, ErrorCode.AccountSuspended, 'This account is suspended');
-    }
-    if (user.role === 'admin') {
-      // Admin sign-in needs TOTP and 8-hour sessions without refresh; that flow ships separately.
-      throw new AppError(403, ErrorCode.MfaRequired, 'Use the admin sign-in');
-    }
-
-    // The new-login security alert commits with the session (product spec, Notifications).
-    const session = await this.prisma.$transaction(async (tx) => {
-      const issued = await this.sessions.create(user, meta, tx);
-      await recordEvent(tx, 'security.login', { userId: user.id, sessionId: issued.sessionId });
-      return issued;
-    });
-    return { user: toMe(user), session };
+    return { user, recordFailure };
   }
 
   /** Sets a new password after a reset OTP, then signs out every session. */
