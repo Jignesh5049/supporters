@@ -73,3 +73,10 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `GET /v1/buyer-requirements` is the Requirements list of the signed-in user's business (open, matched, newest first; the first item is the pinned feed card). `GET /v1/buyer-requirements/:id` is open to the buyer and matched businesses only. `GET /v1/me/buyer-requirements?status=` is the buyer's own list; `PATCH /v1/buyer-requirements/:id` closes or fulfils.
 - `POST /v1/buyer-requirements/:id/quotes` needs an `Idempotency-Key`, a verified business that was matched, and an open requirement. One quote per business per requirement, 50 per day per business. It posts a `quote` message into the buyer–business thread (opening it if needed) and notifies the buyer (`requirement.quoted`). The buyer lists quotes with `GET /v1/buyer-requirements/:id/quotes`.
 - The `cron` queue flips open requirements past `expires_at` to `expired` every hour; reads already treat them as expired.
+
+## Reviews in short
+
+- Businesses only. `POST /v1/businesses/:id/reviews` (1–5 stars, 20–1,000 characters) needs a chat or enquiry thread with the business that holds a message and was opened at least 24 h ago; one per user per business, never the owner, not across a block. `GET /v1/businesses/:id/reviews/mine` returns the viewer's review and their eligibility (`eligible`, `reviewed`, `own_business`, `no_thread`, `too_soon` with `eligibleAt`, `blocked`).
+- `PATCH/DELETE /v1/reviews/:id` (author), `PUT/DELETE /v1/reviews/:id/reply` (business owner, one editable reply). `GET /v1/businesses/:id/reviews` is public, newest first, with `rating`.
+- Every change recomputes `businesses.rating_avg` (one decimal) and `rating_count` from visible reviews in the same transaction, under the business row lock. The API shows `rating.average` as null below 3 reviews ("New"). Moderation that sets `hidden_at` must call `recomputeRating(tx, businessId)` from `modules/reviews/reviews.service.ts`.
+- `review.created` notifies the owner, batched per business for 10 minutes.
