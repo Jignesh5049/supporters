@@ -87,6 +87,8 @@ export function messagePreview(message: Message | null, side: ChatSide): string 
       return `${mine}${message.listing ? message.listing.title : 'A listing'}`;
     case 'enquiry':
       return `${mine}Enquiry: ${truncate(message.body, 60)}`;
+    case 'quote':
+      return `${mine}Quote${message.quote ? `: ${formatMoney(message.quote.price)}` : ''}`;
     default:
       return `${mine}${truncate(message.body, 80)}`;
   }
@@ -128,6 +130,8 @@ export interface MessageView {
   attachments: AttachmentView[];
   listing: ListingCardView | null;
   enquiry: { statusLabel: string; quantityText: string | null } | null;
+  /** A business's quote on a buyer requirement. */
+  quote: { priceText: string; requirementHref: string } | null;
   /** Only for my own messages. */
   delivery: DeliveryState | null;
   error: string | null;
@@ -183,6 +187,12 @@ export function toMessageView(
           quantityText: quantityText(message.enquiry.quantity, message.enquiry.unit),
         }
       : null,
+    quote: message.quote
+      ? {
+          priceText: formatMoney(message.quote.price),
+          requirementHref: `/requirements/${message.quote.requirementId}`,
+        }
+      : null,
     delivery: isMine ? (isReadByPeer ? 'read' : 'sent') : null,
     error: null,
   };
@@ -219,6 +229,7 @@ function pendingView(pending: PendingMessage): MessageView {
     attachments: [],
     listing: null,
     enquiry: null,
+    quote: null,
     delivery:
       pending.status === 'failed' ? 'failed' : pending.status === 'sent' ? 'sent' : 'sending',
     error: sendErrorText(pending),

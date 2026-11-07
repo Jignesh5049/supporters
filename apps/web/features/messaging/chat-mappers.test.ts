@@ -152,6 +152,25 @@ describe('message views', () => {
     expect(view.delivery).toBeNull();
   });
 
+  it('shows a quote with its price and a link to the requirement', () => {
+    const message = chatMessage(1, {
+      type: 'quote',
+      senderSide: 'business',
+      body: 'Ready in 5 days.',
+      quote: {
+        id: messageId(8),
+        requirementId: messageId(9),
+        price: { amountPaise: 1_25_000_00, currency: 'INR' },
+      },
+    });
+    expect(toMessageView(message, 'user', false).quote).toEqual({
+      priceText: '₹1,25,000',
+      requirementHref: `/requirements/${messageId(9)}`,
+    });
+    expect(messagePreview(message, 'business')).toBe('You: Quote: ₹1,25,000');
+    expect(toMessageView(chatMessage(2), 'user', false).quote).toBeNull();
+  });
+
   it('orders a thread oldest first, ticks mine up to the peer’s read pointer', () => {
     const messages = [chatMessage(3), chatMessage(2, { senderSide: 'business' }), chatMessage(1)];
     const views = threadView(conversation({ peerLastReadMessageId: messageId(2) }), messages, []);
