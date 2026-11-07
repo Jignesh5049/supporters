@@ -205,3 +205,14 @@ export const REPORT_LIMITS = {
   /** An admin's note when resolving a report. */
   note: { max: 500 },
 } as const;
+
+/** The admin area (backend spec, Security: Admin). */
+export const ADMIN_LIMITS = {
+  /** Admin sessions last 8 hours and are never refreshed; sign in again with TOTP. */
+  sessionTtlSec: 8 * 60 * 60,
+  searchQueryMax: 80,
+  /** Why an account is suspended (kept in the audit log). */
+  reason: { min: 10, max: 500 },
+  categoryName: { min: 2, max: 60 },
+  categoryPositionMax: 10_000,
+} as const;

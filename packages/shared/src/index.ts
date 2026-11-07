@@ -1,4 +1,5 @@
 export * from './limits';
+export * from './schemas/admin';
 export * from './schemas/auth';
 export * from './schemas/blocks';
 export * from './schemas/business';
