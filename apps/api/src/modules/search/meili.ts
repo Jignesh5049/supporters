@@ -21,8 +21,21 @@ export const createMeili = (url: string, apiKey: string) =>
  * `sort` comes first so an explicit sort (newest, price) orders the whole result
  * list rather than only breaking relevance ties. With no sort it does nothing,
  * and the relevance rules decide.
+ *
+ * `featured:desc` is the Premium boost (product spec, Listings: "Featured …
+ * boosts the listing in Discover and search"): among results that match the
+ * words equally well, Premium sellers come first. It never lifts a weaker
+ * match above a better one, and an explicit sort still wins.
  */
-const RANKING_RULES = ['sort', 'words', 'typo', 'proximity', 'attribute', 'exactness'];
+const RANKING_RULES = [
+  'sort',
+  'words',
+  'typo',
+  'proximity',
+  'attribute',
+  'featured:desc',
+  'exactness',
+];
 
 /** Business fields copied onto listings and posts, so they filter by their seller. */
 const SELLER_FILTERS = [

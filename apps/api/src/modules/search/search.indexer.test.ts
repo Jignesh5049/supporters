@@ -18,7 +18,7 @@ import {
 } from '../../test/search';
 import { publishedPostBody } from '../../test/social';
 import { SEARCH_INDEX, createMeili } from './meili';
-import { recordSearchSync } from './search.sync';
+import { recordPremiumExpirySyncs, recordSearchSync } from './search.sync';
 
 let ctx: TestContext;
 let refs: ReferenceData;
@@ -168,6 +168,43 @@ describe('search indexing', () => {
     });
     expect(missing.statusCode).toBe(404);
     expect(await prisma.outboxEvent.count({ where: { type: 'search.sync' } })).toBe(before);
+  });
+
+  it('boosts Premium sellers and drops the boost when Premium ends', async () => {
+    const plain = await signUpOwner(ctx, refs, { name: 'Plain Co' });
+    const premium = await signUpOwner(ctx, refs, { name: 'Premium Co' });
+    const plainId = await createProduct(ctx, plain.session, refs, { title: 'Steel bolts' });
+    const premiumId = await createProduct(ctx, premium.session, refs, { title: 'Steel bolts' });
+    const ends = new Date(Date.now() + 60 * 60_000);
+    await prisma.$transaction(async (tx) => {
+      await tx.business.update({
+        where: { id: premium.business.id },
+        data: { premiumUntil: ends },
+      });
+      await recordSearchSync(tx, 'business', premium.business.id);
+    });
+    await drainSearch();
+    expect(await docOf('product', premiumId)).toMatchObject({ featured: 1 });
+    const searchOnly = createMeili(inject('meiliUrl'), inject('meiliSearchKey'));
+    const ranked = () =>
+      searchOnly
+        .index<{ id: string }>(SEARCH_INDEX.product)
+        .search('steel bolts', { attributesToRetrieve: ['id'] })
+        .then((result) => result.hits.map((hit) => hit.id));
+    expect(await ranked()).toEqual([premiumId, plainId]);
+
+    // An hour later Premium has ended; the hourly job queues the sync.
+    const later = new Date(ends.getTime() + 60_000);
+    expect(await recordPremiumExpirySyncs(prisma, later)).toBe(1);
+    await prisma.business.update({
+      where: { id: premium.business.id },
+      data: { premiumUntil: new Date(Date.now() - 1_000) },
+    });
+    await drainSearch();
+    expect(await docOf('product', premiumId)).toMatchObject({ featured: 0 });
+    expect(await recordPremiumExpirySyncs(prisma, new Date(later.getTime() + 4 * 3600_000))).toBe(
+      0,
+    );
   });
 
   it('rebuilds everything with a full reindex', async () => {
