@@ -38,17 +38,17 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs text-[#667085]">
               <li>
-                <Link href="/discover?tab=products" className="hover:text-[#2E3192]">
+                <Link href="/search?type=product" className="hover:text-[#2E3192]">
                   Browse Products
                 </Link>
               </li>
               <li>
-                <Link href="/discover?tab=services" className="hover:text-[#2E3192]">
+                <Link href="/search?type=service" className="hover:text-[#2E3192]">
                   Verified Services
                 </Link>
               </li>
               <li>
-                <Link href="/discover?tab=businesses" className="hover:text-[#2E3192]">
+                <Link href="/search" className="hover:text-[#2E3192]">
                   Business Directory
                 </Link>
               </li>
