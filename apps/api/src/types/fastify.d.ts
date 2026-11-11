@@ -22,6 +22,7 @@ import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
 import type { ReportsService } from '../modules/reports/reports.service';
+import type { RequirementsService } from '../modules/requirements/requirements.service';
 import type { SavesService } from '../modules/saves/saves.service';
 import type { ServicesService } from '../modules/services/services.service';
 import type { UploadsService } from '../modules/uploads/uploads.service';
@@ -72,6 +73,7 @@ declare module 'fastify' {
         reports: AdminReportsService;
         categories: AdminCategoriesService;
       };
+      requirements: RequirementsService;
     };
   }
 

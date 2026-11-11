@@ -5,6 +5,7 @@ import {
   type NotificationChannel,
 } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
+import { matchRequirement } from '../requirements/requirements.matching';
 import { DOMAIN_EVENT_TYPES, type DomainEventType, type DomainEvents } from './outbox';
 import { NOTIFICATION_RULES, type NotificationRule } from './rules';
 
@@ -215,6 +216,19 @@ export class NotificationFanout {
           });
         }
         return intents;
+      }
+      case 'requirement.created': {
+        const { requirementId } = payload as DomainEvents['requirement.created'];
+        const match = await matchRequirement(tx, requirementId, this.now());
+        if (!match) return [];
+        return match.notifyUserIds.map((userId) => ({
+          userId,
+          type: NotificationType.RequirementMatched,
+          actorUserId: match.buyerUserId,
+          targetType: NotificationTargetType.Requirement,
+          targetId: requirementId,
+          groupKey: null,
+        }));
       }
       case 'security.login':
       case 'security.password_changed': {
