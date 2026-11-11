@@ -114,6 +114,12 @@ const envSchema = z
     /** Sender address on a domain verified in SES. */
     EMAIL_FROM: z.email().optional(),
     SES_REGION: z.string().min(1).default('ap-south-1'),
+    /** Meilisearch, on the Docker network only (backend spec, Security). */
+    MEILI_URL: z.url(),
+    /** Scoped key with `search` only, for the API. Never the master key (`pnpm search:init`). */
+    MEILI_SEARCH_KEY: z.string().min(16),
+    /** Scoped key for documents and settings, for the worker and `pnpm search:reindex`. */
+    MEILI_INDEX_KEY: z.string().min(16).optional(),
   })
   .superRefine((env, ctx) => {
     const isDeployed = env.NODE_ENV === 'staging' || env.NODE_ENV === 'production';
