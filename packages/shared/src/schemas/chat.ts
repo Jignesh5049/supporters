@@ -16,11 +16,13 @@ export const MessageType = {
   File: 'file',
   ListingCard: 'listing_card',
   Enquiry: 'enquiry',
+  /** A business's quote on a buyer requirement (POST /buyer-requirements/:id/quotes). */
+  Quote: 'quote',
 } as const;
 export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 export const messageTypeSchema = z.enum(Object.values(MessageType));
 
-/** Types a client may send; enquiries are created through POST /enquiries. */
+/** Types a client may send; enquiries and quotes have their own endpoints. */
 export const SENDABLE_MESSAGE_TYPES = ['text', 'image', 'file', 'listing_card'] as const;
 
 export const listingRefSchema = z.strictObject({
