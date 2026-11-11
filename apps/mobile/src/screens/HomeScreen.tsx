@@ -18,6 +18,9 @@ import { buildFeedRows, type FeedRow } from '../features/feed/feed-items';
 import { useFeed, useMarkFeedSeen } from '../features/feed/hooks';
 import { usePostActions } from '../features/feed/use-post-actions';
 import { toPostCardModel } from '../features/social/mappers';
+import { useMyBusiness } from '../features/business/hooks';
+import { RequirementCard } from '../features/requirements/components';
+import { usePinnedRequirement } from '../features/requirements/hooks';
 
 export function HomeScreen() {
   const { setHeaderVisible } = useApp();
@@ -25,6 +28,9 @@ export function HomeScreen() {
   const actions = usePostActions();
   const markSeen = useMarkFeedSeen();
   const feed = useFeed();
+  const myBusiness = useMyBusiness();
+  // Sellers see the newest requirement matched to their business pinned on top.
+  const pinned = usePinnedRequirement(!isGuest && Boolean(myBusiness.data));
   const lastOffsetY = useRef(0);
 
   useEffect(() => () => setHeaderVisible(true), [setHeaderVisible]);
@@ -92,7 +98,18 @@ export function HomeScreen() {
           )
         }
         ListHeaderComponent={
-          <FeedHeader onPostRequirement={() => router.push('/requirements/new')} />
+          <View>
+            <FeedHeader onPostRequirement={() => router.push('/requirements/new')} />
+            {pinned.data ? (
+              <View className="mx-4 mb-3">
+                <RequirementCard
+                  requirement={pinned.data}
+                  isPinned
+                  onPress={() => router.push(`/requirements/${pinned.data?.id ?? ''}`)}
+                />
+              </View>
+            ) : null}
+          </View>
         }
         ListEmptyComponent={
           <FeedEmptyState

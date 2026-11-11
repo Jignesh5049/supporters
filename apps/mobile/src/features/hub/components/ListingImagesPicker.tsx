@@ -13,6 +13,9 @@ interface ListingImagesPickerProps {
   onAdd: () => void;
   onRemove: (key: string) => void;
   onRetry: (key: string) => void;
+  /** Defaults to the listing cap (1 to 10). */
+  max?: number;
+  hint?: string;
 }
 
 /** The photos of a listing: 1 to 10, uploaded as they are picked. */
@@ -21,8 +24,9 @@ export function ListingImagesPicker({
   onAdd,
   onRemove,
   onRetry,
+  max = MEDIA_LIMITS.imagesPerListing.max,
+  hint = `${MEDIA_LIMITS.imagesPerListing.min} to ${max} photos. The first one is the cover.`,
 }: ListingImagesPickerProps) {
-  const { max } = MEDIA_LIMITS.imagesPerListing;
   return (
     <View className="gap-3">
       <View className="flex-row flex-wrap gap-2">
@@ -73,7 +77,7 @@ export function ListingImagesPicker({
         <Text>Add photos</Text>
       </Button>
       <Text variant="muted" className="text-xs">
-        {MEDIA_LIMITS.imagesPerListing.min} to {max} photos. The first one is the cover.
+        {hint}
       </Text>
     </View>
   );

@@ -1,238 +1,106 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { MapPin, Clock, Package, ChevronRight } from 'lucide-react-native';
-import { colors } from '../../../styles/theme';
-import type { BuyerRequirement } from '../types';
+import { Pressable, View } from 'react-native';
+import { CheckCircle2, Pin } from 'lucide-react-native';
+import type { Requirement } from '@supporters/shared';
+import { Badge } from '@supporters/ui-native/components/badge';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
+import { cn } from '@supporters/ui-native/lib/utils';
+import {
+  REQUIREMENT_STATUS_LABEL,
+  requirementBudget,
+  requirementQuantity,
+  requirementTimeLeft,
+  requirementTitle,
+} from '../requirement-form';
 
-export interface RequirementCardProps {
-  requirement: BuyerRequirement;
+interface RequirementCardProps {
+  requirement: Requirement;
   onPress: () => void;
-  onSubmitQuote?: () => void;
+  /** The pinned card at the top of a seller's feed. */
+  isPinned?: boolean;
+  /** Buttons under the card (Send quote, Close, ...). */
+  actions?: React.ReactNode;
 }
 
-export function RequirementCard({ requirement, onPress, onSubmitQuote }: RequirementCardProps) {
-  const isImmediate = requirement.urgency === 'Immediate';
-
+function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.8}
-      accessibilityLabel={requirement.title}
-    >
-      <View style={styles.topRow}>
-        <View style={styles.categoryPill}>
-          <Text style={styles.categoryText}>{requirement.category}</Text>
-        </View>
-        <View style={[styles.urgencyPill, isImmediate && styles.urgencyPillImmediate]}>
-          <Clock size={11} color={isImmediate ? '#DC2626' : '#2563EB'} />
-          <Text style={[styles.urgencyText, isImmediate && styles.urgencyTextImmediate]}>
-            {requirement.urgency}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.title} numberOfLines={2}>
-        {requirement.title}
+    <View className="w-1/2 py-1">
+      <Text variant="muted" className="text-xs">
+        {label}
       </Text>
-
-      <View style={styles.buyerRow}>
-        <Text style={styles.buyerName}>{requirement.buyerName}</Text>
-        <View style={styles.cityRow}>
-          <MapPin size={12} color="#6B7280" />
-          <Text style={styles.cityText}>{requirement.buyerCity}</Text>
-        </View>
-      </View>
-
-      <View style={styles.specGrid}>
-        <View style={styles.specItem}>
-          <Text style={styles.specLabel}>Quantity</Text>
-          <View style={styles.specValueRow}>
-            <Package size={13} color={colors.primary} />
-            <Text style={styles.specValue}>{requirement.quantity}</Text>
-          </View>
-        </View>
-
-        <View style={styles.specItem}>
-          <Text style={styles.specLabel}>Target Budget</Text>
-          <Text style={styles.budgetValue}>{requirement.targetBudget}</Text>
-        </View>
-
-        <View style={styles.specItem}>
-          <Text style={styles.specLabel}>Quotes Received</Text>
-          <Text style={styles.specValue}>{requirement.quotesCount} proposals</Text>
-        </View>
-      </View>
-
-      <View style={styles.footerRow}>
-        <Text style={styles.postedTime}>Posted {requirement.createdAt}</Text>
-        <View style={styles.ctaRow}>
-          {onSubmitQuote ? (
-            <TouchableOpacity
-              style={styles.submitBtn}
-              onPress={(e) => {
-                e.stopPropagation();
-                onSubmitQuote();
-              }}
-            >
-              <Text style={styles.submitBtnText}>Submit Quote</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.viewDetailsRow}>
-              <Text style={styles.viewDetailsText}>View RFQ</Text>
-              <ChevronRight size={14} color={colors.primary} />
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+      <Text className="text-sm font-semibold" numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryPill: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  categoryText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  urgencyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  urgencyPillImmediate: {
-    backgroundColor: '#FEF2F2',
-  },
-  urgencyText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  urgencyTextImmediate: {
-    color: '#DC2626',
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  buyerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  buyerName: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  cityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  cityText: {
-    fontSize: 11,
-    color: '#6B7280',
-  },
-  specGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-  },
-  specItem: {
-    flex: 1,
-  },
-  specLabel: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginBottom: 3,
-  },
-  specValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  specValue: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  budgetValue: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#16A34A',
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  postedTime: {
-    fontSize: 11,
-    color: '#9CA3AF',
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  viewDetailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  viewDetailsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-});
+/** A buyer requirement. Shows the buyer's name and city only, never phone or email. */
+export function RequirementCard({
+  requirement,
+  onPress,
+  isPinned = false,
+  actions,
+}: RequirementCardProps) {
+  const title = requirementTitle(requirement);
+  return (
+    <View
+      className={cn(
+        'bg-card gap-2 rounded-2xl border p-4',
+        isPinned ? 'border-highlight' : 'border-border',
+      )}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${isPinned ? 'Buyer requirement: ' : ''}${title}. ${requirementQuantity(requirement)} to ${requirement.deliveryCity.name}`}
+        accessibilityHint="Opens the requirement"
+        className="gap-2"
+      >
+        <View className="flex-row flex-wrap items-center gap-1.5">
+          {isPinned ? (
+            <Badge className="bg-highlight">
+              <Icon as={Pin} size={12} className="text-highlight-foreground" />
+              <Text className="text-highlight-foreground">Buyer requirement</Text>
+            </Badge>
+          ) : null}
+          <Badge variant="secondary">
+            <Text>{requirement.category.name}</Text>
+          </Badge>
+          <Badge variant={requirement.status === 'open' ? 'default' : 'outline'}>
+            <Text>{REQUIREMENT_STATUS_LABEL[requirement.status]}</Text>
+          </Badge>
+          {requirement.hasQuoted ? (
+            <Badge variant="outline">
+              <Icon as={CheckCircle2} size={12} className="text-success" />
+              <Text>Quoted</Text>
+            </Badge>
+          ) : null}
+        </View>
+        <Text className="text-base font-bold" numberOfLines={2}>
+          {title}
+        </Text>
+        {requirement.description.trim() !== title ? (
+          <Text variant="muted" className="text-sm" numberOfLines={3}>
+            {requirement.description}
+          </Text>
+        ) : null}
+        <View className="flex-row flex-wrap">
+          <Fact label="Quantity" value={requirementQuantity(requirement)} />
+          <Fact label="Budget" value={requirementBudget(requirement)} />
+          <Fact label="Deliver to" value={requirement.deliveryCity.name} />
+          <Fact label="Status" value={requirementTimeLeft(requirement)} />
+        </View>
+        <Text variant="muted" className="text-xs">
+          {requirement.isMine
+            ? `Posted by you · ${requirement.quoteCount} ${requirement.quoteCount === 1 ? 'quote' : 'quotes'}`
+            : `${requirement.buyer.name}${requirement.buyer.city ? ` · ${requirement.buyer.city.name}` : ''}`}
+        </Text>
+      </Pressable>
+      {actions ? (
+        <View className="border-border flex-row flex-wrap gap-2 border-t pt-3">{actions}</View>
+      ) : null}
+    </View>
+  );
+}

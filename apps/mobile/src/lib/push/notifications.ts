@@ -98,6 +98,9 @@ export function handleNotificationResponse(response: Notifications.NotificationR
     id?: string;
     conversationId?: string;
     requirementId?: string;
+    /** What the API's push payload points at (requirement.matched, requirement.quoted). */
+    targetType?: string;
+    targetId?: string | null;
     businessSlug?: string;
   };
 
@@ -113,7 +116,9 @@ export function handleNotificationResponse(response: Notifications.NotificationR
     }
   }
 
-  if (data.type === 'message' && (data.conversationId || data.id)) {
+  if (data.targetType === 'requirement' && data.targetId) {
+    router.push(`/requirements/${encodeURIComponent(data.targetId)}` as any);
+  } else if (data.type === 'message' && (data.conversationId || data.id)) {
     router.push(`/messages/${data.conversationId || data.id}` as any);
   } else if (data.type === 'enquiry') {
     router.push('/hub/enquiries' as any);

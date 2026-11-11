@@ -1,4 +1,5 @@
 import type { EnquiryStatus, Message } from '@supporters/shared';
+import { formatPrice } from '../social/mappers';
 
 export const ENQUIRY_STATUS_LABEL: Record<EnquiryStatus, string> = {
   new: 'New',
@@ -21,6 +22,8 @@ export function messagePreview(message: Message | null, isMine: boolean): string
       return `${prefix}${message.listing?.title ?? 'Listing'}`;
     case 'enquiry':
       return `${prefix}Enquiry${message.listing ? `: ${message.listing.title}` : ''}`;
+    case 'quote':
+      return `${prefix}Quote${message.quote ? `: ${formatPrice(message.quote.price)}` : ''}`;
     default:
       return '';
   }
