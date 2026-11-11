@@ -9,11 +9,21 @@ import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { AppError, ErrorCode, notFound } from '../../lib/errors';
 import { pageArgs, splitPage } from '../../lib/pagination';
 import type { SessionService } from '../auth/session.service';
+import { recordSearchSync } from '../search/search.sync';
 import { type AdminActor, writeAudit } from './audit.service';
 
 /** `+91******1234`: enough to tell accounts apart without showing the number. */
 export const maskPhone = (phone: string) =>
   `${phone.slice(0, 3)}${'*'.repeat(Math.max(0, phone.length - 7))}${phone.slice(-4)}`;
+
+/** A suspended owner's business, listings and posts leave search (and return on restore). */
+async function syncOwnedBusiness(tx: Prisma.TransactionClient, userId: string) {
+  const business = await tx.business.findUnique({
+    where: { ownerUserId: userId },
+    select: { id: true },
+  });
+  if (business) await recordSearchSync(tx, 'business', business.id);
+}
 
 const cannotSuspendAdmin = () =>
   new AppError(409, ErrorCode.Conflict, 'Admin accounts cannot be suspended here', {
@@ -98,6 +108,7 @@ export class AdminUsersService {
       data: { status: 'suspended' },
     });
     if (count === 1) {
+      await syncOwnedBusiness(tx, userId);
       await writeAudit(tx, actor, {
         action: 'user.suspend',
         targetType: 'user',
@@ -128,6 +139,7 @@ export class AdminUsersService {
         data: { status: 'active' },
       });
       if (count === 1) {
+        await syncOwnedBusiness(tx, userId);
         await writeAudit(tx, actor, {
           action: 'user.restore',
           targetType: 'user',

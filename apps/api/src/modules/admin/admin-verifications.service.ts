@@ -9,6 +9,7 @@ import {
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { AppError, ErrorCode, notFound } from '../../lib/errors';
 import { recordEvent } from '../notifications/outbox';
+import { recordSearchSync } from '../search/search.sync';
 import type { ObjectStorage } from '../uploads/storage';
 import { type AdminActor, writeAudit } from './audit.service';
 import { splitPage } from '../../lib/pagination';
@@ -123,6 +124,7 @@ export class AdminVerificationsService {
         data: { verificationStatus: 'verified', verifiedAt: row.business.verifiedAt ?? now },
       });
       await recordEvent(tx, 'business.verified', { verificationId: id });
+      await recordSearchSync(tx, 'business', row.businessId);
       await writeAudit(tx, actor, {
         action: 'verification.approve',
         targetType: 'verification',
@@ -144,6 +146,7 @@ export class AdminVerificationsService {
         data: { verificationStatus: 'rejected' },
       });
       await recordEvent(tx, 'business.verification_rejected', { verificationId: id });
+      await recordSearchSync(tx, 'business', row.businessId);
       await writeAudit(tx, actor, {
         action: 'verification.reject',
         targetType: 'verification',

@@ -27,6 +27,8 @@ import type { SavesService } from '../modules/saves/saves.service';
 import type { ServicesService } from '../modules/services/services.service';
 import type { UploadsService } from '../modules/uploads/uploads.service';
 import type { SessionService } from '../modules/auth/session.service';
+import type { DiscoverService } from '../modules/discover/discover.service';
+import type { SearchService } from '../modules/search/search.service';
 import type { UsersService } from '../modules/users/users.service';
 import type { VerificationService } from '../modules/verification/verification.service';
 import type { AccessClaims, AuthContext } from '../plugins/auth';
@@ -73,6 +75,8 @@ declare module 'fastify' {
         reports: AdminReportsService;
         categories: AdminCategoriesService;
       };
+      search: SearchService;
+      discover: DiscoverService;
       requirements: RequirementsService;
     };
   }

@@ -8,6 +8,7 @@ import {
 } from '../businesses/businesses.service';
 import { toBusinessSummary } from '../businesses/businesses.service';
 import { toCategoryRef } from '../categories/categories.service';
+import { recordSearchSync } from '../search/search.sync';
 import { type MediaUrl, type UploadsService, toMedia } from '../uploads/uploads.service';
 
 /** What products and services share: owner business, category and images. */
@@ -123,6 +124,7 @@ export class ListingWriter {
         if (options.isPublishing) await this.assertPublishSlot(tx, business);
         const { id } = await mutate(tx);
         if (uploads) await this.replaceImages(tx, options.kind, id, uploads);
+        await recordSearchSync(tx, options.kind, id);
         return read(tx, id);
       });
     } catch (error) {
