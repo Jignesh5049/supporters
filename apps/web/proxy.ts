@@ -1,7 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveLegacyBusinessSlug } from '@/dal/legacy-business';
 import { type RefreshOutcome, refreshSession } from '@/dal/refresh-session';
-import { SESSION_COOKIE, loginUrlFor } from '@/lib/auth/session-cookies';
+import {
+  ADMIN_LOGIN_PATH,
+  SESSION_COOKIE,
+  adminLoginUrlFor,
+  loginUrlFor,
+  readJwtClaims,
+} from '@/lib/auth/session-cookies';
 
 /**
  * Signed-in-only routes. They move into an `(app)` route group later; until
@@ -9,7 +15,6 @@ import { SESSION_COOKIE, loginUrlFor } from '@/lib/auth/session-cookies';
  * DAL's `getSession()` and the API decide access.
  */
 const SIGNED_IN_PREFIXES = [
-  '/admin',
   '/business/analytics',
   '/business/edit',
   '/business/enquiries',
@@ -69,6 +74,40 @@ function requestHeadersFor(request: NextRequest, outcome: RefreshOutcome): Heade
   return headers;
 }
 
+export const isAdminRoute = (pathname: string) =>
+  pathname === '/admin' || pathname.startsWith('/admin/');
+
+/**
+ * The admin area (web spec, Admin area). Admin sessions are a single 8-hour
+ * access cookie with no refresh token, so the optimistic check is that cookie
+ * being present and unexpired; the `(admin)` layout and the API decide access.
+ * Every admin response, sign-in included, is `no-store` and `noindex`.
+ */
+export function withAdminSession(request: NextRequest, nowSec = Date.now() / 1000): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const access = request.cookies.get(SESSION_COOKIE.access)?.value;
+  const claims = access ? readJwtClaims(access) : null;
+  const isSignedIn = typeof claims?.exp === 'number' && claims.exp > nowSec;
+  const isAdminToken = claims?.role === 'admin' && claims.mfa === true;
+  let response: NextResponse;
+  if (pathname === ADMIN_LOGIN_PATH) {
+    response = NextResponse.next();
+  } else if (!isSignedIn) {
+    response = NextResponse.redirect(
+      new URL(adminLoginUrlFor(`${pathname}${search}`), request.url),
+    );
+  } else if (!isAdminToken) {
+    // Signed in, but not as an admin: a real 404 status. The layout's notFound()
+    // streams inside Suspense, after a 200 is already sent.
+    response = new NextResponse('Not found', { status: 404 });
+  } else {
+    response = NextResponse.next();
+  }
+  response.headers.set('cache-control', 'no-store');
+  response.headers.set('x-robots-tag', 'noindex, nofollow');
+  return response;
+}
+
 /**
  * Session step: refresh the access token when needed, then send signed-out
  * visitors of signed-in routes to login. Returns the response for the next
@@ -121,6 +160,7 @@ export async function legacyBusinessRedirect(
 }
 
 export async function proxy(request: NextRequest) {
+  if (isAdminRoute(request.nextUrl.pathname)) return withAdminSession(request);
   return (await legacyBusinessRedirect(request)) ?? withSession(request);
 }
 

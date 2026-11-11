@@ -30,19 +30,35 @@ export function loginUrlFor(nextPath: string): string {
   return `${LOGIN_PATH}?next=${encodeURIComponent(safeNextPath(nextPath))}`;
 }
 
+/** The separate admin sign-in (password plus TOTP). */
+export const ADMIN_LOGIN_PATH = '/admin/login';
+
+/** Admin sign-in returning to `nextPath`, which must itself be an admin page. */
+export function adminLoginUrlFor(nextPath: string): string {
+  const next = safeNextPath(nextPath, '/admin');
+  const isAdminPage = next === '/admin' || next.startsWith('/admin/') || next.startsWith('/admin?');
+  return `${ADMIN_LOGIN_PATH}?next=${encodeURIComponent(isAdminPage ? next : '/admin')}`;
+}
+
 /**
  * Reads `exp` (seconds) from a JWT without verifying it. Only for timing the
  * refresh; the API verifies every token.
  */
 export function readJwtExpiry(token: string): number | null {
+  const exp = readJwtClaims(token)?.exp;
+  return typeof exp === 'number' ? exp : null;
+}
+
+/**
+ * The payload of a JWT, unverified. Only for decisions that can deny, never
+ * grant: a forged claim still meets the layout check and the API's own guard.
+ */
+export function readJwtClaims(token: string): Record<string, unknown> | null {
   const payload = token.split('.')[1];
   if (!payload) return null;
   try {
     const json: unknown = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    if (typeof json === 'object' && json !== null && 'exp' in json) {
-      return typeof json.exp === 'number' ? json.exp : null;
-    }
-    return null;
+    return typeof json === 'object' && json !== null ? (json as Record<string, unknown>) : null;
   } catch {
     return null;
   }
