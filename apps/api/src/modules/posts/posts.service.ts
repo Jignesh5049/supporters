@@ -26,6 +26,7 @@ import {
 import { toMoney } from '../listings/listings.service';
 import { recordEvent } from '../notifications/outbox';
 import type { SaveLookup } from '../saves/saves.service';
+import { recordSearchSync } from '../search/search.sync';
 import { type MediaUrl, type UploadsService, toMedia } from '../uploads/uploads.service';
 
 const firstImage = {
@@ -223,11 +224,14 @@ export class PostsService {
   /** Soft delete; the row is purged after 30 days (backend spec, Data model). */
   async remove(userId: string, id: string): Promise<void> {
     const business = await this.businesses.requireOwned(userId);
-    const { count } = await this.prisma.post.updateMany({
-      where: { id, businessId: business.id, deletedAt: null },
-      data: { deletedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.post.updateMany({
+        where: { id, businessId: business.id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (count === 0) throw notFound();
+      await recordSearchSync(tx, 'post', id);
     });
-    if (count === 0) throw notFound();
   }
 
   /** The id of a public post, for likes, comments and saves. */
@@ -256,6 +260,7 @@ export class PostsService {
         if (isPublishing) await this.assertPublishSlot(tx, business);
         const { id } = await mutate(tx);
         if (uploads) await this.replaceMedia(tx, id, uploads);
+        await recordSearchSync(tx, 'post', id);
         return tx.post.findUniqueOrThrow({ where: { id }, include: postInclude });
       });
       return await this.one(row, null);
