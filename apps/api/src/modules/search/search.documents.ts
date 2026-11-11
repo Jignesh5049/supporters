@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
-import { PUBLIC_OWNER } from '../businesses/businesses.service';
+import { PUBLIC_OWNER, isPremium } from '../businesses/businesses.service';
 import { PUBLIC_LISTING } from '../listings/listings.service';
 import { PUBLIC_POST } from '../posts/posts.service';
 import type { SearchEntity } from './meili';
@@ -23,6 +23,8 @@ export interface BusinessDoc {
   stateCode: string;
   businessType: string;
   isVerified: boolean;
+  /** 1 while the business is Premium, else 0 (the search boost). */
+  featured: number;
   createdAt: number;
 }
 
@@ -34,6 +36,8 @@ interface SellerFields {
   stateCode: string;
   businessType: string;
   isVerified: boolean;
+  /** 1 while the business is Premium, else 0 (the search boost). */
+  featured: number;
 }
 
 export interface ListingDoc extends SellerFields {
@@ -64,6 +68,12 @@ export interface PostDoc extends SellerFields {
 
 const millis = (date: Date | null) => date?.getTime() ?? 0;
 
+/**
+ * Premium is time-limited, so the flag goes stale when it ends: the worker's
+ * hourly `search-premium-expiry` job re-syncs businesses whose Premium just ended.
+ */
+const featured = (business: { premiumUntil: Date | null }) => (isPremium(business) ? 1 : 0);
+
 const sellerInclude = {
   city: { include: { state: true } },
   category: true,
@@ -86,6 +96,7 @@ const sellerFields = (business: SellerRow): SellerFields => ({
   stateCode: business.city.state.code,
   businessType: business.type,
   isVerified: business.verificationStatus === 'verified',
+  featured: featured(business),
 });
 
 const businessCategories = (business: SellerRow) =>
@@ -148,6 +159,7 @@ export async function loadBusinessDocs(
       stateCode: row.city.state.code,
       businessType: row.type,
       isVerified: row.verificationStatus === 'verified',
+      featured: featured(row),
       createdAt: millis(row.createdAt),
     };
   });

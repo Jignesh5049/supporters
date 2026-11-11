@@ -78,6 +78,22 @@ describe('GET /v1/discover', () => {
     expect(ids((await discover()).trending)).toEqual([popular.business.id]);
   });
 
+  it('counts each buyer once, however many enquiries they send', async () => {
+    const spammed = await signUpOwner(ctx, refs, { name: 'Spammed Co' });
+    const followed = await signUpOwner(ctx, refs, { name: 'Followed Co' });
+    const buyer = await registerMobile(ctx);
+    const fans = [await registerMobile(ctx), await registerMobile(ctx)];
+    for (const fan of fans) await follow(fan, followed.business.id);
+    // One buyer, three enquiries on three listings: still 1 point against 2 followers.
+    const message = 'We need 500 units delivered to Pune next month.';
+    for (const title of ['A', 'B', 'C']) {
+      const productId = await publishedProduct(spammed.business.id, refs, title);
+      const enquiry = await postWithKey(ctx, buyer, '/v1/enquiries', { productId, message });
+      expect(enquiry.statusCode, enquiry.body).toBe(201);
+    }
+    expect(ids((await discover()).trending)).toEqual([followed.business.id, spammed.business.id]);
+  });
+
   it('shows Premium listings in Featured, and nothing without Premium', async () => {
     const owner = await signUpOwner(ctx, refs);
     const productId = await publishedProduct(owner.business.id, refs, 'Premium bolts');
