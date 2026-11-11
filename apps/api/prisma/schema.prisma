@@ -85,6 +85,7 @@ model User {
   notificationPrefs    NotificationPref[]
   pushTokens           PushToken[]
   webPushSubscriptions WebPushSubscription[]
+  buyerRequirements    BuyerRequirement[]
 
   @@map("users")
 }
@@ -254,10 +255,11 @@ model City {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  state      State      @relation(fields: [stateId], references: [id], onDelete: Restrict)
-  users      User[]
-  businesses Business[]
-  enquiries  Enquiry[]
+  state        State              @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  users        User[]
+  businesses   Business[]
+  enquiries    Enquiry[]
+  requirements BuyerRequirement[]
 
   @@unique([stateId, name], map: "uq_cities_state_id_name")
   @@map("cities")
@@ -274,13 +276,14 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  parent                Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children              Category[]     @relation("CategoryTree")
+  parent                Category?          @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children              Category[]         @relation("CategoryTree")
   interests             UserInterest[]
-  businesses            Business[]     @relation("BusinessCategory")
-  subcategoryBusinesses Business[]     @relation("BusinessSubcategory")
+  businesses            Business[]         @relation("BusinessCategory")
+  subcategoryBusinesses Business[]         @relation("BusinessSubcategory")
   products              Product[]
   services              Service[]
+  requirements          BuyerRequirement[]
 
   @@index([parentId, position], map: "idx_categories_parent_id_position")
   @@map("categories")
@@ -325,19 +328,21 @@ model Business {
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  owner         User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  category      Category       @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
-  subcategory   Category?      @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
-  city          City           @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  state         State          @relation(fields: [stateId], references: [id], onDelete: Restrict)
-  logo          Upload?        @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
-  cover         Upload?        @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
-  products      Product[]
-  posts         Post[]
-  followers     Follow[]
-  services      Service[]
-  conversations Conversation[]
-  enquiries     Enquiry[]
+  owner              User               @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  category           Category           @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory        Category?          @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
+  city               City               @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  state              State              @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  logo               Upload?            @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
+  cover              Upload?            @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
+  products           Product[]
+  posts              Post[]
+  followers          Follow[]
+  services           Service[]
+  conversations      Conversation[]
+  enquiries          Enquiry[]
+  requirementMatches RequirementMatch[]
+  requirementQuotes  RequirementQuote[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
   @@index([subcategoryId], map: "idx_businesses_subcategory_id")
@@ -369,12 +374,13 @@ model Product {
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business  Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category  Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  business  Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category  Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   media     ListingMedia[]
   posts     Post[]
   enquiries Enquiry[]
   messages  Message[]
+  quotes    RequirementQuote[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_products_business_id_status_id")
@@ -403,12 +409,13 @@ model Service {
   createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  business  Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category  Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  business  Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category  Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   media     ListingMedia[]
   posts     Post[]
   enquiries Enquiry[]
   messages  Message[]
+  quotes    RequirementQuote[]
 
   /// UUIDv7 ids sort by creation time, so pages order by id.
   @@index([businessId, status, id], map: "idx_services_business_id_status_id")
@@ -423,6 +430,7 @@ enum UploadPurpose {
   post
   chat
   kyc
+  requirement
 
   @@map("upload_purpose")
 }
@@ -450,12 +458,13 @@ model Upload {
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listingMedia  ListingMedia?
-  postMedia     PostMedia?
-  businessLogo  Business?          @relation("BusinessLogo")
-  businessCover Business?          @relation("BusinessCover")
-  attachment    MessageAttachment?
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingMedia     ListingMedia?
+  postMedia        PostMedia?
+  businessLogo     Business?          @relation("BusinessLogo")
+  businessCover    Business?          @relation("BusinessCover")
+  attachment       MessageAttachment?
+  requirementImage RequirementImage?
 
   @@index([userId, createdAt], map: "idx_uploads_user_id_created_at")
   @@index([status, createdAt], map: "idx_uploads_status_created_at")
@@ -673,6 +682,7 @@ enum MessageType {
   file
   listing_card
   enquiry
+  quote
 
   @@map("message_type")
 }
@@ -700,6 +710,7 @@ model Conversation {
   messages  Message[]
   states    ConversationState[]
   enquiries Enquiry[]
+  quotes    RequirementQuote[]
 
   @@unique([userId, businessId], map: "uq_conversations_user_id_business_id")
   @@index([userId, lastMessageAt, id], map: "idx_conversations_user_id_last_message_at_id")
@@ -748,6 +759,7 @@ model Message {
   attachments  MessageAttachment[]
   hiddenFor    MessageHidden[]
   enquiry      Enquiry?
+  quote        RequirementQuote?
 
   @@unique([senderUserId, clientId], map: "uq_messages_sender_user_id_client_id")
   @@index([conversationId, id], map: "idx_messages_conversation_id_id")
@@ -971,4 +983,122 @@ model OutboxEvent {
   @@index([id], map: "idx_outbox_events_unpublished", where: raw("published_at IS NULL"))
   @@index([processedAt], map: "idx_outbox_events_processed_at", where: raw("processed_at IS NOT NULL"))
   @@map("outbox_events")
+}
+
+// Buyer requirements (product spec, Discovery and buyer requirements; backend spec, Data model:
+// Discovery).
+
+enum RequirementStatus {
+  open
+  closed
+  fulfilled
+  expired
+
+  @@map("requirement_status")
+}
+
+/// What a buyer needs, shown to matching businesses for 30 days. An open row past expires_at
+/// counts as expired even before the hourly cron flips its status.
+model BuyerRequirement {
+  id             String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
+  /// A top-level category or a subcategory; matching uses its top-level category.
+  categoryId     String            @map("category_id") @db.Uuid
+  description    String
+  quantity       Int
+  unit           String
+  deliveryCityId String            @map("delivery_city_id") @db.Uuid
+  budgetPaise    BigInt?           @map("budget_paise")
+  status         RequirementStatus @default(open)
+  /// Denormalized; changed in the same transaction as the quote.
+  quoteCount     Int               @default(0) @map("quote_count")
+  /// Set by the matching job; null until it has run.
+  matchedAt      DateTime?         @map("matched_at") @db.Timestamptz(6)
+  expiresAt      DateTime          @map("expires_at") @db.Timestamptz(6)
+  /// When it left the open state (closed, fulfilled or expired).
+  closedAt       DateTime?         @map("closed_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  deliveryCity City               @relation(fields: [deliveryCityId], references: [id], onDelete: Restrict)
+  images       RequirementImage[]
+  matches      RequirementMatch[]
+  quotes       RequirementQuote[]
+
+  @@index([categoryId, deliveryCityId, status], map: "idx_buyer_requirements_category_id_delivery_city_id_status")
+  /// The buyer's list and the 10-open check.
+  @@index([userId, status, id], map: "idx_buyer_requirements_user_id_status_id")
+  /// The expiry cron.
+  @@index([status, expiresAt], map: "idx_buyer_requirements_status_expires_at")
+  @@map("buyer_requirements")
+}
+
+/// Ordered images of a requirement (up to 3).
+model RequirementImage {
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  requirementId String   @map("requirement_id") @db.Uuid
+  uploadId      String   @unique(map: "uq_requirement_images_upload_id") @map("upload_id") @db.Uuid
+  position      Int      @db.SmallInt
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  requirement BuyerRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  upload      Upload           @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId, position], map: "idx_requirement_images_requirement_id_position")
+  @@map("requirement_images")
+}
+
+/// A business the requirement was shown to. rank orders the matches (1 is best); the top
+/// verified ones also get notified_at.
+model RequirementMatch {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  requirementId String    @map("requirement_id") @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
+  rank          Int
+  notifiedAt    DateTime? @map("notified_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  requirement BuyerRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, businessId], map: "uq_requirement_matches_requirement_id_business_id")
+  /// A business's Requirements list, newest requirement first.
+  @@index([businessId, requirementId], map: "idx_requirement_matches_business_id_requirement_id")
+  @@map("requirement_matches")
+}
+
+/// One quote per business per requirement. It is also a `quote` message in the DM thread.
+model RequirementQuote {
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  requirementId  String   @map("requirement_id") @db.Uuid
+  businessId     String   @map("business_id") @db.Uuid
+  pricePaise     BigInt   @map("price_paise")
+  message        String
+  /// An optional listing of the quoting business.
+  productId      String?  @map("product_id") @db.Uuid
+  serviceId      String?  @map("service_id") @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  messageId      String   @unique(map: "uq_requirement_quotes_message_id") @map("message_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  requirement  BuyerRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  business     Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product      Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  service      Service?         @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  conversation Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  chatMessage  Message          @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, businessId], map: "uq_requirement_quotes_requirement_id_business_id")
+  @@index([requirementId, id], map: "idx_requirement_quotes_requirement_id_id")
+  /// The 50-per-day count of a business.
+  @@index([businessId, createdAt], map: "idx_requirement_quotes_business_id_created_at")
+  @@index([conversationId], map: "idx_requirement_quotes_conversation_id")
+  @@index([productId], map: "idx_requirement_quotes_product_id", where: raw("product_id IS NOT NULL"))
+  @@index([serviceId], map: "idx_requirement_quotes_service_id", where: raw("service_id IS NOT NULL"))
+  @@map("requirement_quotes")
 }
