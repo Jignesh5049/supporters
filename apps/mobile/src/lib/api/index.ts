@@ -13,6 +13,7 @@ import { createPostsApi } from './posts';
 import { createSocialApi } from './social';
 import { createChatApi } from './chat';
 import { createEnquiriesApi } from './enquiries';
+import { createSearchApi } from './search';
 import { createApiClient } from './client';
 import { API_URL, APP_VERSION } from './config';
 
@@ -27,6 +28,7 @@ export type { PostsApi, PageQuery, MyPostsQuery } from './posts';
 export type { SocialApi, FeedQuery, CommentsQuery, SavesQuery } from './social';
 export type { ChatApi, ConversationsQuery, MessagesQuery, SendMessageDraft } from './chat';
 export type { EnquiriesApi, EnquiryDraft, BusinessEnquiriesQuery } from './enquiries';
+export type { SearchApi } from './search';
 
 /** The one API client for the app. Screens use Query hooks or specific domain APIs, never raw fetch. */
 export const apiClient = createApiClient({
@@ -52,3 +54,4 @@ export const socialApi = createSocialApi(apiClient);
 export const placesApi = createPlacesApi(apiClient);
 export const chatApi = createChatApi(apiClient);
 export const enquiriesApi = createEnquiriesApi(apiClient);
+export const searchApi = createSearchApi(apiClient);
