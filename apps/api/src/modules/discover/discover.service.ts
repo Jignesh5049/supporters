@@ -50,7 +50,13 @@ export class DiscoverService {
     return { trending, featured, nearYou, suggested };
   }
 
-  /** Most new followers plus enquiries in the last 7 days; businesses with neither are left out. */
+  /**
+   * Trending score = people who started following in the last 7 days (and still
+   * follow) + distinct buyers who sent an enquiry in the last 7 days. A buyer
+   * counts once per business however many enquiries they send, so one account
+   * can't push a business up. Businesses scoring 0 are left out; ties go to the
+   * larger following, then the newest business.
+   */
   private async trending(exclude: string[]): Promise<BusinessCard[]> {
     const since = new Date(this.now().getTime() - SEARCH_LIMITS.trendingWindowDays * DAY_MS);
     const excluded = exclude[0] ?? '00000000-0000-0000-0000-000000000000';
@@ -62,7 +68,7 @@ export class DiscoverService {
         WHERE created_at >= ${since} GROUP BY business_id
       ) f ON f.business_id = b.id
       LEFT JOIN (
-        SELECT business_id, count(*) AS n FROM enquiries
+        SELECT business_id, count(DISTINCT user_id) AS n FROM enquiries
         WHERE created_at >= ${since} GROUP BY business_id
       ) e ON e.business_id = b.id
       WHERE (f.n IS NOT NULL OR e.n IS NOT NULL) AND b.id <> ${excluded}::uuid

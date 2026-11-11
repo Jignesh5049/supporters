@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Prisma } from '../../generated/prisma/client';
+import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { SEARCH_ENTITIES, type SearchEntity } from './meili';
 
 /**
@@ -32,4 +32,30 @@ export async function recordSearchSync(
   await tx.outboxEvent.create({
     data: { type: SEARCH_SYNC_EVENT, payload: { entity, id } satisfies SearchSyncPayload },
   });
+}
+
+/** How far back the hourly premium-expiry job looks; overlaps the last run in case one was missed. */
+export const PREMIUM_EXPIRY_LOOKBACK_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Premium ends by time, not by a write, so nothing records a sync when it
+ * does. The worker runs this hourly: every business whose Premium ended in
+ * the lookback window gets a `search.sync`, which drops its search boost (and
+ * its listings' and posts'). Repeats are harmless: a sync only re-reads rows.
+ */
+export async function recordPremiumExpirySyncs(prisma: PrismaClient, now = new Date()) {
+  const ended = await prisma.business.findMany({
+    where: {
+      premiumUntil: { gt: new Date(now.getTime() - PREMIUM_EXPIRY_LOOKBACK_MS), lte: now },
+    },
+    select: { id: true },
+  });
+  if (ended.length === 0) return 0;
+  await prisma.outboxEvent.createMany({
+    data: ended.map(({ id }) => ({
+      type: SEARCH_SYNC_EVENT,
+      payload: { entity: 'business', id } satisfies SearchSyncPayload,
+    })),
+  });
+  return ended.length;
 }
