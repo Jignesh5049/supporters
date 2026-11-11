@@ -9,6 +9,8 @@ export const UploadPurpose = {
   Post: 'post',
   Chat: 'chat',
   Kyc: 'kyc',
+  /** Up to 3 images on a buyer requirement; public, like post media. */
+  Requirement: 'requirement',
 } as const;
 export type UploadPurpose = (typeof UploadPurpose)[keyof typeof UploadPurpose];
 export const uploadPurposeSchema = z.enum(Object.values(UploadPurpose));
@@ -30,6 +32,7 @@ export const UPLOAD_RULES: Record<UploadPurpose, ReadonlyMap<string, number>> = 
   post: new Map([...images, ...videos]),
   chat: new Map([...images, ...documents]),
   kyc: new Map([...kycImages, ...documents]),
+  requirement: new Map(images),
 };
 
 export const presignUploadSchema = z

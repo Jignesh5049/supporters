@@ -16,6 +16,7 @@ import {
 } from '../modules/notifications/delivery';
 import { NotificationFanout } from '../modules/notifications/fanout';
 import type { SearchIndexer } from '../modules/search/search.indexer';
+import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { cleanupNotifications } from './cleanup';
 import { type FanoutJob, type SearchIndexJob, relayOutbox } from './outbox-relay';
 
@@ -146,9 +147,16 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       'tickets' in job.data ? push.checkReceipts(job.data) : push.deliver(job.data),
     ),
     worker<EmailJob>(QUEUE.email, 5, async (job) => email.deliver(job.data)),
-    worker<Record<string, never>>(QUEUE.cron, 1, async (job) =>
-      job.name === 'cleanup' ? cleanupNotifications(prisma, options.now?.()) : null,
-    ),
+    worker<Record<string, never>>(QUEUE.cron, 1, async (job) => {
+      switch (job.name) {
+        case 'cleanup':
+          return cleanupNotifications(prisma, options.now?.());
+        case 'expire-requirements':
+          return expireRequirements(prisma, options.now?.());
+        default:
+          return null;
+      }
+    }),
   ];
   const { searchIndexer } = options;
   if (searchIndexer) {
@@ -167,6 +175,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       'notifications-cleanup',
       { pattern: '0 3 * * *', tz: 'Asia/Kolkata' },
       { name: 'cleanup' },
+    );
+    // Reads treat a requirement as expired from expires_at; this catches the stored status up.
+    await queues.cron.upsertJobScheduler(
+      'requirements-expiry',
+      { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
+      { name: 'expire-requirements' },
     );
   }
 
