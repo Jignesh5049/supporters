@@ -17,6 +17,7 @@ import {
 import { NotificationFanout } from '../modules/notifications/fanout';
 import type { SearchIndexer } from '../modules/search/search.indexer';
 import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
+import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { cleanupNotifications } from './cleanup';
 import { type FanoutJob, type SearchIndexJob, relayOutbox } from './outbox-relay';
 
@@ -148,11 +149,16 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
     ),
     worker<EmailJob>(QUEUE.email, 5, async (job) => email.deliver(job.data)),
     worker<Record<string, never>>(QUEUE.cron, 1, async (job) => {
-      if (job.name === 'cleanup') return cleanupNotifications(prisma, options.now?.());
-      if (job.name === 'search-premium-expiry') {
-        return recordPremiumExpirySyncs(prisma, options.now?.());
+      switch (job.name) {
+        case 'cleanup':
+          return cleanupNotifications(prisma, options.now?.());
+        case 'expire-requirements':
+          return expireRequirements(prisma, options.now?.());
+        case 'search-premium-expiry':
+          return recordPremiumExpirySyncs(prisma, options.now?.());
+        default:
+          return null;
       }
-      return null;
     }),
   ];
   const { searchIndexer } = options;
@@ -172,6 +178,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       'notifications-cleanup',
       { pattern: '0 3 * * *', tz: 'Asia/Kolkata' },
       { name: 'cleanup' },
+    );
+    // Reads treat a requirement as expired from expires_at; this catches the stored status up.
+    await queues.cron.upsertJobScheduler(
+      'requirements-expiry',
+      { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
+      { name: 'expire-requirements' },
     );
     if (searchIndexer) {
       // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
