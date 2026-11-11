@@ -97,6 +97,11 @@ describe('admin users', () => {
     expect(problemCode(login)).toBe('ACCOUNT_SUSPENDED');
     expect((await call(ctx, 'GET', `/v1/businesses/${business.slug}`)).statusCode).toBe(404);
 
+    // Search is told to drop the business, and to bring it back on restore.
+    expect(
+      (await prisma.outboxEvent.findMany({ where: { type: 'search.sync' } })).map((e) => e.payload),
+    ).toEqual(expect.arrayContaining([{ entity: 'business', id: business.id }]));
+
     // Repeating changes nothing and records nothing more.
     expect(
       (await post(`/v1/admin/users/${owner.user.id}/suspend`, { reason: REASON })).statusCode,

@@ -4,6 +4,7 @@ import { AppError, ErrorCode, invalidField, isUniqueViolation, notFound } from '
 
 const isForeignKeyViolation = (error: unknown) =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2003';
+import { recordSearchSync } from '../search/search.sync';
 import { type AdminActor, writeAudit } from './audit.service';
 
 const slugTaken = () => invalidField('body.slug', 'Another category uses this slug');
@@ -56,6 +57,17 @@ const toAdminCategory = (row: CountedRow): AdminCategory => ({
 
 const isInUse = (category: AdminCategory) =>
   category.usage.subcategories + category.usage.businesses + category.usage.listings > 0;
+
+/** Businesses filed under a category (or its subcategories) show its name in search. */
+async function syncBusinessesIn(tx: Prisma.TransactionClient, categoryId: string) {
+  const businesses = await tx.business.findMany({
+    where: {
+      OR: [{ categoryId }, { subcategoryId: categoryId }, { category: { parentId: categoryId } }],
+    },
+    select: { id: true },
+  });
+  for (const { id } of businesses) await recordSearchSync(tx, 'business', id);
+}
 
 /** Category editing (product spec, Phase 2 admin). Two levels: categories and subcategories. */
 export class AdminCategoriesService {
@@ -121,6 +133,7 @@ export class AdminCategoriesService {
           changes[key] = { from: before[key], to };
         }
         const updated = await tx.category.update({ where: { id }, data, include: usageSelect });
+        await syncBusinessesIn(tx, id);
         await writeAudit(tx, actor, {
           action: 'category.update',
           targetType: 'category',

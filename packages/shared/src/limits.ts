@@ -110,7 +110,10 @@ export const RATE_LIMITS = {
   commentsPerHour: 30,
   reportsPerDay: 20,
   uploadPresignsPerHour: 60,
+  /** `GET /search`, per IP. */
   search: { max: 60, windowSec: 60 },
+  /** `GET /search/suggest`, per IP: its own budget, so autocomplete never uses up searches. */
+  suggest: { max: 60, windowSec: 60 },
   eventBatches: { max: 120, windowSec: 60 },
 } as const;
 
@@ -215,4 +218,18 @@ export const ADMIN_LIMITS = {
   reason: { min: 10, max: 500 },
   categoryName: { min: 2, max: 60 },
   categoryPositionMax: 10_000,
+} as const;
+
+/** Search and Discover (product spec, Discovery and buyer requirements). */
+export const SEARCH_LIMITS = {
+  queryMax: 100,
+  /** Autocomplete starts at this many characters and returns at most suggestMax items. */
+  suggestMinChars: 2,
+  suggestMax: 8,
+  /** Meilisearch's pagination.maxTotalHits: results past this many are not reachable. */
+  maxTotalHits: 1_000,
+  /** Items per Discover section. */
+  discoverSectionSize: 12,
+  /** Trending counts new followers and enquiries over this many days. */
+  trendingWindowDays: 7,
 } as const;

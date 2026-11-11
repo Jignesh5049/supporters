@@ -9,6 +9,8 @@ import {
   SesEmailSender,
 } from './modules/notifications/channels/email';
 import { VapidWebPushSender } from './modules/notifications/channels/web-push';
+import { createMeili } from './modules/search/meili';
+import { SearchIndexer } from './modules/search/search.indexer';
 import { createPrisma, createValkey } from './plugins/data';
 
 // The BullMQ worker: same image as the API, started with `node dist/worker.js` (backend spec,
@@ -31,6 +33,12 @@ const webPush =
       })
     : null;
 
+if (!env.MEILI_INDEX_KEY) {
+  // Without it, search-index jobs pile up and search goes stale.
+  throw new Error('Invalid environment: MEILI_INDEX_KEY is required by the worker');
+}
+const searchIndexer = new SearchIndexer(prisma, createMeili(env.MEILI_URL, env.MEILI_INDEX_KEY));
+
 const worker = await startNotificationWorker({
   env,
   prisma,
@@ -38,6 +46,7 @@ const worker = await startNotificationWorker({
   expo: new HttpExpoPushClient(env.EXPO_ACCESS_TOKEN),
   webPush,
   email,
+  searchIndexer,
   log,
 });
 log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');

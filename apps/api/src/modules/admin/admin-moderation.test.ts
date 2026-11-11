@@ -148,6 +148,9 @@ describe('admin verifications', () => {
       targetId: business.id,
     });
     expect(await prisma.auditLog.count({ where: { action: 'verification.approve' } })).toBe(1);
+    expect(
+      (await prisma.outboxEvent.findMany({ where: { type: 'search.sync' } })).map((e) => e.payload),
+    ).toContainEqual({ entity: 'business', id: business.id });
   });
 
   it('rejects with a reason the owner can read, then accepts a new request', async () => {

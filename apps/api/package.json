@@ -16,6 +16,8 @@
     "keys:generate": "tsx scripts/generate-keys.ts",
     "admin:create": "tsx --env-file=.env scripts/create-admin.ts",
     "storage:init": "tsx --env-file=.env scripts/init-storage.ts",
+    "search:init": "tsx --env-file=.env scripts/init-search.ts",
+    "search:reindex": "tsx --env-file=.env scripts/reindex-search.ts",
     "typecheck": "prisma generate && tsc --noEmit",
     "lint": "prisma generate && eslint .",
     "test": "prisma generate && vitest run"
@@ -41,6 +43,7 @@
     "fastify-plugin": "6.0.1",
     "fastify-type-provider-zod": "7.0.0",
     "ioredis": "6.0.0",
+    "meilisearch": "0.62.0",
     "openapi-types": "12.1.3",
     "pino": "10.4.0",
     "socket.io": "4.8.4",
