@@ -12,9 +12,9 @@ import { rateLimited } from '../../lib/errors';
 export const searchRoutes: FastifyPluginAsyncZod = async (app) => {
   const { search } = app.services;
 
-  /** 60 per minute per IP for each endpoint, on top of the global limit (backend spec, Limits). */
+  /** Per-IP budgets for search and for suggest, on top of the global limit (backend spec, Limits). */
   const perIpLimit = (bucket: 'search' | 'suggest') => async (request: FastifyRequest) => {
-    const { max, windowSec } = RATE_LIMITS.search;
+    const { max, windowSec } = RATE_LIMITS[bucket];
     const result = await app.limiter.hit(`${bucket}:ip:${request.ip}`, max, windowSec);
     if (!result.allowed) throw rateLimited(Math.max(1, Math.ceil(result.resetMs / 1000)));
   };

@@ -16,6 +16,7 @@ import {
 } from '../modules/notifications/delivery';
 import { NotificationFanout } from '../modules/notifications/fanout';
 import type { SearchIndexer } from '../modules/search/search.indexer';
+import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
 import { cleanupNotifications } from './cleanup';
 import { type FanoutJob, type SearchIndexJob, relayOutbox } from './outbox-relay';
 
@@ -146,9 +147,13 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       'tickets' in job.data ? push.checkReceipts(job.data) : push.deliver(job.data),
     ),
     worker<EmailJob>(QUEUE.email, 5, async (job) => email.deliver(job.data)),
-    worker<Record<string, never>>(QUEUE.cron, 1, async (job) =>
-      job.name === 'cleanup' ? cleanupNotifications(prisma, options.now?.()) : null,
-    ),
+    worker<Record<string, never>>(QUEUE.cron, 1, async (job) => {
+      if (job.name === 'cleanup') return cleanupNotifications(prisma, options.now?.());
+      if (job.name === 'search-premium-expiry') {
+        return recordPremiumExpirySyncs(prisma, options.now?.());
+      }
+      return null;
+    }),
   ];
   const { searchIndexer } = options;
   if (searchIndexer) {
@@ -168,6 +173,14 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       { pattern: '0 3 * * *', tz: 'Asia/Kolkata' },
       { name: 'cleanup' },
     );
+    if (searchIndexer) {
+      // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
+      await queues.cron.upsertJobScheduler(
+        'search-premium-expiry',
+        { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'search-premium-expiry' },
+      );
+    }
   }
 
   let isStopped = false;
