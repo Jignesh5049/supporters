@@ -23,6 +23,7 @@ import {
   toPaise,
 } from '../listings/listings.service';
 import type { PlacesService } from '../places/places.service';
+import { recordSearchSync } from '../search/search.sync';
 
 type ProductRow = Prisma.ProductGetPayload<{ include: typeof listingInclude }>;
 
@@ -184,11 +185,14 @@ export class ProductsService {
   /** Soft delete; the row is purged after 30 days (backend spec, Data model). */
   async remove(userId: string, id: string): Promise<void> {
     const business = await this.businesses.requireOwned(userId);
-    const { count } = await this.prisma.product.updateMany({
-      where: { id, businessId: business.id, deletedAt: null },
-      data: { deletedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.product.updateMany({
+        where: { id, businessId: business.id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (count === 0) throw notFound();
+      await recordSearchSync(tx, 'product', id);
     });
-    if (count === 0) throw notFound();
   }
 
   private readonly read = (db: Prisma.TransactionClient, id: string) =>
