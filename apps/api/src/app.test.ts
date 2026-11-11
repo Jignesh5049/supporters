@@ -175,6 +175,8 @@ describe('env', () => {
         JWT_KEY_ID: 'k',
         OTP_HMAC_KEY: base.OTP_HMAC_KEY.toString('base64'),
         S3_BUCKET: 'supporters-media',
+        MEILI_URL: base.MEILI_URL,
+        MEILI_SEARCH_KEY: base.MEILI_SEARCH_KEY,
         MEDIA_PUBLIC_URL: 'https://media.supporters.in',
       }),
     ).toThrow(/APP_ORIGIN: must use https[\s\S]*SMS_PROVIDER/);
@@ -192,6 +194,8 @@ describe('env', () => {
         JWT_KEY_ID: 'k',
         OTP_HMAC_KEY: base.OTP_HMAC_KEY.toString('base64'),
         S3_BUCKET: 'supporters-media',
+        MEILI_URL: base.MEILI_URL,
+        MEILI_SEARCH_KEY: base.MEILI_SEARCH_KEY,
         S3_ACCESS_KEY_ID: 'static-key-id',
         S3_SECRET_ACCESS_KEY: 'static-secret',
         MEDIA_PUBLIC_URL: 'http://media.supporters.in',

@@ -517,7 +517,12 @@ describe('worker', () => {
     });
     expect(await badge).toMatchObject({ unreadCount: expect.any(Number) });
     expect(JSON.stringify(expo.sent)).not.toContain('stock');
-    expect(await prisma.outboxEvent.count({ where: { processedAt: null } })).toBe(0);
+    // search.sync events go to the search-index queue, which this worker doesn't consume.
+    expect(
+      await prisma.outboxEvent.count({
+        where: { processedAt: null, type: { not: 'search.sync' } },
+      }),
+    ).toBe(0);
     socket.disconnect();
   });
 
