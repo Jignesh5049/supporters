@@ -16,6 +16,7 @@ import { AppError, ErrorCode, isUniqueViolation, notFound } from '../../lib/erro
 import type { CategoriesService } from '../categories/categories.service';
 import { toCategoryRef } from '../categories/categories.service';
 import { toCity, type PlacesService } from '../places/places.service';
+import { recordSearchSync } from '../search/search.sync';
 import { type MediaUrl, toMedia, type UploadsService } from '../uploads/uploads.service';
 
 const businessInclude = {
@@ -261,20 +262,24 @@ export class BusinessesService {
       : [slugify(input.name), ...Array.from({ length: 4 }, () => this.suffixed(input.name))];
     for (const slug of candidates) {
       try {
-        const row = await this.prisma.business.create({
-          data: {
-            ...fields,
-            ownerUserId: userId,
-            slug,
-            name: input.name,
-            type: input.type,
-            categoryId: input.categoryId,
-            cityId: city.id,
-            stateId: city.stateId,
-            isContactPublic: input.isContactPublic ?? false,
-            profileCompletion: profileCompletion(fields),
-          },
-          include: businessInclude,
+        const row = await this.prisma.$transaction(async (tx) => {
+          const created = await tx.business.create({
+            data: {
+              ...fields,
+              ownerUserId: userId,
+              slug,
+              name: input.name,
+              type: input.type,
+              categoryId: input.categoryId,
+              cityId: city.id,
+              stateId: city.stateId,
+              isContactPublic: input.isContactPublic ?? false,
+              profileCompletion: profileCompletion(fields),
+            },
+            include: businessInclude,
+          });
+          await recordSearchSync(tx, 'business', created.id);
+          return created;
         });
         return await this.toMyBusiness(row);
       } catch (error) {
@@ -350,10 +355,14 @@ export class BusinessesService {
     data.profileCompletion = profileCompletion(merged);
 
     try {
-      const row = await this.prisma.business.update({
-        where: { id: current.id },
-        data,
-        include: businessInclude,
+      const row = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.business.update({
+          where: { id: current.id },
+          data,
+          include: businessInclude,
+        });
+        await recordSearchSync(tx, 'business', updated.id);
+        return updated;
       });
       return await this.toMyBusiness(row);
     } catch (error) {
