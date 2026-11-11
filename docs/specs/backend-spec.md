@@ -104,7 +104,7 @@ The API is REST over JSON at `https://<domain>/v1`, documented with OpenAPI 3.1 
 **Conventions**
 
 - Resources are plural nouns in kebab-case (`/buyer-requirements`). The signed-in user's own resources live under `/me/...`, and their business under `/me/business/...`.
-- **Pagination** uses cursors: `?cursor=<opaque>&limit=20` (max 50). Responses are `{ "data": [...], "nextCursor": "..." | null }`. There is no offset paging.
+- **Pagination** uses cursors: `?cursor=<opaque>&limit=20` (max 50). Responses are `{ "data": [...], "nextCursor": "..." | null }`. There is no offset paging in the API. The one exception is internal: `GET /search` pages through Meilisearch, which only supports offsets, so its opaque cursor encodes an offset, results stop at 1,000 (`SEARCH_LIMITS.maxTotalHits`), and a page can shift if the index changes between requests. Clients treat it like any other cursor.
 - **Errors** are RFC 9457 problem details with `Content-Type: application/problem+json`: `{ "type": "https://<domain>/errors/validation-failed", "title", "status", "detail", "code": "VALIDATION_FAILED", "errors": [{ "path", "message" }], "requestId" }`. Clients branch on `code`, never on `title` or `detail`. Stack traces never leave the server.
 - **Idempotency:** writes that create money or messages (checkout, enquiries, quotes, withdrawals, messages) require an `Idempotency-Key` header (UUID). The first response is stored in Valkey for 24 h and replayed for the same key and user. The same key with a different body returns 422.
 - **Formats:** timestamps are ISO 8601 UTC. Money is `{ amountPaise, currency: "INR" }`. Phones are E.164.
@@ -124,7 +124,7 @@ The API is REST over JSON at `https://<domain>/v1`, documented with OpenAPI 3.1 
 | Comments | `GET/POST /posts/:id/comments`, `DELETE /comments/:id` | Read public, write user |
 | Saves and follows | `PUT/DELETE /saves/:type/:id`, `GET /me/saves`, `PUT/DELETE /follows/:businessId`, `GET /me/following` | User |
 | Reviews | `POST /businesses/:id/reviews`, `PATCH/DELETE /reviews/:id`, `PUT /reviews/:id/reply` (owner) | User (eligible), owner for reply |
-| Search | `GET /search?q=&type=&category=&city=&state=&businessType=&verified=&priceMin=&priceMax=&availability=&moqMax=&ratingMin=&sort=`, `GET /search/suggest?q=` | Public |
+| Search | `GET /search?q=&type=&category=&city=&state=&businessType=&verified=&priceMin=&priceMax=&availability=&moqMax=&ratingMin=&sort=&cursor=&limit=` (`type` is business, product, service or post, default business; filters that don't apply to the type are ignored), `GET /search/suggest?q=`, `GET /discover?city=` | Public |
 | Requirements | `GET /buyer-requirements` (matched to my business), `GET /me/buyer-requirements`, `POST /buyer-requirements`, `PATCH /buyer-requirements/:id` (close or fulfil), `POST /buyer-requirements/:id/quotes` | User. Quotes need a verified business |
 | Chat | `GET /conversations`, `POST /conversations` (with a businessId), `GET /conversations/:id/messages`, `POST /conversations/:id/messages` (REST fallback), `POST /conversations/:id/read`, `PATCH /conversations/:id` (mute or hide), `DELETE /messages/:id` (delete for me), `GET /attachments/:key` (signed-URL redirect) | Members only |
 | Enquiries | `POST /enquiries`, `GET /me/enquiries`, `GET /me/business/enquiries`, `PATCH /me/business/enquiries/:id` (close) | User, owner |
@@ -155,7 +155,8 @@ These values live in `packages/shared/limits.ts`. Rate limits are sliding window
 | Comments | 30 per hour per user |
 | Reports | 20 per day per user |
 | Upload presign | 60 per hour per user |
-| Search and suggest | 60 per minute per IP |
+| Search | 60 per minute per IP |
+| Suggest (autocomplete) | 60 per minute per IP, a separate budget from search; clients debounce typing |
 | Events | 120 batches per minute per IP |
 | Withdrawals | 1 pending at a time, minimum ₹100 |
 
@@ -189,11 +190,11 @@ Chat runs on Socket.IO inside the API process. Anything slow or retryable (push,
 | `notifications` | Fan out an event to in-app, push and email, respecting user preferences | 5× exponential |
 | `push` | Send in batches through the Expo Push API (mobile) and web-push with VAPID (browsers), honouring quiet hours (22:00 to 08:00 IST), and prune invalid tokens and expired subscriptions | 5× |
 | `email` | Send through Amazon SES using templated emails | 5× |
-| `search-index` | Upsert or delete businesses, products, services and posts in Meilisearch | 10× |
+| `search-index` | Apply `search.sync` outbox events: re-read the row with the public-page rules and upsert or delete it in Meilisearch (a business also refreshes its listings and posts). Every write that changes searchable fields or visibility records one in its transaction. One job at a time | 10×, dead-letter |
 | `media` | Check the upload's type and size, strip EXIF, build image variants (sharp) | 3× |
 | `payments` | Process Razorpay webhooks and update subscriptions and referrals | 10×, dead-letter |
 | `payouts` | Run an admin-approved withdrawal through RazorpayX, then reconcile | Manual retry only |
-| `cron` | Expire requirements and OTPs, send renewal reminders, roll up analytics nightly | n/a |
+| `cron` | Expire requirements and OTPs, send renewal reminders, roll up analytics nightly; hourly, queue a search sync for businesses whose Premium just ended (drops the search boost) | n/a |
 
 **Notification pipeline:** a domain event (such as `enquiry.created`) writes the `notifications` row in the same transaction, using the outbox pattern. A job then delivers it to the user's enabled channels. Likes and follows are batched in a 10-minute window.
 

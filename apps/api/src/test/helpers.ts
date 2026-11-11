@@ -35,6 +35,9 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     S3_ACCESS_KEY_ID: MINIO_CREDENTIALS.accessKeyId,
     S3_SECRET_ACCESS_KEY: MINIO_CREDENTIALS.secretAccessKey,
     MEDIA_PUBLIC_URL: 'https://media.supporters.test',
+    MEILI_URL: inject('meiliUrl'),
+    MEILI_SEARCH_KEY: inject('meiliSearchKey'),
+    MEILI_INDEX_KEY: inject('meiliIndexKey'),
     ...overrides,
   });
 }

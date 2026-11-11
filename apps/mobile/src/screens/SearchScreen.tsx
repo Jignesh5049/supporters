@@ -1,343 +1,159 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, SearchX, SlidersHorizontal } from 'lucide-react-native';
+import type { SearchHit, SearchType } from '@supporters/shared';
+import { Badge } from '@supporters/ui-native/components/badge';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Tabs, TabsList, TabsTrigger } from '@supporters/ui-native/components/tabs';
+import { Text } from '@supporters/ui-native/components/text';
+import { EmptyState } from '@supporters/ui-native/patterns';
+import { messageForError } from '../lib/api';
+import { OptionPicker } from '../features/hub/components/OptionPicker';
+import { FilterSheet } from '../features/search/components/FilterSheet';
+import { SearchHitRow } from '../features/search/components/ResultRows';
+import { SearchBar } from '../features/search/components/SearchBar';
+import { flattenHits, hitId, useSearchResults } from '../features/search/hooks';
 import {
-  ArrowLeft,
-  Search as SearchIcon,
-  X,
-  Package,
-  Wrench,
-  Building2,
-} from 'lucide-react-native';
-import { EmptyState, ProductCard, BusinessCard } from '@supporters/ui-native/patterns';
-import { useApp } from '../context/AppContext';
-import { colors } from '../styles/theme';
+  type SearchState,
+  TYPE_TABS,
+  activeFilterCount,
+  clearFilters,
+  fromRouteParams,
+  sortOptions,
+  withType,
+} from '../features/search/search-state';
 
+/** Search: box with autocomplete, type tabs, sort and a filter sheet, on `GET /v1/search`. */
 export function SearchScreen() {
-  const router = useRouter();
-  const { products, services, businesses, openEnquiryModal } = useApp();
-
-  const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'products' | 'services' | 'businesses'>('all');
-  const [selectedCity, setSelectedCity] = useState<string>('All');
-
-  const cities = ['All', 'Ahmedabad', 'Surat', 'Mumbai', 'Bengaluru', 'Pune'];
-
-  const filteredResults = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) {
-      return { products: [], services: [], businesses: [] };
-    }
-
-    const matchesCity = (city: string) =>
-      selectedCity === 'All' || city.toLowerCase() === selectedCity.toLowerCase();
-
-    const matchedProducts = products.filter(
-      (p) =>
-        (p.title.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.businessName.toLowerCase().includes(q)) &&
-        matchesCity(p.businessCity),
-    );
-
-    const matchedServices = services.filter(
-      (s) =>
-        (s.title.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q) ||
-          s.businessName.toLowerCase().includes(q)) &&
-        matchesCity(s.businessCity),
-    );
-
-    const matchedBusinesses = businesses.filter(
-      (b) =>
-        (b.name.toLowerCase().includes(q) ||
-          b.businessType.toLowerCase().includes(q) ||
-          b.category.toLowerCase().includes(q)) &&
-        matchesCity(b.city),
-    );
-
-    return {
-      products: matchedProducts,
-      services: matchedServices,
-      businesses: matchedBusinesses,
-    };
-  }, [query, selectedCity, products, services, businesses]);
-
-  const totalResults =
-    filteredResults.products.length +
-    filteredResults.services.length +
-    filteredResults.businesses.length;
+  const params = useLocalSearchParams();
+  const [state, setState] = useState<SearchState>(() => fromRouteParams(params));
+  const [isFilterOpen, setFilterOpen] = useState(false);
+  const results = useSearchResults(state);
+  const hits = flattenHits(results.data?.pages);
+  const total = results.data?.pages[0]?.estimatedTotal ?? 0;
+  const filterCount = activeFilterCount(state);
 
   return (
-    <View style={styles.container}>
-      {/* Search Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          accessibilityLabel="Back"
+    <View className="bg-background flex-1">
+      <View className="border-border gap-2 border-b px-4 pb-2 pt-3">
+        <View className="flex-row items-start gap-2">
+          <Pressable
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            className="size-11 items-center justify-center"
+          >
+            <Icon as={ArrowLeft} size={20} />
+          </Pressable>
+          <View className="flex-1">
+            <SearchBar
+              initialQuery={state.q}
+              autoFocus={!state.q && !state.category}
+              onSubmit={(q) => setState((current) => ({ ...current, q }))}
+            />
+          </View>
+        </View>
+        <Tabs
+          value={state.type}
+          onValueChange={(type) => setState((current) => withType(current, type as SearchType))}
         >
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-
-        <View style={styles.searchBar}>
-          <SearchIcon size={18} color="#9CA3AF" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search products, suppliers, cities..."
-            placeholderTextColor="#9CA3AF"
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            returnKeyType="search"
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-              <X size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          )}
+          <TabsList className="w-full flex-row">
+            {TYPE_TABS.map((tab) => (
+              <TabsTrigger key={tab.type} value={tab.type} className="flex-1">
+                <Text>{tab.label}</Text>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1">
+            <OptionPicker
+              title="Sort"
+              placeholder="Relevance"
+              options={sortOptions(state.type).map((option) => ({
+                id: option.value,
+                label: option.label,
+              }))}
+              value={state.sort}
+              onChange={(sort) =>
+                setState((current) => ({ ...current, sort: sort as SearchState['sort'] }))
+              }
+            />
+          </View>
+          <Button
+            variant="outline"
+            onPress={() => setFilterOpen(true)}
+            accessibilityLabel={`Filters, ${filterCount} applied`}
+          >
+            <Icon as={SlidersHorizontal} size={16} />
+            <Text>Filters</Text>
+            {filterCount > 0 ? (
+              <Badge>
+                <Text>{filterCount}</Text>
+              </Badge>
+            ) : null}
+          </Button>
         </View>
       </View>
 
-      {/* City Filters */}
-      <View style={styles.filterBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {cities.map((city) => (
-            <TouchableOpacity
-              key={city}
-              style={[styles.cityPill, selectedCity === city && styles.cityPillActive]}
-              onPress={() => setSelectedCity(city)}
-            >
-              <Text
-                style={[styles.cityPillText, selectedCity === city && styles.cityPillTextActive]}
-              >
-                {city}
+      {results.isPending ? (
+        <ActivityIndicator className="mt-8" />
+      ) : results.isError && hits.length === 0 ? (
+        <View className="items-center gap-3 p-8">
+          <Text className="text-center">{messageForError(results.error)}</Text>
+          <Button onPress={() => results.refetch()}>
+            <Text>Try again</Text>
+          </Button>
+        </View>
+      ) : (
+        <FlatList<SearchHit>
+          data={hits}
+          keyExtractor={hitId}
+          renderItem={({ item }) => <SearchHitRow hit={item} />}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 24 }}
+          ListHeaderComponent={
+            hits.length > 0 ? (
+              <Text variant="muted" className="px-4 pt-3 text-xs" accessibilityLiveRegion="polite">
+                {total >= 1000 ? '1,000+' : total} {total === 1 ? 'result' : 'results'}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+            ) : undefined
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon={<SearchX size={32} color="#9CA3AF" />}
+              title="No results"
+              description={
+                filterCount > 0
+                  ? 'Nothing matches these filters. Try removing some.'
+                  : 'Try other words, or check the spelling.'
+              }
+              actionLabel={filterCount > 0 ? 'Clear filters' : undefined}
+              onAction={filterCount > 0 ? () => setState(clearFilters(state)) : undefined}
+              className="mx-4 my-6"
+            />
+          }
+          ListFooterComponent={
+            results.isFetchingNextPage ? <ActivityIndicator className="my-4" /> : undefined
+          }
+          onEndReached={() => {
+            if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
+        />
+      )}
 
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {(['all', 'products', 'services', 'businesses'] as const).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tabBtn, activeTab === tab && styles.tabBtnActive]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab.toUpperCase()}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Results Content */}
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {!query.trim() ? (
-          <EmptyState
-            icon={<SearchIcon size={36} color="#9CA3AF" />}
-            title="Search Verified Trade Directory"
-            description="Find B2B manufacturers, textile mills, engineering suppliers, and direct RFQs across India."
-            className="my-10"
-          />
-        ) : totalResults === 0 ? (
-          <EmptyState
-            icon={<X size={36} color="#9CA3AF" />}
-            title="No Results Matching"
-            description={`We couldn't find any listings for "${query}" in ${selectedCity}. Try searching with broader keywords.`}
-            actionLabel="Reset Search"
-            onAction={() => {
-              setQuery('');
-              setSelectedCity('All');
-            }}
-            className="my-10"
-          />
-        ) : (
-          <View style={styles.resultsGrid}>
-            {/* Products Section */}
-            {(activeTab === 'all' || activeTab === 'products') &&
-              filteredResults.products.length > 0 && (
-                <View style={styles.section}>
-                  <View style={styles.sectionHeaderRow}>
-                    <Package size={16} color={colors.primary} />
-                    <Text style={styles.sectionTitle}>
-                      Products ({filteredResults.products.length})
-                    </Text>
-                  </View>
-                  <View style={styles.cardsGrid}>
-                    {filteredResults.products.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        product={{
-                          id: p.id,
-                          title: p.title,
-                          price: p.price,
-                          moq: p.minOrderQuantity,
-                          unit: p.unit,
-                          imageUrl: p.images[0],
-                          businessName: p.businessName,
-                        }}
-                        onPress={() => router.push(`/product/${p.id}` as any)}
-                        onEnquiry={() =>
-                          openEnquiryModal({
-                            title: p.title,
-                            businessName: p.businessName,
-                            businessId: p.businessId,
-                          })
-                        }
-                        className="mb-3"
-                      />
-                    ))}
-                  </View>
-                </View>
-              )}
-
-            {/* Businesses Section */}
-            {(activeTab === 'all' || activeTab === 'businesses') &&
-              filteredResults.businesses.length > 0 && (
-                <View style={styles.section}>
-                  <View style={styles.sectionHeaderRow}>
-                    <Building2 size={16} color={colors.primary} />
-                    <Text style={styles.sectionTitle}>
-                      Suppliers ({filteredResults.businesses.length})
-                    </Text>
-                  </View>
-                  {filteredResults.businesses.map((b) => (
-                    <BusinessCard
-                      key={b.id}
-                      business={{
-                        id: b.id,
-                        name: b.name,
-                        category: b.category,
-                        city: b.city,
-                        isVerified: b.verified,
-                        rating: b.rating,
-                        logoUrl: b.avatar,
-                      }}
-                      onPress={() => router.push(`/business/${b.id}` as any)}
-                      className="mb-3"
-                    />
-                  ))}
-                </View>
-              )}
-          </View>
-        )}
-      </ScrollView>
+      <FilterSheet
+        visible={isFilterOpen}
+        state={state}
+        onClose={() => setFilterOpen(false)}
+        onApply={(next) => {
+          setState(next);
+          setFilterOpen(false);
+        }}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    padding: 6,
-    marginRight: 6,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textPrimary,
-    paddingVertical: 2,
-  },
-  clearBtn: {
-    padding: 4,
-  },
-  filterBar: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  cityPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    marginRight: 8,
-  },
-  cityPillActive: {
-    backgroundColor: colors.primary,
-  },
-  cityPillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  cityPillTextActive: {
-    color: '#FFFFFF',
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabBtnActive: {
-    borderBottomColor: colors.primary,
-  },
-  tabText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#9CA3AF',
-  },
-  tabTextActive: {
-    color: colors.primary,
-  },
-  content: {
-    padding: 14,
-    paddingBottom: 40,
-  },
-  resultsGrid: {
-    gap: 16,
-  },
-  section: {
-    marginBottom: 8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  cardsGrid: {
-    gap: 10,
-  },
-});

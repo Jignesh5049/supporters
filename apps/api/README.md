@@ -9,16 +9,17 @@ Needs Node 24 and Docker.
 ```bash
 pnpm install
 cd apps/api
-docker compose up -d            # PostgreSQL 18, Valkey 9, MinIO (S3)
+docker compose up -d            # PostgreSQL 18, Valkey 9, MinIO (S3), Meilisearch
 cp .env.example .env
 pnpm --silent keys:generate >> .env   # JWT signing key and OTP HMAC key
 pnpm db:deploy                  # apply migrations
 pnpm storage:init               # media bucket in MinIO
+MEILI_MASTER_KEY=meili-local-master-key pnpm --silent search:init >> .env  # scoped search keys, indexes
 pnpm db:seed                    # states, cities, placeholder categories, two demo users
 pnpm dev                        # http://127.0.0.1:3001
 ```
 
-If ports 5432, 6379 or 9000 are taken, start compose with `POSTGRES_PORT=55432 VALKEY_PORT=56379 MINIO_PORT=59000` and change the URLs in `.env` to match.
+If ports 5432, 6379, 9000 or 7700 are taken, start compose with `POSTGRES_PORT=55432 VALKEY_PORT=56379 MINIO_PORT=59000 MEILI_PORT=57700` and change the URLs in `.env` to match.
 
 Uploads go straight from the client to S3 (MinIO locally): `POST /v1/uploads/presign` returns a 5-minute PUT URL locked to the declared type and size, then `POST /v1/uploads/:id/complete` checks the stored file's size and magic bytes. Image re-encoding (sharp, EXIF stripping) is still a stub, `PassthroughMediaProcessor`, and the API refuses to start in production with it. On a phone, `localhost:9000` is not reachable; point `S3_ENDPOINT` and `MEDIA_PUBLIC_URL` at your machine's LAN address.
 
@@ -29,10 +30,12 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 | Script                 | What it does                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------- |
 | `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                       |
-| `test`                 | Vitest. Starts PostgreSQL, Valkey and MinIO in Testcontainers, so Docker must be running |
+| `test`                 | Vitest. Starts PostgreSQL, Valkey, MinIO and Meilisearch in Testcontainers, so Docker must be running |
 | `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                           |
 | `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)        |
 | `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable |
+| `search:init`          | With `MEILI_MASTER_KEY` in the shell: creates the scoped Meilisearch keys and the indexes, prints the keys as .env lines |
+| `search:reindex`       | Rebuilds every index from PostgreSQL in place (after a restore, a settings change, or lost jobs) |
 | `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users |
 
 ## Layout
@@ -78,6 +81,16 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `pnpm dev:worker` runs `src/worker.ts` (same image as the API, different command: `node dist/worker.js`). It relays the outbox to BullMQ on Valkey, runs the `notifications`, `push`, `email` and `cron` queues (5 attempts, exponential backoff, then the `dead-letter` queue), and cleans up nightly at 03:00 IST (notifications after 90 days, processed outbox rows after 7).
 - Push goes to Expo (batches of 100; dead tokens pruned from tickets and receipts) and to Web Push (VAPID; 404/410 subscriptions pruned). Non-urgent push waits out quiet hours (22:00 to 08:00 IST); batched items push once when their 10-minute window ends; security events always go at once. Push payloads hold ids and generic copy only. Email goes only to a verified address (`EMAIL_PROVIDER=ses`, console in dev).
 - `POST/DELETE /v1/me/push-tokens`, `POST/DELETE /v1/me/web-push-subscriptions` (known push-service hosts only), `GET /v1/notifications/vapid-public-key`. The worker publishes badge counts on Valkey; the API emits `notification:new { notificationId, unreadCount }` to `user:<id>`.
+
+## Search and Discover in short
+
+- Meilisearch 1.56, self-hosted on the app server and reachable only on the Docker network. The API searches with `MEILI_SEARCH_KEY` (action `search` only); the worker and `search:reindex` write with `MEILI_INDEX_KEY` (documents and settings of the four indexes). The master key stays in the Meilisearch container.
+- Indexes `businesses`, `products`, `services`, `posts` hold only public rows: the same rules as the public pages (`PUBLIC_OWNER`, `PUBLIC_LISTING`, `PUBLIC_POST`). Documents hold searchable and filter fields, never contact details. Results are re-read from PostgreSQL with those rules, so a stale index entry is never shown.
+- Any write that changes a searchable field or visibility calls `recordSearchSync(tx, entity, id)` in its transaction. The relay sends these `search.sync` outbox events to the `search-index` queue (10 attempts, one job at a time); the job re-reads the row and upserts or deletes it. A business also refreshes its listings and posts. **Admin actions (hide, suspend, verify, category edits) must call it too.**
+- `GET /v1/search` (`q`, `type` = business | product | service | post, filters, `sort`, `cursor`, `limit`) → `{ data, nextCursor, estimatedTotal }`. Meilisearch pages by offset, so the cursor is an opaque offset and results stop after 1,000. `GET /v1/search/suggest?q=` → up to 8 names and titles. Search and suggest each have their own 60-per-minute-per-IP budget (`RATE_LIMITS.search`, `RATE_LIMITS.suggest`).
+- Ranking: an explicit `sort` wins; otherwise relevance, with `featured` (Premium) as a tie-breaker after the word rules. The worker's hourly `search-premium-expiry` cron queues syncs for businesses whose Premium just ended. Trending counts distinct buyers' enquiries.
+- Rating: business documents get `rating` (the shown average, only with 3+ visible reviews) when reviews land; the reviews write path must call `recordSearchSync(tx, 'business', id)`. Until then `ratingMin` matches nothing and `sort=rating` keeps index order.
+- `GET /v1/discover` → `{ trending, featured, nearYou, suggested }` from PostgreSQL. Trending: most new followers plus enquiries in 7 days. Featured: listings of Premium businesses (empty until Premium checkout exists). Near you: `?city=` or the user's city. Suggested: interest categories, not followed.
 
 ## Buyer requirements in short
 
