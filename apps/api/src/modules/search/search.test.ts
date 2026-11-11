@@ -250,7 +250,10 @@ describe('rate limits', () => {
     expect(limited.statusCode).toBe(429);
     expect(problemCode(limited)).toBe('RATE_LIMITED');
     expect(Number(limited.headers['retry-after'])).toBeGreaterThan(0);
-    // Suggest has its own bucket.
-    expect((await hit('/v1/search/suggest?q=xy')).statusCode).toBe(200);
+    // Suggest has its own budget, with its own limit.
+    for (let i = 0; i < RATE_LIMITS.suggest.max; i += 1) {
+      expect((await hit('/v1/search/suggest?q=xy')).statusCode).toBe(200);
+    }
+    expect((await hit('/v1/search/suggest?q=xy')).statusCode).toBe(429);
   });
 });

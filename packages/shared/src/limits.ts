@@ -110,7 +110,10 @@ export const RATE_LIMITS = {
   commentsPerHour: 30,
   reportsPerDay: 20,
   uploadPresignsPerHour: 60,
+  /** `GET /search`, per IP. */
   search: { max: 60, windowSec: 60 },
+  /** `GET /search/suggest`, per IP: its own budget, so autocomplete never uses up searches. */
+  suggest: { max: 60, windowSec: 60 },
   eventBatches: { max: 120, windowSec: 60 },
 } as const;
 
