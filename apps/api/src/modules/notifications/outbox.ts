@@ -21,6 +21,8 @@ export interface DomainEvents {
   /** Moderation hid a post, comment, message or business page of `userId`. */
   'content.hidden': { userId: string; targetType: string; targetId: string };
   'account.warned': { userId: string; reportId: string };
+  /** A buyer posted a requirement; its fan-out runs the matching. */
+  'requirement.created': { requirementId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -37,6 +39,7 @@ export const DOMAIN_EVENT_TYPES = [
   'business.verification_rejected',
   'content.hidden',
   'account.warned',
+  'requirement.created',
 ] as const satisfies readonly DomainEventType[];
 
 /**
