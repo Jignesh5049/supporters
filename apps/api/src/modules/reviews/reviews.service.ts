@@ -14,6 +14,7 @@ import { pageArgs, splitPage } from '../../lib/pagination';
 import type { BlocksService } from '../blocks/blocks.service';
 import { type BusinessesService, PUBLIC_OWNER, toRating } from '../businesses/businesses.service';
 import { recordEvent } from '../notifications/outbox';
+import { recordSearchSync } from '../search/search.sync';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -58,6 +59,8 @@ export async function recomputeRating(tx: Prisma.TransactionClient, businessId: 
       FROM reviews WHERE business_id = ${businessId}::uuid AND hidden_at IS NULL
     ) s
     WHERE b.id = ${businessId}::uuid`;
+  // The index carries the shown rating (ratingMin filter, sort=rating).
+  await recordSearchSync(tx, 'business', businessId);
 }
 
 /**
