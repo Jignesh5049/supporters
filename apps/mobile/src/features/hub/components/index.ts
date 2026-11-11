@@ -11,4 +11,3 @@ export * from './HubPageControls';
 export * from './AddProductModal';
 export * from './AddServiceModal';
 export * from './EnquiryLeadCard';
-export * from './VerificationUploadCard';

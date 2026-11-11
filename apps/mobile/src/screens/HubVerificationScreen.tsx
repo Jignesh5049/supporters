@@ -1,326 +1,291 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Clock,
+  FileCheck,
+  ShieldAlert,
+  Upload,
+  type LucideIcon,
+} from 'lucide-react-native';
+import {
+  VERIFICATION_LIMITS,
+  type MyVerification,
+  type VerificationMethod,
+} from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Input } from '@supporters/ui-native/components/input';
+import { Text } from '@supporters/ui-native/components/text';
+import { cn } from '@supporters/ui-native/lib/utils';
 import { useApp } from '../context/AppContext';
-import { colors } from '../styles/theme';
-import { VerificationUploadCard } from '../features/hub/components/VerificationUploadCard';
+import { messageForError } from '../lib/api';
+import {
+  type KycFile,
+  type VerificationDraft,
+  kycFileProblem,
+  verificationDraftProblem,
+  verificationErrorMessage,
+} from '../features/moderation/moderation';
+import {
+  pickKycFiles,
+  useMyVerification,
+  useSubmitVerification,
+} from '../features/moderation/use-verification';
 
+const METHODS: { value: VerificationMethod; label: string; hint: string; certificate: string }[] = [
+  {
+    value: 'gstin',
+    label: 'GST registration',
+    hint: 'GSTIN, e.g. 27AAPFU0939F1ZV',
+    certificate: 'GST registration certificate',
+  },
+  {
+    value: 'udyam',
+    label: 'Udyam / MSME',
+    hint: 'Udyam number, e.g. UDYAM-MH-01-0012345',
+    certificate: 'Udyam registration certificate',
+  },
+];
+
+/** Business Hub > Verification (product spec, Verification): status, then the request form. */
 export function HubVerificationScreen() {
   const router = useRouter();
-  const { showToast } = useApp();
-
-  const [docType, setDocType] = useState<'GSTIN' | 'Udyam'>('GSTIN');
-  const [docNumber, setDocNumber] = useState('');
-  const [docUploaded, setDocUploaded] = useState(false);
-  const [ownerIdUploaded, setOwnerIdUploaded] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<'not_submitted' | 'under_review'>(
-    'not_submitted',
-  );
-
-  const handleSubmit = () => {
-    if (!docNumber.trim()) {
-      showToast(`Please enter your valid ${docType} number`, 'error');
-      return;
-    }
-    if (!docUploaded) {
-      showToast('Please upload your business registration certificate', 'error');
-      return;
-    }
-    if (!ownerIdUploaded) {
-      showToast('Please upload the owner/director ID document', 'error');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setVerificationStatus('under_review');
-      showToast('Verification documents submitted for review!', 'success');
-    }, 600);
-  };
+  const verification = useMyVerification();
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Business Verification</Text>
-        <View style={{ width: 40 }} />
+    <SafeAreaView className="bg-background flex-1">
+      <View className="border-border flex-row items-center gap-2 border-b px-2 py-2">
+        <Button variant="ghost" size="icon" onPress={() => router.back()} accessibilityLabel="Back">
+          <Icon as={ArrowLeft} size={20} />
+        </Button>
+        <Text className="text-base font-semibold" accessibilityRole="header">
+          Business verification
+        </Text>
       </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Verification Status Banner */}
-        {verificationStatus === 'under_review' ? (
-          <View style={styles.statusReviewBanner}>
-            <AlertCircle size={28} color={colors.primary} style={{ marginBottom: 6 }} />
-            <Text style={styles.statusReviewTitle}>Documents Under Review</Text>
-            <Text style={styles.statusReviewText}>
-              Our compliance team is verifying your {docType} certificate and credentials. The
-              Verified badge will appear on your profile within 24 to 48 hours.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.perksBanner}>
-            <ShieldCheck size={32} color={colors.primary} style={{ marginBottom: 6 }} />
-            <Text style={styles.perksTitle}>Get the Verified Supplier Badge</Text>
-            <Text style={styles.perksSubtitle}>
-              Verification is completely free and separates legitimate registered manufacturers and
-              traders from unverified accounts.
-            </Text>
-
-            <View style={styles.perkList}>
-              <View style={styles.perkItem}>
-                <CheckCircle2 size={16} color="#16A34A" style={{ marginRight: 6 }} />
-                <Text style={styles.perkText}>Prominent Green Shield on all products & posts</Text>
-              </View>
-              <View style={styles.perkItem}>
-                <CheckCircle2 size={16} color="#16A34A" style={{ marginRight: 6 }} />
-                <Text style={styles.perkText}>Higher search ranking in local discovery</Text>
-              </View>
-              <View style={styles.perkItem}>
-                <CheckCircle2 size={16} color="#16A34A" style={{ marginRight: 6 }} />
-                <Text style={styles.perkText}>Access to high-value buyer RFQs and tenders</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Verification Form */}
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Verification Documents</Text>
-
-          {/* Doc Type Selector */}
-          <Text style={styles.label}>Select Registration Type</Text>
-          <View style={styles.typeSelector}>
-            {(['GSTIN', 'Udyam'] as const).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.typeOption, docType === type && styles.typeOptionActive]}
-                onPress={() => setDocType(type)}
-              >
-                <Text
-                  style={[styles.typeOptionText, docType === type && styles.typeOptionTextActive]}
-                >
-                  {type === 'GSTIN' ? 'GST Registration' : 'Udyam / MSME'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Registration Number */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              {docType === 'GSTIN' ? '15-Digit GSTIN Number *' : 'Udyam Registration Number *'}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={
-                docType === 'GSTIN' ? 'e.g. 24ABCDE1234F1Z5' : 'e.g. UDYAM-GJ-01-0012345'
-              }
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="characters"
-              value={docNumber}
-              onChangeText={setDocNumber}
-            />
-          </View>
-
-          {/* Document Upload Cards */}
-          <Text style={styles.label}>Upload Registration Certificate *</Text>
-          <VerificationUploadCard
-            label={`Upload ${docType} Certificate`}
-            sublabel="PDF or JPG up to 10MB"
-            isUploaded={docUploaded}
-            onToggleUpload={() => setDocUploaded(!docUploaded)}
-          />
-
-          <Text style={styles.label}>Authorized Signatory / Owner Photo ID *</Text>
-          <VerificationUploadCard
-            label="Upload Aadhaar / PAN / Passport"
-            sublabel="Government approved photo identity"
-            isUploaded={ownerIdUploaded}
-            onToggleUpload={() => setOwnerIdUploaded(!ownerIdUploaded)}
-          />
-
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.submitButtonText}>Submit for Verification</Text>
-            )}
-          </TouchableOpacity>
+      {verification.isPending ? (
+        <ActivityIndicator className="mt-10" />
+      ) : verification.isError ? (
+        <View className="items-center gap-3 p-6">
+          <Text className="text-center">{messageForError(verification.error)}</Text>
+          <Button variant="outline" onPress={() => verification.refetch()}>
+            <Text>Try again</Text>
+          </Button>
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView contentContainerClassName="gap-4 p-4" keyboardShouldPersistTaps="handled">
+          <StatusBanner verification={verification.data} />
+          {verification.data.status === 'none' || verification.data.status === 'rejected' ? (
+            <RequestForm />
+          ) : null}
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+}
+
+function Banner({
+  icon,
+  title,
+  body,
+  tone,
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  tone: 'success' | 'info' | 'warning';
+}) {
+  const color = { success: 'text-success', info: 'text-primary', warning: 'text-warning' }[tone];
+  return (
+    <View
+      className="border-border bg-card flex-row gap-3 rounded-2xl border p-4"
+      accessibilityRole="summary"
+    >
+      <Icon as={icon} size={22} className={color} />
+      <View className="flex-1 gap-1">
+        <Text className={cn('font-semibold', color)}>{title}</Text>
+        <Text className="text-sm">{body}</Text>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    padding: 6,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  scrollContent: {
-    padding: 14,
-    paddingBottom: 40,
-  },
-  statusReviewBanner: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statusReviewTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  statusReviewText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  perksBanner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  perksTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  perksSubtitle: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  perkList: {
-    gap: 8,
-  },
-  perkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  perkText: {
-    fontSize: 12,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  formCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  formTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  typeOption: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
-  },
-  typeOptionActive: {
-    borderColor: colors.primary,
-    backgroundColor: '#EEF2FF',
-  },
-  typeOptionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  typeOptionTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+function StatusBanner({ verification }: { verification: MyVerification }) {
+  const { status, request } = verification;
+  if (status === 'verified') {
+    return (
+      <Banner
+        icon={BadgeCheck}
+        tone="success"
+        title="Your business is verified"
+        body="The Verified badge shows on your page and posts. Changing the business name or GSTIN removes it until you are verified again."
+      />
+    );
+  }
+  if (status === 'pending') {
+    return (
+      <Banner
+        icon={Clock}
+        tone="info"
+        title="In review"
+        body={`We check your documents within ${VERIFICATION_LIMITS.reviewWorkingDays} working days and will notify you.${request ? ` Sent with ${request.registrationNumber}.` : ''}`}
+      />
+    );
+  }
+  if (status === 'rejected' && request?.rejectionReason) {
+    return (
+      <Banner
+        icon={ShieldAlert}
+        tone="warning"
+        title="Not approved"
+        body={`${request.rejectionReason} Fix this and send a new request.`}
+      />
+    );
+  }
+  return (
+    <Banner
+      icon={BadgeCheck}
+      tone="info"
+      title="Get the Verified badge"
+      body="Verification is free. Send one certificate and your photo ID. Files stay private: only our review team can open them. Only verified businesses can quote on buyer requirements."
+    />
+  );
+}
+
+function FilePicker({
+  label,
+  files,
+  onPick,
+}: {
+  label: string;
+  files: KycFile[];
+  onPick: () => void;
+}) {
+  const isPicked = files.length > 0;
+  return (
+    <Pressable
+      onPress={onPick}
+      accessibilityRole="button"
+      accessibilityLabel={
+        isPicked ? `${label}: ${files.map((f) => f.name).join(', ')}. Change` : label
+      }
+      className={cn(
+        'min-h-11 flex-row items-center gap-3 rounded-xl border border-dashed p-4',
+        isPicked ? 'border-success' : 'border-border',
+      )}
+    >
+      <Icon
+        as={isPicked ? FileCheck : Upload}
+        size={22}
+        className={isPicked ? 'text-success' : 'text-primary'}
+      />
+      <View className="flex-1">
+        <Text className="text-sm font-semibold">{label}</Text>
+        <Text variant="muted" className="text-xs" numberOfLines={2}>
+          {isPicked ? files.map((file) => file.name).join(', ') : 'PDF, JPEG or PNG, up to 10 MB'}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function RequestForm() {
+  const { showToast } = useApp();
+  const submit = useSubmitVerification();
+  const [draft, setDraft] = useState<VerificationDraft>({
+    method: 'gstin',
+    registrationNumber: '',
+    certificate: null,
+    ownerIds: [],
+  });
+  const [problem, setProblem] = useState<string | null>(null);
+  const method = METHODS.find((option) => option.value === draft.method) ?? METHODS[0];
+
+  const pick = async (kind: 'certificate' | 'ownerIds') => {
+    try {
+      const files = await pickKycFiles(kind === 'ownerIds');
+      if (files.length === 0) return;
+      const bad = files.map(kycFileProblem).find(Boolean);
+      if (bad) {
+        showToast(bad, 'error');
+        return;
+      }
+      setDraft((current) =>
+        kind === 'certificate'
+          ? { ...current, certificate: files[0] ?? null }
+          : { ...current, ownerIds: files.slice(0, VERIFICATION_LIMITS.ownerIdFiles.max) },
+      );
+    } catch {
+      showToast('Could not open your files', 'error');
+    }
+  };
+
+  const handleSubmit = () => {
+    const found = verificationDraftProblem(draft);
+    setProblem(found);
+    if (found) return;
+    submit.mutate(draft, {
+      onSuccess: () => showToast('Sent for review', 'success'),
+    });
+  };
+
+  return (
+    <View className="border-border bg-card gap-4 rounded-2xl border p-4">
+      <Text className="font-semibold">Registration</Text>
+      <View className="flex-row gap-2" accessibilityRole="radiogroup">
+        {METHODS.map((option) => {
+          const isSelected = option.value === draft.method;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setDraft({ ...draft, method: option.value })}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
+              className={cn(
+                'min-h-11 flex-1 items-center justify-center rounded-xl border px-2',
+                isSelected ? 'border-primary bg-primary/10' : 'border-border',
+              )}
+            >
+              <Text className={cn('text-sm', isSelected && 'text-primary font-semibold')}>
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Input
+        value={draft.registrationNumber}
+        onChangeText={(registrationNumber) => setDraft({ ...draft, registrationNumber })}
+        placeholder={method?.hint}
+        accessibilityLabel={draft.method === 'gstin' ? 'GSTIN' : 'Udyam number'}
+        autoCapitalize="characters"
+        autoCorrect={false}
+      />
+      <FilePicker
+        label={method?.certificate ?? 'Certificate'}
+        files={draft.certificate ? [draft.certificate] : []}
+        onPick={() => void pick('certificate')}
+      />
+      <FilePicker
+        label="Owner photo ID (front and back)"
+        files={draft.ownerIds}
+        onPick={() => void pick('ownerIds')}
+      />
+      {problem || submit.error ? (
+        <Text className="text-destructive text-sm" accessibilityLiveRegion="polite">
+          {problem ?? verificationErrorMessage(submit.error)}
+        </Text>
+      ) : null}
+      <Button
+        onPress={handleSubmit}
+        disabled={submit.isPending}
+        accessibilityLabel="Send for verification"
+      >
+        {submit.isPending ? <ActivityIndicator /> : <Text>Send for verification</Text>}
+      </Button>
+    </View>
+  );
+}

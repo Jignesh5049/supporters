@@ -6,6 +6,7 @@ import { useToggleSave } from '../social/hooks/use-save';
 import type { PostCardModel } from '../social/mappers';
 import { useRequireAuth } from '../social/use-require-auth';
 import { messageForError } from '../../lib/api';
+import { useReportStore } from '../moderation/moderation';
 import type { PostCardProps } from './components/PostCard';
 
 const seg = encodeURIComponent;
@@ -18,6 +19,7 @@ export function usePostActions(): Omit<PostCardProps, 'post' | 'isDetail'> {
   const save = useToggleSave();
   const { mutate: mutateLike } = like;
   const { mutate: mutateSave } = save;
+  const openReport = useReportStore((state) => state.open);
 
   return useMemo(
     () => ({
@@ -44,7 +46,8 @@ export function usePostActions(): Omit<PostCardProps, 'post' | 'isDetail'> {
           title: `${post.businessName} on Supporters`,
           url: `https://supporters.in/post/${seg(post.id)}`,
         }),
+      onReport: (post: PostCardModel) => requireAuth(() => openReport('post', post.id)),
     }),
-    [requireAuth, openShareModal, showToast, mutateLike, mutateSave],
+    [requireAuth, openShareModal, showToast, mutateLike, mutateSave, openReport],
   );
 }

@@ -1,7 +1,15 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import { CheckCircle2, MapPin, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
+import {
+  CheckCircle2,
+  Flag,
+  MapPin,
+  Share2,
+  UserCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react-native';
 import type { Business } from '@supporters/shared';
 import { Avatar, AvatarFallback, AvatarImage } from '@supporters/ui-native/components/avatar';
 import { Button } from '@supporters/ui-native/components/button';
@@ -19,6 +27,8 @@ interface BusinessHeroProps {
   onToggleFollow: () => void;
   onOpenFollowers: () => void;
   onShare: () => void;
+  /** Shown to signed-in viewers who don't own the business. */
+  onReport?: () => void;
   onEnquiry: () => void;
 }
 
@@ -30,6 +40,7 @@ export function BusinessHero({
   onToggleFollow,
   onOpenFollowers,
   onShare,
+  onReport,
   onEnquiry,
 }: BusinessHeroProps) {
   const initials = business.name
@@ -84,6 +95,16 @@ export function BusinessHero({
             <Button variant="outline" size="icon" onPress={onShare} accessibilityLabel="Share">
               <Icon as={Share2} size={16} />
             </Button>
+            {onReport ? (
+              <Button
+                variant="outline"
+                size="icon"
+                onPress={onReport}
+                accessibilityLabel="Report business"
+              >
+                <Icon as={Flag} size={16} />
+              </Button>
+            ) : null}
           </View>
         </View>
 

@@ -24,6 +24,7 @@ import {
 import { FollowersModal } from '../features/business/components/FollowersModal';
 import { followedIds, useFollowing, useToggleFollow } from '../features/social/hooks/use-follow';
 import { useRequireAuth } from '../features/social/use-require-auth';
+import { useReportStore } from '../features/moderation/moderation';
 
 function TopBar({ title }: { title: string }) {
   return (
@@ -48,6 +49,7 @@ export function BusinessDetailScreen() {
   const slug = typeof rawSlug === 'string' && slugPattern.test(rawSlug) ? rawSlug : '';
   const { openShareModal, openEnquiryModal, showToast } = useApp();
   const requireAuth = useRequireAuth();
+  const openReport = useReportStore((state) => state.open);
   const [activeTab, setActiveTab] = useState<BusinessTabType>('products');
   const [followersOpen, setFollowersOpen] = useState(false);
 
@@ -130,6 +132,9 @@ export function BusinessDetailScreen() {
           onToggleFollow={handleToggleFollow}
           onOpenFollowers={() => setFollowersOpen(true)}
           onShare={() => openShareModal({ title: `${data.name} on Supporters`, url: shareUrl })}
+          {...(isOwner
+            ? {}
+            : { onReport: () => requireAuth(() => openReport('business', data.id)) })}
           onEnquiry={() =>
             requireAuth(() =>
               openEnquiryModal({ title: data.name, businessName: data.name, businessId: data.id }),

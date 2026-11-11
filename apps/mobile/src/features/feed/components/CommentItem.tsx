@@ -4,7 +4,9 @@ import type { Comment } from '@supporters/shared';
 import { Avatar, AvatarFallback } from '@supporters/ui-native/components/avatar';
 import { Button } from '@supporters/ui-native/components/button';
 import { Text } from '@supporters/ui-native/components/text';
+import { useReportStore } from '../../moderation/moderation';
 import { formatTimeAgo } from '../../social/mappers';
+import { useViewerId } from '../../social/use-viewer';
 
 export interface CommentItemProps {
   comment: Comment;
@@ -14,6 +16,9 @@ export interface CommentItemProps {
 }
 
 export function CommentItem({ comment, canDelete, onReply, onDelete }: CommentItemProps) {
+  const viewerId = useViewerId();
+  const openReport = useReportStore((state) => state.open);
+  const canReport = viewerId !== null && viewerId !== comment.author.id;
   const initial = comment.author.name.trim().charAt(0).toUpperCase() || '?';
   return (
     <View className="flex-row gap-2.5">
@@ -56,6 +61,16 @@ export function CommentItem({ comment, canDelete, onReply, onDelete }: CommentIt
               accessibilityLabel="Delete comment"
             >
               <Text className="text-destructive text-xs">Delete</Text>
+            </Button>
+          ) : null}
+          {canReport ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => openReport('comment', comment.id)}
+              accessibilityLabel={`Report comment by ${comment.author.name}`}
+            >
+              <Text className="text-muted-foreground text-xs">Report</Text>
             </Button>
           ) : null}
         </View>
