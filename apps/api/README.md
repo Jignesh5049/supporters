@@ -78,3 +78,10 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - Ranking: an explicit `sort` wins; otherwise relevance, with `featured` (Premium) as a tie-breaker after the word rules. The worker's hourly `search-premium-expiry` cron queues syncs for businesses whose Premium just ended. Trending counts distinct buyers' enquiries.
 - Rating: business documents get `rating` (the shown average, only with 3+ visible reviews) when reviews land; the reviews write path must call `recordSearchSync(tx, 'business', id)`. Until then `ratingMin` matches nothing and `sort=rating` keeps index order.
 - `GET /v1/discover` → `{ trending, featured, nearYou, suggested }` from PostgreSQL. Trending: most new followers plus enquiries in 7 days. Featured: listings of Premium businesses (empty until Premium checkout exists). Near you: `?city=` or the user's city. Suggested: interest categories, not followed.
+
+## Buyer requirements in short
+
+- `POST /v1/buyer-requirements` (any signed-in user): description, category (top level or subcategory), quantity and unit, delivery city, optional budget, up to 3 `requirement` uploads. 3 new per rolling 24 h and 10 open at once. Open for 30 days.
+- Matching runs in the worker: `requirement.created` goes through the outbox, and its fan-out job writes `requirement_matches` (same top-level category, active owner, no block, and the business is in the delivery city or a published listing ships to or serves it). The best 50 verified businesses, Premium first, get a `requirement.matched` notification.
+- `GET /v1/buyer-requirements` is the Requirements list of the signed-in user's business (open, matched, newest first; the first item is the pinned feed card). `GET /v1/buyer-requirements/:id` is open to the buyer and matched businesses only. `GET /v1/me/buyer-requirements?status=` is the buyer's own list; `PATCH /v1/buyer-requirements/:id` closes or fulfils.
+- The `cron` queue flips open requirements past `expires_at` to `expired` every hour; reads already treat them as expired.
