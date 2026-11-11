@@ -36,6 +36,8 @@ export const NotificationType = {
   PostLiked: 'post.liked',
   PostCommented: 'post.commented',
   CommentReplied: 'comment.replied',
+  /** A new buyer requirement matches the recipient's business (top 50 verified only). */
+  RequirementMatched: 'requirement.matched',
   SecurityLogin: 'security.login',
   SecurityPasswordChanged: 'security.password_changed',
   /** An admin approved the business's verification request. */
@@ -57,6 +59,7 @@ export const NotificationTargetType = {
   Post: 'post',
   Business: 'business',
   Account: 'account',
+  Requirement: 'requirement',
 } as const;
 export type NotificationTargetType =
   (typeof NotificationTargetType)[keyof typeof NotificationTargetType];

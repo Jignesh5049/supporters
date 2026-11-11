@@ -38,6 +38,10 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'New replies',
     body: (n) => `${people(n, 'Someone', 'people')} replied to your comment`,
   },
+  [NotificationType.RequirementMatched]: {
+    title: 'New buyer requirement',
+    body: () => 'A buyer needs something your business offers',
+  },
   [NotificationType.SecurityLogin]: {
     title: 'New sign-in',
     body: () => "Your account was just signed in to. If this wasn't you, reset your password.",

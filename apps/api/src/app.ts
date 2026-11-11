@@ -53,6 +53,8 @@ import { productsRoutes } from './modules/products/products.routes';
 import { ReportTargets } from './modules/reports/report-targets';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { ReportsService } from './modules/reports/reports.service';
+import { requirementsRoutes } from './modules/requirements/requirements.routes';
+import { RequirementsService } from './modules/requirements/requirements.service';
 import { ProductsService } from './modules/products/products.service';
 import { savesRoutes } from './modules/saves/saves.routes';
 import { SaveLookup, SavesService } from './modules/saves/saves.service';
@@ -227,6 +229,7 @@ export async function buildApp(options: BuildAppOptions) {
       users: new AdminUsersService(app.prisma, sessions),
       auditLogs: new AuditLogService(app.prisma),
     },
+    requirements: new RequirementsService(app.prisma, businesses, categories, places, uploads),
   });
 
   await app.register(realtimePlugin);
@@ -254,6 +257,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(verificationRoutes);
       await v1.register(reportsRoutes);
       await v1.register(adminRoutes, { prefix: '/admin' });
+      await v1.register(requirementsRoutes);
     },
     { prefix: '/v1' },
   );
