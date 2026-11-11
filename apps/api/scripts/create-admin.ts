@@ -20,22 +20,25 @@ import { createPrisma, createValkey } from '../src/plugins/data';
 
 const USAGE = 'Usage: admin:create --phone <+91...> --name <name> | --reset-totp --phone <+91...>';
 
-/** Reads a line without echoing it. */
-async function promptHidden(question: string): Promise<string> {
-  let muted = false;
-  const output = new Writable({
-    write(chunk: Buffer, _encoding, callback) {
-      if (!muted) process.stdout.write(chunk);
-      callback();
-    },
-  });
+/**
+ * Reads lines without echoing them. Lines come from readline's buffered
+ * iterator, so piped input (several lines at once) isn't lost between questions.
+ */
+function hiddenPrompter() {
+  // Readline echoes typed characters to `output`; drop them all.
+  const output = new Writable({ write: (_chunk, _encoding, callback) => callback() });
   const rl = createInterface({ input: process.stdin, output, terminal: process.stdin.isTTY });
-  const answer = rl.question(question);
-  muted = true;
-  const value = await answer;
-  rl.close();
-  process.stdout.write('\n');
-  return value;
+  const lines = rl[Symbol.asyncIterator]();
+  return {
+    async ask(question: string): Promise<string> {
+      process.stdout.write(question);
+      const line = await lines.next();
+      process.stdout.write('\n');
+      if (line.done) throw new Error('No input');
+      return line.value;
+    },
+    close: () => rl.close(),
+  };
 }
 
 async function main() {
@@ -51,19 +54,23 @@ async function main() {
   const env = loadEnv();
   if (!env.TOTP_ENCRYPTION_KEY) throw new Error('Set TOTP_ENCRYPTION_KEY first');
   const prisma = createPrisma(env.DATABASE_URL);
-  const valkey = createValkey(env.VALKEY_URL);
   try {
     let enrolment;
     if (values['reset-totp']) {
       enrolment = await resetAdminTotp(prisma, env.TOTP_ENCRYPTION_KEY, values.phone);
+      // Valkey only here: revoking marks the sessions refused at once.
+      const valkey = createValkey(env.VALKEY_URL);
       const sessions = new SessionService(prisma, valkey, pino({ level: 'warn' }));
-      const revoked = await sessions.revokeAllForUser(enrolment.userId);
+      const revoked = await sessions
+        .revokeAllForUser(enrolment.userId)
+        .finally(() => valkey.quit());
       process.stdout.write(`New TOTP secret set; ${revoked.length} session(s) signed out.\n`);
     } else {
-      const password = await promptHidden('Password (min 10 characters): ');
-      if ((await promptHidden('Repeat password: ')) !== password) {
-        throw new Error('The passwords do not match');
-      }
+      const prompt = hiddenPrompter();
+      const password = await prompt.ask('Password (min 10 characters): ');
+      const repeated = await prompt.ask('Repeat password: ');
+      prompt.close();
+      if (repeated !== password) throw new Error('The passwords do not match');
       enrolment = await createAdmin(prisma, env.TOTP_ENCRYPTION_KEY, {
         phone: values.phone,
         name: values.name ?? '',
@@ -83,7 +90,6 @@ async function main() {
     );
   } finally {
     await prisma.$disconnect();
-    await valkey.quit();
   }
 }
 
