@@ -30,6 +30,7 @@ import { getMyBusiness } from '@/dal/my-business';
 import { getSession } from '@/dal/session';
 import { isFollowingBusiness, listBusinessPosts } from '@/dal/social';
 import { BusinessPosts } from '@/features/social/business-posts';
+import { ReportButton } from '@/features/moderation/report-dialog';
 import { FollowButton } from '@/features/social/follow-button';
 import { serverEnv } from '@/dal/config';
 import { BUSINESS_TYPE_LABELS, businessAddress, openingHoursLines } from '@/lib/catalog/format';
@@ -136,6 +137,13 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                   mode={!session ? 'guest' : isOwner ? 'owner' : 'viewer'}
                   returnTo={businessPath(business.slug)}
                 />
+                {session && !isOwner && (
+                  <ReportButton
+                    targetType="business"
+                    targetId={business.id}
+                    label="Report business"
+                  />
+                )}
                 <ContactActions
                   layout="row"
                   subject={`General enquiry for ${business.name}`}

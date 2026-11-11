@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { BusinessLogo } from '@/components/catalog/business-logo';
 import { ShareModal } from '@/components/common/ShareModal';
 import { useApp } from '@/context/AppContext';
+import { ReportButton } from '@/features/moderation/report-dialog';
 import { loginUrlFor } from '@/lib/auth/session-cookies';
 import { type PostView, countLabel, toPostView } from './post-mappers';
 import { useLikePost, useSavePost } from './use-social-actions';
@@ -82,6 +83,8 @@ export function PostCard({ post, isSignedIn, variant = 'feed' }: PostCardProps) 
             )}
           </p>
         </div>
+        {/* Your own posts answer 400; the dialog says so. */}
+        {isSignedIn && <ReportButton targetType="post" targetId={post.id} size="xs" />}
       </header>
 
       {view.offer && (

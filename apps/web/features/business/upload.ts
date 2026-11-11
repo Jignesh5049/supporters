@@ -96,3 +96,21 @@ export async function uploadImage(
   }
   return { id: upload.id, url: upload.url };
 }
+
+/** Uploads one private verification document (PDF, JPEG or PNG) and returns its upload id. */
+export async function uploadKycFile(file: File, deps: UploadDeps = defaultDeps): Promise<string> {
+  const input = presignUploadSchema.safeParse({
+    purpose: 'kyc',
+    contentType: file.type,
+    size: file.size,
+  });
+  if (!input.success) {
+    const issue = input.error.issues[0];
+    throw new UploadError(
+      issue?.path[0] === 'size'
+        ? `${file.name} is too large. Use a file under 10 MB.`
+        : `${file.name}: use a PDF, JPEG or PNG.`,
+    );
+  }
+  return (await uploadFile(file, input.data, deps)).id;
+}
