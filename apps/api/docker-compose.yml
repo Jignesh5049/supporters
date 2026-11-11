@@ -1,7 +1,7 @@
-# Local development only: PostgreSQL 18, Valkey 9 and MinIO (S3) for the API.
+# Local development only: PostgreSQL 18, Valkey 9, MinIO (S3) and Meilisearch for the API.
 # Start with `docker compose up -d` from apps/api. Credentials below are
 # local-only defaults that match .env.example; never reuse them elsewhere.
-# Set POSTGRES_PORT, VALKEY_PORT or MINIO_PORT if those host ports are already taken.
+# Set POSTGRES_PORT, VALKEY_PORT, MINIO_PORT or MEILI_PORT if those host ports are already taken.
 name: supporters-api
 
 services:
@@ -52,7 +52,21 @@ services:
     volumes:
       - minio-data:/data
 
+  # Search (backend spec, stack table). The master key is local-only; the API and worker use
+  # the scoped keys that `pnpm search:init` creates with it.
+  meilisearch:
+    image: getmeili/meilisearch:v1.56.1
+    environment:
+      MEILI_MASTER_KEY: meili-local-master-key
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: 'true'
+    ports:
+      - '127.0.0.1:${MEILI_PORT:-7700}:7700'
+    volumes:
+      - meili-data:/meili_data
+
 volumes:
   postgres-data:
   valkey-data:
   minio-data:
+  meili-data:

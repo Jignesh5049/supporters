@@ -15,9 +15,11 @@ import {
   type ReceiptsJob,
 } from '../modules/notifications/delivery';
 import { NotificationFanout } from '../modules/notifications/fanout';
+import type { SearchIndexer } from '../modules/search/search.indexer';
+import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
 import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { cleanupNotifications } from './cleanup';
-import { type FanoutJob, relayOutbox } from './outbox-relay';
+import { type FanoutJob, type SearchIndexJob, relayOutbox } from './outbox-relay';
 
 /** Queue names (backend spec, Queues). */
 export const QUEUE = {
@@ -25,12 +27,16 @@ export const QUEUE = {
   push: 'push',
   email: 'email',
   cron: 'cron',
+  /** Upserts or deletes businesses, products, services and posts in Meilisearch. */
+  searchIndex: 'search-index',
   /** Jobs that used up their retries, kept for inspection and manual replay. */
   deadLetter: 'dead-letter',
 } as const;
 
 /** 5 tries with exponential backoff for every delivery queue (backend spec, Queues). */
 export const JOB_ATTEMPTS = 5;
+/** Search indexing retries 10 times (backend spec, Queues). */
+export const SEARCH_JOB_ATTEMPTS = 10;
 
 export interface DeadLetter {
   queue: string;
@@ -49,6 +55,8 @@ export interface NotificationWorkerOptions {
   expo: ExpoPushClient;
   webPush: WebPushSender | null;
   email: EmailSender;
+  /** Consumes `search-index`; without it, sync events are queued but wait for a worker that has one. */
+  searchIndexer?: SearchIndexer;
   log: FastifyBaseLogger;
   /** First retry delay; doubles on each attempt. */
   backoffMs?: number;
@@ -62,8 +70,8 @@ export interface NotificationWorkerOptions {
 }
 
 /**
- * The notifications side of the worker process: the outbox relay, the
- * `notifications`, `push`, `email` and `cron` queues, and dead-lettering.
+ * The worker process: the outbox relay, the `notifications`, `push`,
+ * `email`, `cron` and `search-index` queues, and dead-lettering.
  */
 export async function startNotificationWorker(options: NotificationWorkerOptions) {
   const { prisma, log } = options;
@@ -83,6 +91,10 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
     push: queue<PushJob | ReceiptsJob>(QUEUE.push),
     email: queue<EmailJob>(QUEUE.email),
     cron: queue<Record<string, never>>(QUEUE.cron, { attempts: 1, removeOnComplete: 100 }),
+    searchIndex: queue<SearchIndexJob>(QUEUE.searchIndex, {
+      ...defaultJobOptions,
+      attempts: SEARCH_JOB_ATTEMPTS,
+    }),
     deadLetter: queue<DeadLetter>(QUEUE.deadLetter, { removeOnComplete: false }),
   };
 
@@ -142,11 +154,23 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
           return cleanupNotifications(prisma, options.now?.());
         case 'expire-requirements':
           return expireRequirements(prisma, options.now?.());
+        case 'search-premium-expiry':
+          return recordPremiumExpirySyncs(prisma, options.now?.());
         default:
           return null;
       }
     }),
   ];
+  const { searchIndexer } = options;
+  if (searchIndexer) {
+    // One at a time: each job re-reads its row and writes it, so two jobs for the same row
+    // can never interleave and leave the older state in the index.
+    workers.push(
+      worker<SearchIndexJob>(QUEUE.searchIndex, 1, async (job) =>
+        searchIndexer.processEvent(job.data.eventId),
+      ),
+    );
+  }
 
   if (options.isCleanupScheduled !== false) {
     // 03:00 IST, the quietest hour.
@@ -161,11 +185,19 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
       { name: 'expire-requirements' },
     );
+    if (searchIndexer) {
+      // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
+      await queues.cron.upsertJobScheduler(
+        'search-premium-expiry',
+        { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'search-premium-expiry' },
+      );
+    }
   }
 
   let isStopped = false;
   let relaying: Promise<unknown> = Promise.resolve();
-  const relayOnce = () => relayOutbox(prisma, queues.notifications);
+  const relayOnce = () => relayOutbox(prisma, queues);
   const loop = async () => {
     while (!isStopped) {
       try {
