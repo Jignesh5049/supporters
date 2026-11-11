@@ -2,6 +2,8 @@ import { REPORT_LIMITS, type ReportTargetType } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { PUBLIC_OWNER } from '../businesses/businesses.service';
 import { PUBLIC_POST } from '../posts/posts.service';
+import type { SearchEntity } from '../search/meili';
+import { recordSearchSync } from '../search/search.sync';
 
 type Tx = Prisma.TransactionClient;
 
@@ -57,6 +59,18 @@ const toggle = (
     1,
 });
 
+/** Tells search to re-read a post or business whose visibility just changed (same transaction). */
+async function synced(
+  tx: Tx,
+  entity: SearchEntity,
+  change: Promise<boolean>,
+  id: string,
+): Promise<boolean> {
+  const changed = await change;
+  if (changed) await recordSearchSync(tx, entity, id);
+  return changed;
+}
+
 export class ReportTargets {
   private readonly targets = new Map<ReportTargetType, ReportTarget>();
 
@@ -90,8 +104,9 @@ export class ReportTargets {
             businessSlug: row.business.slug,
           }),
         ),
-      hide: (tx, id) => toggle((args) => tx.post.updateMany(args)).hide(id),
-      unhide: (tx, id) => toggle((args) => tx.post.updateMany(args)).unhide(id),
+      hide: (tx, id) => synced(tx, 'post', toggle((args) => tx.post.updateMany(args)).hide(id), id),
+      unhide: (tx, id) =>
+        synced(tx, 'post', toggle((args) => tx.post.updateMany(args)).unhide(id), id),
     });
 
     this.register('comment', {
@@ -194,8 +209,10 @@ export class ReportTargets {
             businessSlug: row.slug,
           }),
         ),
-      hide: (tx, id) => toggle((args) => tx.business.updateMany(args)).hide(id),
-      unhide: (tx, id) => toggle((args) => tx.business.updateMany(args)).unhide(id),
+      hide: (tx, id) =>
+        synced(tx, 'business', toggle((args) => tx.business.updateMany(args)).hide(id), id),
+      unhide: (tx, id) =>
+        synced(tx, 'business', toggle((args) => tx.business.updateMany(args)).unhide(id), id),
     });
   }
 

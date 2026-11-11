@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@supporters/ui-web/components/button';
 import { useLogout } from '@/features/auth/auth-api';
+import { searchHref } from '@/features/search/search-params';
 import { Avatar } from '@/components/common/Avatar';
 import {
   Search,
@@ -44,11 +45,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/discover?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      router.push('/discover');
-    }
+    router.push(searchHref({ q: searchQuery.trim() }));
   };
 
   const handleLogout = () => {

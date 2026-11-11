@@ -184,6 +184,15 @@ describe('auto-hide after 5 distinct reporters', () => {
     });
   });
 
+  it('tells search to drop an auto-hidden post', async () => {
+    await clearOutbox();
+    const reporters = await users(5);
+    for (const reporter of reporters) await report(reporter, reportOf('post', postId));
+    expect((await outboxOf('search.sync')).map((event) => event.payload)).toEqual([
+      { entity: 'post', id: postId },
+    ]);
+  });
+
   it('counts only open reports', async () => {
     const reporters = await users(5);
     for (const reporter of reporters.slice(0, 4)) await report(reporter, reportOf('post', postId));
