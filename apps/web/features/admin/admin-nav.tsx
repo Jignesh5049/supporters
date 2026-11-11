@@ -9,6 +9,9 @@ import { adminApi } from './admin-api';
 const LINKS = [
   { href: '/admin/verifications', label: 'Verifications' },
   { href: '/admin/reports', label: 'Reports' },
+  { href: '/admin/users', label: 'Users' },
+  { href: '/admin/categories', label: 'Categories' },
+  { href: '/admin/audit-logs', label: 'Audit log' },
 ];
 
 export function AdminNav({ name }: { name: string }) {
