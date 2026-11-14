@@ -148,7 +148,7 @@ The prototype's PascalCase files (for example `BusinessCard.tsx`) are renamed to
 - Never log passwords, OTPs, tokens, phone numbers, emails or payout details.
 - New dependencies need a reason in the PR description. Prefer well-maintained packages, and pin exact versions.
 - Report a suspected vulnerability privately, never in a public issue: see [SECURITY.md](SECURITY.md).
-- Security checks run in CI (CodeQL, gitleaks, `pnpm audit`, dependency review); keep them green. Pin every GitHub Action to a commit SHA. The ASVS and MASVS mapping is in [docs/security/checklist.md](docs/security/checklist.md).
+- Security checks run in CI (CodeQL, gitleaks, `pnpm audit`); keep them green. Pin every GitHub Action to a commit SHA. The ASVS and MASVS mapping is in [docs/security/checklist.md](docs/security/checklist.md).
 
 ## Definition of done
 
