@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { readOtp } from './helpers';
 
 test('register, verify the OTP, then signed in', async ({ page, context }) => {

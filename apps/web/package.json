@@ -17,6 +17,7 @@
     "@supporters/shared": "workspace:*",
     "@supporters/ui-web": "workspace:*",
     "@tanstack/react-query": "5.105.0",
+    "get-nonce": "1.0.1",
     "lucide-react": "^1.52.0",
     "next": "16.4.2",
     "react": "19.3.0",

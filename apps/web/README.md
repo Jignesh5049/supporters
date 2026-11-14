@@ -18,6 +18,10 @@ Copy `.env.example` to `.env.local` only if the API runs somewhere else.
 - `dal/` is server-only. `getSession()` calls `GET /v1/me` once per request and returns a small DTO; `requireSession()` redirects to login.
 - `lib/api/client.ts` is the browser client: it sends `x-csrf-token` on writes, refreshes once on a 401 (shared by concurrent requests) and retries, and maps RFC 9457 `code`s to messages.
 
+## Security headers and CSP
+
+`proxy.ts` sets a per-request nonce and the strict CSP (`lib/security/csp.ts`); `next.config.ts` sets the static headers (`lib/security/headers.ts`). Env (read per request): `CSP_MODE=report-only` to stage it, `CSP_REPORT_URL`, `CSP_UPLOAD_ORIGINS` (S3 endpoints), `MEDIA_PUBLIC_URL`, `APP_ORIGIN`. Browser-run checks: `E2E_PROD=1 LOCAL_API_PROXY=1` build, then `E2E_PROD=1 pnpm e2e`; every e2e test fails on a CSP violation (`e2e/fixtures.ts`).
+
 ## Tests
 
 - `pnpm --filter @supporters/web test`: Vitest unit tests.
