@@ -51,6 +51,11 @@ ENV NODE_ENV=production HOME=/tmp
 
 # ---- migrate: `prisma migrate deploy`, run once per release before the API starts ----
 FROM runtime AS migrate
+# The schema engine talks TLS to RDS (sslmode=verify-full) through OpenSSL, which Prisma also needs to
+# detect in order to pick the matching engine binary. node:24-slim has neither the CLI nor the hint.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=root:root /out-migrate/ ./
 # Fetch the schema engine binary now, so the container never downloads code at run time.
 RUN node_modules/.bin/prisma --version
