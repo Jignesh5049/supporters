@@ -1,331 +1,174 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import {
-  ArrowLeft,
-  Share2,
-  Clock,
-  MapPin,
-  Package,
-  Send,
-  Building2,
-  ShieldCheck,
-} from 'lucide-react-native';
-import { colors } from '../styles/theme';
-import { useApp } from '../context/AppContext';
-import { SAMPLE_REQUIREMENTS } from '../features/requirements/types';
-import { QuoteSubmissionModal } from '../features/requirements/components';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { MessageSquare } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
+import type { Quote } from '@supporters/shared';
+import { Badge } from '@supporters/ui-native/components/badge';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Text } from '@supporters/ui-native/components/text';
+import { ApiError, ApiErrorCode, messageForError } from '../lib/api';
+import { useMyBusiness } from '../features/business/hooks';
+import { QuoteSheet, RequirementCard } from '../features/requirements/components';
+import { RequirementOwnerActions } from '../features/requirements/components/RequirementOwnerActions';
+import { ScreenHeader } from '../features/requirements/components/ScreenHeader';
+import { useRequirement, useRequirementQuotes } from '../features/requirements/hooks';
+import { formatPrice } from '../features/social/mappers';
 
+/** One requirement: the buyer sees the quotes received; a matched seller can quote. */
 export function RequirementDetailScreen() {
+  const { id: rawId } = useLocalSearchParams<{ id: string }>();
+  const id = z.uuid().safeParse(rawId).success ? (rawId as string) : '';
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { showToast, openShareModal } = useApp();
+  const query = useRequirement(id);
+  const myBusiness = useMyBusiness();
+  const isVerified = myBusiness.data?.verificationStatus === 'verified';
+  const [isQuoting, setIsQuoting] = useState(false);
 
-  const req = SAMPLE_REQUIREMENTS.find((r) => r.id === id) || SAMPLE_REQUIREMENTS[0];
-  const [modalOpen, setModalOpen] = useState(false);
+  if (!id || query.isError) {
+    const isMissing =
+      !id || (query.error instanceof ApiError && query.error.code === ApiErrorCode.NotFound);
+    return (
+      <SafeAreaView className="bg-background flex-1">
+        <ScreenHeader title="Buyer requirement" />
+        <View className="items-center gap-3 p-8">
+          <Text className="text-center text-base font-semibold">
+            {isMissing ? 'Requirement not found' : messageForError(query.error)}
+          </Text>
+          {isMissing ? (
+            <Text variant="muted" className="text-center text-sm">
+              It may have been closed, or it was not shared with your business.
+            </Text>
+          ) : (
+            <Button onPress={() => query.refetch()}>
+              <Text>Try again</Text>
+            </Button>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (!query.data) {
+    return (
+      <SafeAreaView className="bg-background flex-1">
+        <ScreenHeader title="Buyer requirement" />
+        <ActivityIndicator className="mt-8" />
+      </SafeAreaView>
+    );
+  }
 
-  const handleQuoteSubmit = (_data: {
-    pricePerUnit: string;
-    deliveryDays: string;
-    note: string;
-  }) => {
-    showToast('Your quotation has been dispatched to the buyer!', 'success');
-  };
+  const requirement = query.data;
+  const canQuote =
+    !requirement.isMine && isVerified && requirement.status === 'open' && !requirement.hasQuoted;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>RFQ Overview</Text>
-        <TouchableOpacity
-          onPress={() =>
-            openShareModal({
-              title: req.title,
-              url: `https://supporters.in/requirements/${req.id}`,
-            })
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+      <ScreenHeader title="Buyer requirement" />
+      <ScrollView contentContainerClassName="gap-4 p-4">
+        <RequirementCard
+          requirement={requirement}
+          onPress={() => undefined}
+          actions={
+            requirement.isMine ? (
+              <RequirementOwnerActions requirement={requirement} showView={false} />
+            ) : canQuote ? (
+              <Button size="sm" onPress={() => setIsQuoting(true)}>
+                <Text>Send quote</Text>
+              </Button>
+            ) : null
           }
-          style={styles.backButton}
-        >
-          <Share2 size={20} color={colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Urgency Badge */}
-        <View style={styles.badgeRow}>
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryText}>{req.category}</Text>
+        />
+        {requirement.images.length > 0 ? (
+          <View className="flex-row gap-2">
+            {requirement.images.map((image) => (
+              <Image
+                key={image.id}
+                source={{ uri: image.url }}
+                style={{ width: 96, height: 96, borderRadius: 12 }}
+                contentFit="cover"
+                accessibilityLabel="Requirement image"
+              />
+            ))}
           </View>
-          <View style={styles.urgencyPill}>
-            <Clock size={12} color="#DC2626" />
-            <Text style={styles.urgencyText}>{req.urgency} Requirement</Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>{req.title}</Text>
-        <Text style={styles.postedTime}>Posted {req.createdAt} • Surat Verified Tender</Text>
-
-        {/* Spec Overview Card */}
-        <View style={styles.specCard}>
-          <View style={styles.specRow}>
-            <View style={styles.specCol}>
-              <Text style={styles.specLabel}>Required Quantity</Text>
-              <Text style={styles.specValue}>{req.quantity}</Text>
-            </View>
-            <View style={styles.specCol}>
-              <Text style={styles.specLabel}>Target Budget</Text>
-              <Text style={styles.budgetValue}>{req.targetBudget}</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.specRow}>
-            <View style={styles.specCol}>
-              <Text style={styles.specLabel}>Buyer Location</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <MapPin size={13} color="#4B5563" />
-                <Text style={styles.specValue}>{req.buyerCity}</Text>
-              </View>
-            </View>
-            <View style={styles.specCol}>
-              <Text style={styles.specLabel}>Proposals Submitted</Text>
-              <Text style={styles.specValue}>{req.quotesCount} Suppliers</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Buyer Profile Snippet */}
-        <View style={styles.buyerCard}>
-          <Building2 size={24} color={colors.primary} />
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.buyerName}>{req.buyerName}</Text>
-              <ShieldCheck size={14} color="#16A34A" />
-            </View>
-            <Text style={styles.buyerMeta}>Verified B2B Enterprise Buyer • {req.buyerCity}</Text>
-          </View>
-        </View>
-
-        {/* Detailed Requirement Description */}
-        <View style={styles.descSection}>
-          <Text style={styles.descTitle}>Technical Specifications & Scope</Text>
-          <Text style={styles.descText}>{req.description}</Text>
-        </View>
-
-        {/* Buyer Notes */}
-        <View style={styles.notesCard}>
-          <Text style={styles.notesTitle}>Instructions for Suppliers</Text>
-          <Text style={styles.notesText}>
-            • Direct manufacturers and verified stockists preferred.{'\n'}• Quotation must include
-            GST breakup and delivery lead time.{'\n'}• Sample approval required prior to full
-            production run.
+        ) : null}
+        {!requirement.isMine && !isVerified && requirement.status === 'open' ? (
+          <Text className="bg-warning-soft text-warning rounded-xl p-3 text-sm">
+            Only verified businesses can quote. Request the badge from the Business Hub.
           </Text>
-        </View>
+        ) : null}
+        {requirement.isMine ? (
+          <QuotesReceived
+            requirementId={requirement.id}
+            onOpenChat={(quote) => router.push(`/messages/${quote.conversationId}`)}
+          />
+        ) : null}
       </ScrollView>
-
-      {/* Floating Bottom Bar */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.submitBtn} onPress={() => setModalOpen(true)}>
-          <Send size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-          <Text style={styles.submitBtnText}>Submit Quotation Proposal</Text>
-        </TouchableOpacity>
-      </View>
-
-      <QuoteSubmissionModal
-        visible={modalOpen}
-        requirement={req}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleQuoteSubmit}
+      <QuoteSheet
+        requirement={isQuoting ? requirement : null}
+        onClose={() => setIsQuoting(false)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  backButton: {
-    padding: 6,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-  },
-  categoryPill: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  urgencyPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FEF2F2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  urgencyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#DC2626',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    lineHeight: 24,
-    marginBottom: 4,
-  },
-  postedTime: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 16,
-  },
-  specCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 16,
-  },
-  specRow: {
-    flexDirection: 'row',
-  },
-  specCol: {
-    flex: 1,
-  },
-  specLabel: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginBottom: 3,
-  },
-  specValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  budgetValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#16A34A',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginVertical: 12,
-  },
-  buyerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 16,
-  },
-  buyerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  buyerMeta: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  descSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 16,
-  },
-  descTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  descText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  notesCard: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 14,
-  },
-  notesTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E40AF',
-    marginBottom: 6,
-  },
-  notesText: {
-    fontSize: 12,
-    color: '#3B82F6',
-    lineHeight: 18,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    padding: 14,
-    paddingBottom: 24,
-  },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  submitBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+function QuotesReceived({
+  requirementId,
+  onOpenChat,
+}: {
+  requirementId: string;
+  onOpenChat: (quote: Quote) => void;
+}) {
+  const quotes = useRequirementQuotes(requirementId, true);
+  const items = quotes.data?.pages.flatMap((page) => page.data) ?? [];
+  return (
+    <View className="gap-3">
+      <Text className="text-base font-bold" role="heading">
+        Quotes received
+      </Text>
+      {quotes.isPending ? <ActivityIndicator /> : null}
+      {!quotes.isPending && items.length === 0 ? (
+        <Text variant="muted" className="text-sm">
+          No quotes yet. Matching suppliers have been told; their quotes arrive here and in your
+          messages.
+        </Text>
+      ) : null}
+      {items.map((quote) => (
+        <View key={quote.id} className="bg-card border-border gap-1.5 rounded-2xl border p-4">
+          <View className="flex-row flex-wrap items-center gap-2">
+            <Text className="text-sm font-bold">{quote.business.name}</Text>
+            {quote.business.isVerified ? (
+              <Badge variant="secondary">
+                <Text>Verified</Text>
+              </Badge>
+            ) : null}
+            <Text variant="muted" className="text-xs">
+              {quote.business.city.name}
+            </Text>
+          </View>
+          <Text className="text-primary text-lg font-black">{formatPrice(quote.price)}</Text>
+          <Text variant="muted" className="text-sm">
+            {quote.message}
+          </Text>
+          <Button
+            size="sm"
+            variant="outline"
+            className="self-start"
+            onPress={() => onOpenChat(quote)}
+            accessibilityLabel={`Chat with ${quote.business.name}`}
+          >
+            <Icon as={MessageSquare} size={14} />
+            <Text>Chat</Text>
+          </Button>
+        </View>
+      ))}
+      {quotes.hasNextPage ? (
+        <Button variant="outline" onPress={() => quotes.fetchNextPage()}>
+          <Text>More quotes</Text>
+        </Button>
+      ) : null}
+    </View>
+  );
+}
