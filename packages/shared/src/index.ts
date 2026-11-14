@@ -21,3 +21,5 @@ export * from './schemas/search';
 export * from './schemas/social';
 export * from './schemas/uploads';
 export * from './schemas/verification';
+export * from './schemas/premium-events';
+export * from './schemas/wallet';
