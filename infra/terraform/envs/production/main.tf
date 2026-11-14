@@ -50,6 +50,8 @@ module "secrets" {
     SSM_PATH          = local.ssm_path
     ECR_REGISTRY      = local.ecr_registry
     ECR_REPOSITORY_NS = var.ecr_repository_prefix
+
+    CLOUDFRONT_KEY_PAIR_ID = coalesce(module.edge.chat_public_key_id, "not-configured")
   }
 }
 
@@ -73,6 +75,7 @@ module "compute" {
   log_group_prefix = local.ssm_path
 
   s3_bucket_arn       = "arn:aws:s3:::${local.media_bucket_name}"
+  s3_kms_key_arn      = module.storage.kms_key_arn
   ses_identity_arns   = ["arn:aws:ses:${var.region}:${local.account_id}:identity/${var.domain}"]
   ecr_repository_arns = ["arn:aws:ecr:${var.region}:${local.account_id}:repository/${var.ecr_repository_prefix}/*"]
   ecr_registry        = local.ecr_registry
@@ -88,4 +91,40 @@ module "database" {
   subnet_ids        = module.network.private_subnet_ids
   security_group_id = module.network.db_security_group_id
   instance_class    = var.db_instance_class
+}
+
+module "storage" {
+  source = "../../modules/storage"
+
+  bucket_name          = local.media_bucket_name
+  cors_allowed_origins = ["https://${local.app_domain}"]
+}
+
+module "edge" {
+  source = "../../modules/edge"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  name          = local.name
+  zone_id       = data.aws_route53_zone.this.zone_id
+  app_domain    = local.app_domain
+  media_domain  = local.media_domain
+  origin_domain = local.origin_domain
+  origin_ip     = module.compute.public_ip
+
+  origin_verify_value = module.secrets.origin_verify_value
+
+  bucket_id                   = module.storage.bucket_id
+  bucket_arn                  = module.storage.bucket_arn
+  bucket_regional_domain_name = module.storage.bucket_regional_domain_name
+  bucket_base_policy_json     = module.storage.base_policy_json
+
+  price_class                 = var.cloudfront_price_class
+  admin_allowed_ipv4_cidrs    = var.admin_allowed_ipv4_cidrs
+  admin_allowed_ipv6_cidrs    = var.admin_allowed_ipv6_cidrs
+  auth_rate_limit             = var.auth_rate_limit
+  chat_signing_public_key_pem = var.chat_signing_public_key_pem
 }

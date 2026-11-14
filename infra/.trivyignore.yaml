@@ -4,3 +4,10 @@ misconfigurations:
     statement: >-
       The app server needs outbound internet access (ECR, SSM, SES, Razorpay, MSG91, Expo Push)
       and the design has no NAT Gateway by cost rule. Ingress is limited to CloudFront.
+  - id: AVD-AWS-0011
+    paths:
+      - modules/edge/main.tf
+    statement: >-
+      The media distribution serves only static, cached files from a private bucket through Origin
+      Access Control; it has no dynamic code to attack. The product spec puts WAF on the app
+      distribution. A second web ACL would add monthly cost for no protection of dynamic content.

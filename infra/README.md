@@ -10,14 +10,16 @@ infra/
     bootstrap/          one-off stack: remote-state bucket, lock table, GitHub OIDC provider
     modules/
       secrets/          KMS key, SSM Parameter Store placeholders, X-Origin-Verify secret
+      storage/          private media bucket, KMS key, lifecycle, CORS
       network/          VPC, subnets, S3 gateway endpoint, security groups, flow logs (no NAT)
       compute/          EC2 t4g, instance profile, Elastic IP, user data, EBS snapshots
       database/         RDS PostgreSQL 18, parameter group (TLS required), backups
+      edge/             CloudFront (app + media), WAF, ACM, Route 53 records
     envs/
       production/       root module for production (one state file)
 ```
 
-More modules (storage, edge, ops) and the staging root arrive in the following PRs of this stack.
+Ops modules and the staging root arrive in the last PR of this stack.
 
 ## Environments: separate roots, not workspaces
 
@@ -69,6 +71,24 @@ aws secretsmanager get-secret-value --secret-id <db_master_secret_arn> --query S
 ```
 
 `sslmode=verify-full` needs the RDS CA bundle (`rds-ca-rsa2048-g1`, from <https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem>) inside the API container; that belongs in the Dockerfile.
+
+
+## Storage and edge (PR 2)
+
+- **Storage:** one private bucket, `<name>-media-<account-id>`, with versioning (old versions kept 30 days), SSE-KMS with its own customer-managed key, all four public-access blocks, `BucketOwnerEnforced`, a TLS-only policy, abort-incomplete-multipart and Intelligent-Tiering lifecycle rules, and CORS for presigned `PUT` from `https://<domain>`. The prefixes are conventions enforced by IAM and the bucket policy: `public/` (served), `chat/` (signed URLs only) and `kyc/` (S3 presigned links for admins, never behind CloudFront).
+- **App distribution (`<domain>`):** a single origin, `origin.<domain>` (Caddy on the server, HTTPS only), with the secret `X-Origin-Verify` header. `/v1/ws*` and `/v1/*` are never cached and forward every cookie, header and query string; `/_next/static/*` is cached immutably for a year; everything else goes to Next.js uncached. The `Host` header is deliberately not forwarded (the origin certificate is for `origin.<domain>`); the apps use `APP_ORIGIN`.
+- **Media distribution (`media.<domain>`):** private bucket through Origin Access Control. The bucket policy lets that distribution read `public/*` only, so `kyc/*` is refused by S3 even if someone requests it. Chat attachments are served from `chat/*` only when `chat_signing_public_key_pem` is set; the behaviour then requires a CloudFront signed URL (trusted key group). Responses carry `X-Content-Type-Options: nosniff`, HSTS and a sandboxing CSP.
+- **WAF (CloudFront scope, us-east-1):** an IP allow-list rule for `/admin*` and `/v1/admin*` (fail-closed when the list is empty), a rate rule on `/v1/auth/*`, a coarse global rate rule, the AWS managed Core rule set (with `SizeRestrictions_BODY` set to count) and the Known Bad Inputs set. Logs go to a 30-day log group with `authorization` and `cookie` redacted.
+- **Certificates and DNS:** one ACM certificate in us-east-1 for `<domain>` and `media.<domain>`, validated by DNS in the client's hosted zone; A/AAAA alias records for both distributions and an A record for `origin.<domain>`.
+
+### Generating the chat signing key pair
+
+```bash
+openssl genrsa -out chat-signing-private.pem 2048
+openssl rsa -pubout -in chat-signing-private.pem -out chat-signing-public.pem
+# Put the PUBLIC key in terraform.tfvars as chat_signing_public_key_pem.
+# Put the PRIVATE key in SSM as /supporters/<env>/CLOUDFRONT_SIGNING_PRIVATE_KEY, then delete the file.
+```
 
 ## Static checks
 

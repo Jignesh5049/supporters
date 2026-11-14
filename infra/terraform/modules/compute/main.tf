@@ -69,6 +69,18 @@ data "aws_iam_policy_document" "app" {
   }
 
   statement {
+    sid       = "MediaBucketEncryption"
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+    resources = [var.s3_kms_key_arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["s3.${local.region}.amazonaws.com"]
+    }
+  }
+
+  statement {
     sid       = "SendEmail"
     actions   = ["ses:SendEmail", "ses:SendRawEmail", "ses:SendTemplatedEmail"]
     resources = var.ses_identity_arns
