@@ -109,16 +109,24 @@ export class UploadsService {
       sniffContentType(bytes) === upload.contentType;
     if (!isGenuine) return this.reject(upload, 'content mismatch');
 
+    // The presigned PUT URL stays valid for its whole TTL, so the client could overwrite the file
+    // we just checked. Snapshot the validated bytes under a fresh, never-presigned key and drop
+    // the original, so what is served is exactly what was checked.
+    const finalKey = objectKey(upload.purpose);
+    await this.storage.copy(upload.key, finalKey);
+    await this.storage.delete(upload.key);
+    const checked = { ...upload, key: finalKey };
+
     try {
-      await this.processor.process(upload, this.storage);
+      await this.processor.process(checked, this.storage);
     } catch (error) {
       this.log.warn({ err: error, uploadId: upload.id }, 'media processing failed');
-      return this.reject(upload, 'processing failed');
+      return this.reject(checked, 'processing failed');
     }
 
     const ready = await this.prisma.upload.update({
       where: { id: upload.id },
-      data: { status: 'ready', completedAt: new Date() },
+      data: { status: 'ready', key: finalKey, completedAt: new Date() },
     });
     return this.toUpload(ready);
   }
