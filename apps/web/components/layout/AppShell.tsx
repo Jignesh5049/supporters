@@ -18,7 +18,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     '/onboarding/business',
   ].includes(pathname);
 
-  if (isAuthRoute) {
+  // The admin area has its own navigation.
+  if (isAuthRoute || pathname === '/admin' || pathname.startsWith('/admin/')) {
     return <main className="flex-1 flex flex-col">{children}</main>;
   }
 

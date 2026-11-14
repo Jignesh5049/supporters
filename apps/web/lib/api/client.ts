@@ -1,4 +1,9 @@
-import { CSRF_HEADER, SESSION_COOKIE, loginUrlFor } from '@/lib/auth/session-cookies';
+import {
+  CSRF_HEADER,
+  SESSION_COOKIE,
+  adminLoginUrlFor,
+  loginUrlFor,
+} from '@/lib/auth/session-cookies';
 import { ApiError, toApiError } from './errors';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -20,7 +25,7 @@ export interface ApiClientDeps {
 }
 
 /** Auth calls that answer 401 for a bad password or code, not an expired session. */
-const NO_REFRESH_PATHS = ['/v1/auth/'];
+const NO_REFRESH_PATHS = ['/v1/auth/', '/v1/admin/auth/'];
 
 export function createApiClient(deps: ApiClientDeps) {
   let refreshing: Promise<boolean> | null = null;
@@ -91,6 +96,8 @@ export const api = createApiClient({
   readCookie: readBrowserCookie,
   onSessionExpired: () => {
     const { pathname, search } = window.location;
-    window.location.assign(loginUrlFor(`${pathname}${search}`));
+    const next = `${pathname}${search}`;
+    const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/');
+    window.location.assign(isAdmin ? adminLoginUrlFor(next) : loginUrlFor(next));
   },
 });

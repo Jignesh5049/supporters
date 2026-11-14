@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/business/manage/', '/settings/'],
+      disallow: ['/admin', '/business/manage/', '/settings/'],
     },
     sitemap: 'https://supporters.in/sitemap.xml',
   };
