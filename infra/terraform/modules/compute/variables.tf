@@ -94,3 +94,8 @@ variable "docker_compose_version" {
   type        = string
   default     = "v5.7.1"
 }
+
+variable "s3_kms_key_arn" {
+  description = "Customer-managed key that encrypts the media bucket. The API signs presigned uploads, so its role needs it."
+  type        = string
+}

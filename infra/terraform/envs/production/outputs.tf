@@ -22,3 +22,23 @@ output "ssm_path" {
   description = "Parameter Store prefix for this environment's secrets and config."
   value       = local.ssm_path
 }
+
+output "media_bucket" {
+  description = "Name of the private media bucket."
+  value       = module.storage.bucket_id
+}
+
+output "app_distribution_id" {
+  description = "CloudFront distribution of the app (<domain>)."
+  value       = module.edge.app_distribution_id
+}
+
+output "media_distribution_id" {
+  description = "CloudFront distribution of media.<domain>."
+  value       = module.edge.media_distribution_id
+}
+
+output "chat_public_key_id" {
+  description = "CloudFront public key id for signing chat URLs (null until chat_signing_public_key_pem is set)."
+  value       = module.edge.chat_public_key_id
+}

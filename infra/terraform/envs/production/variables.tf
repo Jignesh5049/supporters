@@ -58,6 +58,35 @@ variable "secret_names" {
     "EXPO_ACCESS_TOKEN",
     "SENTRY_DSN",
     "CLOUDFRONT_SIGNING_PRIVATE_KEY",
-    "CLOUDFRONT_KEY_PAIR_ID",
   ]
+}
+
+variable "admin_allowed_ipv4_cidrs" {
+  description = "IPv4 CIDRs allowed to reach /admin* and /v1/admin/* (client staff offices or a VPN). Empty blocks everyone."
+  type        = list(string)
+  default     = []
+}
+
+variable "admin_allowed_ipv6_cidrs" {
+  description = "IPv6 CIDRs allowed to reach /admin* and /v1/admin/*."
+  type        = list(string)
+  default     = []
+}
+
+variable "chat_signing_public_key_pem" {
+  description = "Public half of the key pair that signs 5-minute chat attachment URLs. Generate it out of band (openssl) and keep the private key in SSM. Empty leaves chat/ unserved."
+  type        = string
+  default     = ""
+}
+
+variable "cloudfront_price_class" {
+  description = "CloudFront price class. PriceClass_200 includes India."
+  type        = string
+  default     = "PriceClass_200"
+}
+
+variable "auth_rate_limit" {
+  description = "WAF: requests per client IP per 5 minutes to /v1/auth/* before blocking."
+  type        = number
+  default     = 300
 }
