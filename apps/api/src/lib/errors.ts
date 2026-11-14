@@ -30,6 +30,8 @@ export const ErrorCode = {
   PostLimitReached: 'POST_LIMIT_REACHED',
   RequirementLimitReached: 'REQUIREMENT_LIMIT_REACHED',
   RequirementNotOpen: 'REQUIREMENT_NOT_OPEN',
+  BusinessNotVerified: 'BUSINESS_NOT_VERIFIED',
+  QuoteExists: 'QUOTE_EXISTS',
   UploadIncomplete: 'UPLOAD_INCOMPLETE',
   UploadRejected: 'UPLOAD_REJECTED',
   Blocked: 'BLOCKED',

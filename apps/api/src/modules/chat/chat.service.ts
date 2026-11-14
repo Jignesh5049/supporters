@@ -457,7 +457,8 @@ export class ChatService {
       },
       include: messageInclude,
     });
-    if (input.type !== 'enquiry') {
+    // Enquiries and quotes are announced as themselves (enquiry.created, requirement.quoted).
+    if (input.type !== 'enquiry' && input.type !== 'quote') {
       await recordEvent(tx, 'message.created', { messageId: row.id });
     }
     await tx.conversation.update({

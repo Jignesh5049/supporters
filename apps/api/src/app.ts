@@ -216,7 +216,15 @@ export async function buildApp(options: BuildAppOptions) {
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
     search: new SearchService(createMeili(env.MEILI_URL, env.MEILI_SEARCH_KEY), searchCards),
     discover: new DiscoverService(app.prisma, searchCards),
-    requirements: new RequirementsService(app.prisma, businesses, categories, places, uploads),
+    requirements: new RequirementsService(
+      app.prisma,
+      businesses,
+      categories,
+      places,
+      uploads,
+      chat,
+      blocks,
+    ),
   });
 
   await app.register(realtimePlugin);

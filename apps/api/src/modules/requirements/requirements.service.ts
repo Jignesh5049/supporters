@@ -2,10 +2,12 @@ import {
   type MyRequirementsQuery,
   type Page,
   type PaginationQuery,
+  type Quote,
   RATE_LIMITS,
   REQUIREMENT,
   type Requirement,
   type RequirementStatus,
+  type createQuoteSchema,
   type createRequirementSchema,
   type productUnitSchema,
 } from '@supporters/shared';
@@ -20,10 +22,19 @@ import {
   rateLimited,
 } from '../../lib/errors';
 import { decodeCursor, encodeCursor, pageArgs, splitPage } from '../../lib/pagination';
-import type { BusinessesService } from '../businesses/businesses.service';
+import type { BlocksService } from '../blocks/blocks.service';
+import {
+  type BusinessesService,
+  PUBLIC_OWNER,
+  businessRequired,
+  summaryInclude,
+  toBusinessSummary,
+} from '../businesses/businesses.service';
 import { toCategoryRef } from '../categories/categories.service';
 import type { CategoriesService } from '../categories/categories.service';
-import { toMoney } from '../listings/listings.service';
+import { messageInclude } from '../chat/chat.mapper';
+import { type ChatService, blockedError, keyReusedError, requestHash } from '../chat/chat.service';
+import { PUBLIC_LISTING, toMoney } from '../listings/listings.service';
 import { recordEvent } from '../notifications/outbox';
 import { toCity, type PlacesService } from '../places/places.service';
 import { toMedia, type UploadsService } from '../uploads/uploads.service';
@@ -38,12 +49,24 @@ const requirementInclude = {
 } satisfies Prisma.BuyerRequirementInclude;
 type RequirementRow = Prisma.BuyerRequirementGetPayload<{ include: typeof requirementInclude }>;
 
+const quoteInclude = {
+  business: { include: summaryInclude },
+} satisfies Prisma.RequirementQuoteInclude;
+type QuoteRow = Prisma.RequirementQuoteGetPayload<{ include: typeof quoteInclude }>;
+
 type ProductUnit = z.infer<typeof productUnitSchema>;
 type CreateRequirement = z.infer<typeof createRequirementSchema>;
+type CreateQuote = z.infer<typeof createQuoteSchema>;
 
 const suspended = () => new AppError(403, ErrorCode.AccountSuspended, 'Your account is suspended');
 const notOpen = () =>
   new AppError(409, ErrorCode.RequirementNotOpen, 'This requirement is no longer open');
+const notVerified = () =>
+  new AppError(403, ErrorCode.BusinessNotVerified, 'Only verified businesses can quote', {
+    detail: 'Get your business verified from the Business Hub first.',
+  });
+const quoteExists = () =>
+  new AppError(409, ErrorCode.QuoteExists, 'Your business has already quoted on this requirement');
 
 /** An open requirement past its expiry is expired, whether or not the cron has run yet. */
 const isLive = (now: Date) =>
@@ -67,7 +90,7 @@ const notBlockedWith = (userId: string): Prisma.UserWhereInput => ({
 });
 
 /**
- * Buyer requirements (product spec, Discovery and buyer
+ * Buyer requirements and quotes (product spec, Discovery and buyer
  * requirements). Matching happens in the worker; see requirements.matching.ts.
  */
 export class RequirementsService {
@@ -77,6 +100,8 @@ export class RequirementsService {
     private readonly categories: CategoriesService,
     private readonly places: PlacesService,
     private readonly uploads: UploadsService,
+    private readonly chat: ChatService,
+    private readonly blocks: BlocksService,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -228,6 +253,136 @@ export class RequirementsService {
     return this.get(userId, id);
   }
 
+  /** Quotes on the buyer's own requirement, newest first. */
+  async listQuotes(userId: string, id: string, query: PaginationQuery): Promise<Page<Quote>> {
+    const owned = await this.prisma.buyerRequirement.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!owned) throw notFound();
+    const page = pageArgs(query.cursor, query.limit);
+    const rows = await this.prisma.requirementQuote.findMany({
+      ...page,
+      where: { ...page.where, requirementId: id, business: PUBLIC_OWNER },
+      include: quoteInclude,
+    });
+    const split = splitPage(rows, query.limit);
+    return { data: split.rows.map((row) => this.toQuote(row)), nextCursor: split.nextCursor };
+  }
+
+  /**
+   * A verified, matched business quotes once. The quote is posted as a
+   * `quote` message into the DM thread between the buyer and the business,
+   * opening the thread if there is none, and the buyer is notified. The
+   * Idempotency-Key is the message's clientId: a retry returns the stored
+   * quote.
+   */
+  async quote(
+    userId: string,
+    requirementId: string,
+    clientId: string,
+    input: CreateQuote,
+  ): Promise<{ quote: Quote; replayed: boolean }> {
+    const hash = requestHash(['quote', requirementId, input]);
+    const replay = await this.replayOf(userId, clientId, hash);
+    if (replay) return { quote: replay, replayed: true };
+
+    await this.requireActive(userId);
+    const business = await this.prisma.business.findUnique({
+      where: { ownerUserId: userId },
+      select: { id: true, verificationStatus: true },
+    });
+    if (!business) throw businessRequired();
+
+    const requirement = await this.prisma.buyerRequirement.findFirst({
+      where: {
+        id: requirementId,
+        user: { status: 'active' },
+        matches: { some: { businessId: business.id } },
+      },
+      select: { id: true, userId: true, status: true, expiresAt: true },
+    });
+    if (!requirement) throw notFound();
+    if (business.verificationStatus !== 'verified') throw notVerified();
+    const now = this.now();
+    if (requirement.status !== 'open' || requirement.expiresAt <= now) throw notOpen();
+    if (await this.blocks.isBlockedEitherWay(userId, requirement.userId)) throw blockedError();
+    const listing = await this.requireOwnListing(business.id, input.listing);
+
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quotes:${business.id}`}, 0))`;
+        const existing = await tx.requirementQuote.findUnique({
+          where: { requirementId_businessId: { requirementId, businessId: business.id } },
+          select: { id: true },
+        });
+        if (existing) throw quoteExists();
+        const today = await tx.requirementQuote.findMany({
+          where: { businessId: business.id, createdAt: { gt: new Date(now.getTime() - DAY_MS) } },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        });
+        const oldest = today[0];
+        if (today.length >= RATE_LIMITS.quotesPerBusinessPerDay && oldest) {
+          throw rateLimited(
+            Math.ceil((oldest.createdAt.getTime() + DAY_MS - now.getTime()) / 1000),
+          );
+        }
+        // The business starts the thread here, so it doesn't count against the
+        // buyer's daily cap on new conversations.
+        const conversation = await tx.conversation.upsert({
+          where: { userId_businessId: { userId: requirement.userId, businessId: business.id } },
+          create: { userId: requirement.userId, businessId: business.id },
+          update: {},
+          select: { id: true, userId: true, businessId: true },
+        });
+        const message = await this.chat.append(tx, {
+          conversation,
+          senderUserId: userId,
+          senderSide: 'business',
+          clientId,
+          requestHash: hash,
+          type: 'quote',
+          body: input.message,
+          productId: listing?.productId,
+          serviceId: listing?.serviceId,
+        });
+        const quote = await tx.requirementQuote.create({
+          data: {
+            requirementId,
+            businessId: business.id,
+            pricePaise: BigInt(input.price.amountPaise),
+            message: input.message,
+            productId: listing?.productId ?? null,
+            serviceId: listing?.serviceId ?? null,
+            conversationId: conversation.id,
+            messageId: message.id,
+            createdAt: now,
+          },
+          include: quoteInclude,
+        });
+        await tx.buyerRequirement.update({
+          where: { id: requirementId },
+          data: { quoteCount: { increment: 1 } },
+        });
+        await recordEvent(tx, 'requirement.quoted', { quoteId: quote.id });
+        return { quote, conversation, messageId: message.id };
+      });
+      const stored = await this.prisma.message.findUniqueOrThrow({
+        where: { id: result.messageId },
+        include: messageInclude,
+      });
+      this.chat.events.messageNew(result.conversation, this.chat.message(stored));
+      return { quote: this.toQuote(result.quote), replayed: false };
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      // A parallel retry with the same key won the race, or another request quoted first.
+      const raced = await this.replayOf(userId, clientId, hash);
+      if (raced) return { quote: raced, replayed: true };
+      throw quoteExists();
+    }
+  }
+
   private async requireActive(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -258,6 +413,32 @@ export class RequirementsService {
     return new Set(rows.map((row) => row.requirementId));
   }
 
+  /** The attached listing must be a published product or service of the quoting business. */
+  private async requireOwnListing(
+    businessId: string,
+    listing: { type: 'product' | 'service'; id: string } | undefined,
+  ) {
+    if (!listing) return null;
+    const where = { id: listing.id, businessId, ...PUBLIC_LISTING };
+    const found =
+      listing.type === 'product'
+        ? await this.prisma.product.findFirst({ where, select: { id: true } })
+        : await this.prisma.service.findFirst({ where, select: { id: true } });
+    if (!found) throw invalidField('body.listing', 'Pick a published listing of your business');
+    return listing.type === 'product' ? { productId: found.id } : { serviceId: found.id };
+  }
+
+  /** A retried quote: the stored one, or null when the key is new. */
+  private async replayOf(userId: string, clientId: string, hash: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { senderUserId_clientId: { senderUserId: userId, clientId } },
+      select: { requestHash: true, quote: { include: quoteInclude } },
+    });
+    if (!message) return null;
+    if (message.requestHash !== hash || !message.quote) throw keyReusedError();
+    return this.toQuote(message.quote);
+  }
+
   private toRequirement(
     row: RequirementRow,
     viewer: { viewerId: string; quotedIds: Set<string> },
@@ -284,6 +465,19 @@ export class RequirementsService {
       isMine: row.userId === viewer.viewerId,
       expiresAt: row.expiresAt.toISOString(),
       closedAt: (row.closedAt ?? (isExpired ? row.expiresAt : null))?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+
+  private toQuote(row: QuoteRow): Quote {
+    return {
+      id: row.id,
+      requirementId: row.requirementId,
+      business: toBusinessSummary(row.business, this.businesses.mediaUrl),
+      price: { amountPaise: Number(row.pricePaise), currency: 'INR' },
+      message: row.message,
+      conversationId: row.conversationId,
+      messageId: row.messageId,
       createdAt: row.createdAt.toISOString(),
     };
   }

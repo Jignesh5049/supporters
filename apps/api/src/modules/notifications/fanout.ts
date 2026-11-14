@@ -230,6 +230,27 @@ export class NotificationFanout {
           groupKey: null,
         }));
       }
+      case 'requirement.quoted': {
+        const { quoteId } = payload as DomainEvents['requirement.quoted'];
+        const quote = await tx.requirementQuote.findUnique({
+          where: { id: quoteId },
+          select: {
+            requirement: { select: { id: true, userId: true } },
+            business: { select: { ownerUserId: true } },
+          },
+        });
+        if (!quote) return [];
+        return [
+          {
+            userId: quote.requirement.userId,
+            type: NotificationType.RequirementQuoted,
+            actorUserId: quote.business.ownerUserId,
+            targetType: NotificationTargetType.Requirement,
+            targetId: quote.requirement.id,
+            groupKey: null,
+          },
+        ];
+      }
       case 'security.login':
       case 'security.password_changed': {
         const { userId } = payload as DomainEvents['security.login'];

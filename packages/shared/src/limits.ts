@@ -16,6 +16,8 @@ export const TEXT_LIMITS = {
   listingTitle: { max: 120 },
   listingDescription: { max: 5_000 },
   requirement: { min: 20, max: 1_000 },
+  /** The note a business sends with its quote on a buyer requirement. */
+  quoteMessage: { min: 10, max: 1_000 },
   enquiryMessage: { min: 20, max: 1_000 },
   personName: { min: 2, max: 80 },
 } as const;

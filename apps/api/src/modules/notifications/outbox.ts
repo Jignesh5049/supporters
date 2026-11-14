@@ -17,6 +17,7 @@ export interface DomainEvents {
   'security.password_changed': { userId: string };
   /** A buyer posted a requirement; its fan-out runs the matching. */
   'requirement.created': { requirementId: string };
+  'requirement.quoted': { quoteId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -30,6 +31,7 @@ export const DOMAIN_EVENT_TYPES = [
   'security.login',
   'security.password_changed',
   'requirement.created',
+  'requirement.quoted',
 ] as const satisfies readonly DomainEventType[];
 
 /**
