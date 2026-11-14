@@ -30,7 +30,7 @@ What this directory expects from the infrastructure, and what it provides.
 - **Log group** `/supporters/<env>/containers`, retention 30 days. (Terraform creates it; the agent config also sets the retention but the agent role may not be allowed to.)
 - **DNS**: `origin.<domain>` → the instance's Elastic IP; CloudFront's origin is `origin.<domain>` over HTTPS with the custom header `X-Origin-Verify: <ORIGIN_VERIFY_SECRET>`. CloudFront routes `/v1/*` and `/health` to this origin with no caching; everything else too (Caddy does the routing).
 - **Security group**: 443 from CloudFront's managed prefix list only. Nothing else is published: the compose file publishes only Caddy's 443.
-- **The deploy role for GitHub OIDC** (trust: this repository, the `staging` and `production` environments): `ecr:*Push*` on the four repositories, `ssm:SendCommand` and `ssm:GetCommandInvocation` on the instance, and nothing else. Its ARN is the repository variable `AWS_DEPLOY_ROLE_ARN` (see "Deploy workflow" below).
+- **The deploy role for GitHub OIDC** (trust: this repository, the `staging` and `production` environments): `ecr:*Push*` on the four repositories, `ssm:SendCommand` and `ssm:GetCommandInvocation` on the instance, and nothing else. Its ARN is the environment variable `AWS_DEPLOY_ROLE_ARN` (see "Deploy workflow" below); the instance id is `EC2_INSTANCE_ID`.
 
 **Provided by this directory**
 
@@ -45,6 +45,43 @@ What this directory expects from the infrastructure, and what it provides.
 | Deploys | automatically on merge to `dev` | a `v*` tag, or a manual run with a required reviewer |
 | SSM path | `/supporters/staging` | `/supporters/production` |
 | Server | `t4g.small` + `db.t4g.micro` | `t4g.large` + `db.t4g.micro` |
+
+## Deploy workflow
+
+`.github/workflows/deploy.yml` builds the four images on a Graviton (arm64) runner, scans each with Trivy (**a CRITICAL finding that has a fix stops the release**; HIGH findings are listed), pushes to ECR through **GitHub OIDC** (no long-lived keys), copies the release's `/deploy/` files out of the `migrate` image onto the server and runs `start.sh` through SSM Run Command. `start.sh` rolls back by itself when the new containers are not healthy; the workflow also checks `$PUBLIC_URL/health` from outside and rolls back to the previous tag if that fails.
+
+| Trigger | Environment | Image tag |
+| --- | --- | --- |
+| push to `dev` | `staging`, automatic | `sha-<12 chars of the commit>` |
+| push of a tag `vX.Y.Z` | `production`, after a reviewer approves | the tag |
+| manual run | the chosen environment (production waits for a reviewer) | `sha-<commit>`, or an existing tag given as `image_tag` (that is the rollback) |
+| pull request | none: images are built and scanned, nothing is pushed | `pr-<n>` |
+
+The workflow is **inert until configured**: without the repository variable `DEPLOY_ENABLED=true`, a push or manual run ends with a notice in the run summary, and pull requests still get the build-and-scan check. `deploy-smoke.yml` runs `smoke.sh` on pull requests with no credentials.
+
+**One-time setup in GitHub** (Settings → Secrets and variables → Actions, and Environments):
+
+| Where | Name | Value |
+| --- | --- | --- |
+| Repository variable | `DEPLOY_ENABLED` | `true` when you want deploys to run |
+| Repository variable | `AWS_REGION` | `ap-south-1` (the default) |
+| Environment `staging`, `production` | `AWS_DEPLOY_ROLE_ARN` | the OIDC role for that environment (`arn:aws:iam::<account-id>:role/...`) |
+| Environment `staging`, `production` | `EC2_INSTANCE_ID` | `i-...` of that environment's server |
+| Environment (optional) | `PUBLIC_URL` | `https://<domain>`: enables the outside-in health check and rollback |
+| Environment (optional) | `ECR_REPOSITORY_NS` | repository namespace, default `supporters` |
+| Environment (optional) | `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT` | the browser DSN is baked into that environment's web image |
+| Environment secret (optional) | `SENTRY_AUTH_TOKEN` | enables source map upload during the web build; without it no maps are uploaded or shipped |
+| Environment `production` | required reviewers | at least one person; also restrict deployment branches/tags to `v*` |
+
+The OIDC role trusts `token.actions.githubusercontent.com` with the subject `repo:<owner>/<repo>:environment:<name>` and may only push to the four ECR repositories and run `ssm:SendCommand` / `ssm:GetCommandInvocation` against its own instance. It never receives the SSM secrets: the server reads those with its own instance role.
+
+Every action is pinned to a commit SHA, the workflow's default permissions are `contents: read`, and only the release job gets `id-token: write`. Rollback: run the workflow with `image_tag` set to the previous tag (the run summary names it).
+
+## Observability
+
+- **Logs**: pino JSON from the API and worker (one line per request with `requestId`, `userId` when signed in and `responseTime`; `/health` and `/ready` are not logged), Caddy's JSON access log, Next.js output. Docker rotates them on the host and the CloudWatch agent ships them (see "Viewing logs"). Redaction follows the spec's list (`authorization`, `cookie`, `set-cookie`, passwords, OTPs, tokens, phone numbers, emails, payout fields) in the API and in Caddy's log.
+- **Sentry** (free tier): set `SENTRY_DSN` in SSM for the API, worker and web server, and build the web image with the browser DSN (`NEXT_PUBLIC_SENTRY_DSN`). With no DSN Sentry is off. Traces are sampled at 10%, no user data, cookies, headers, bodies or query strings are collected, and `scrubEvent` removes anything matching the spec's redaction list from what remains. **The CSP's `connect-src` must allow the DSN's ingest host** (`https://o<id>.ingest.<region>.sentry.io`) or the browser SDK is silently blocked; that header is owned by the web CSP work. Mobile Sentry is configured in the mobile app (a separate PR).
+- **Probes**: `/health` (liveness, no dependencies; public through Caddy for uptime monitors) and `/ready` (PostgreSQL, Valkey and queue backlog, 503 when one fails; internal only: `ops.sh <env> status` or `docker exec`). The queue check fails above 5,000 waiting jobs. CloudWatch alarms for 5xx, p95 latency, CPU, DB connections and queue backlog belong to the Terraform stack; the container logs give 5xx counts through a metric filter on the Caddy log.
 
 ## What start.sh does
 

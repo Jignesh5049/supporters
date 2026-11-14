@@ -1,0 +1,37 @@
+name: Deploy smoke test
+
+# Brings up deploy/compose.prod.yml with fake secrets, PostgreSQL and MinIO, and checks the origin
+# secret, /health, /ready, a signup through Caddy and the web home page (deploy/smoke.sh). Needs no
+# credentials of any kind.
+on:
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'deploy/**'
+      - 'pnpm-lock.yaml'
+      - '.dockerignore'
+      - '.github/workflows/deploy-smoke.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'deploy/**'
+      - 'apps/*/Dockerfile'
+
+concurrency:
+  group: deploy-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Compose stack smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Smoke test
+        run: deploy/smoke.sh

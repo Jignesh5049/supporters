@@ -1,0 +1,256 @@
+name: Deploy
+
+# Staging deploys on every merge to dev. Production deploys on a version tag (v1.2.3) or a manual
+# run, and waits for a required reviewer on the `production` GitHub environment.
+#
+# Inert until configured: with the repository variable DEPLOY_ENABLED unset, push and manual runs
+# only print a notice (and pull requests only build and scan the images, which needs nothing).
+# What to configure is in deploy/README.md, "Deploy workflow".
+on:
+  push:
+    branches: [dev]
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'deploy/**'
+      - 'pnpm-lock.yaml'
+      - '.dockerignore'
+      - '.github/workflows/deploy*.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy to (production waits for a reviewer)
+        type: choice
+        options: [staging, production]
+        required: true
+      image_tag:
+        description: Redeploy an existing image tag (a rollback). Empty builds the selected ref.
+        type: string
+        required: false
+
+# One deploy per environment at a time, and a deploy is never cancelled half way.
+concurrency:
+  group: deploy-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && inputs.environment) || (startsWith(github.ref, 'refs/tags/') && 'production') || 'staging' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least privilege: jobs only read the repo unless they say otherwise.
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.plan.outputs.enabled }}
+      environment: ${{ steps.plan.outputs.environment }}
+      tag: ${{ steps.plan.outputs.tag }}
+      build: ${{ steps.plan.outputs.build }}
+    steps:
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.sha }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_TAG: ${{ inputs.image_tag }}
+          DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+        run: |
+          set -euo pipefail
+          environment=''
+          tag="sha-${SHA::12}"
+          build=true
+          case "$EVENT" in
+            push)
+              if [ "$REF_TYPE" = tag ]; then
+                if ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+                  echo "::error::Tag $REF_NAME is not a version tag like v1.2.3"; exit 1
+                fi
+                environment=production; tag="$REF_NAME"
+              else
+                environment=staging
+              fi ;;
+            workflow_dispatch)
+              environment="$INPUT_ENVIRONMENT"
+              if [ -n "$INPUT_TAG" ]; then
+                if ! [[ "$INPUT_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+                  echo "::error::Invalid image tag"; exit 1
+                fi
+                tag="$INPUT_TAG"; build=false
+              fi ;;
+          esac
+          enabled=false
+          if [ -n "$environment" ]; then
+            if [ "$DEPLOY_ENABLED" = true ]; then
+              enabled=true
+            else
+              echo "::notice title=Deploy skipped::Deploys are not configured: set the repository variable DEPLOY_ENABLED to true and the variables listed in deploy/README.md (Deploy workflow)."
+              echo "### Deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+              echo "The repository variable \`DEPLOY_ENABLED\` is not \`true\`, so nothing was built or deployed. See \`deploy/README.md\`, *Deploy workflow*." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          {
+            echo "enabled=$enabled"
+            echo "environment=$environment"
+            echo "tag=$tag"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
+
+  # Pull requests: prove the images still build and have no critical findings. Nothing is pushed
+  # and no credentials are involved. Arm64 runners match the Graviton server.
+  build-check:
+    name: Images build and scan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and scan
+        env:
+          REGISTRY: local
+          PUSH: '0'
+          PLATFORM: linux/arm64
+        run: deploy/build-images.sh staging "pr-${{ github.event.pull_request.number }}"
+
+  # Build, scan, push to ECR and roll onto the server. One job, so the reviewer approves the
+  # production environment once, before anything is built or pushed.
+  release:
+    name: Release to ${{ needs.plan.outputs.environment }}
+    needs: plan
+    if: needs.plan.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    environment: ${{ needs.plan.outputs.environment }}
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC -> AWS, no long-lived keys
+    env:
+      ENVIRONMENT: ${{ needs.plan.outputs.environment }}
+      IMAGE_TAG: ${{ needs.plan.outputs.tag }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
+      ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+      ECR_NS: ${{ vars.ECR_REPOSITORY_NS || 'supporters' }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          set -euo pipefail
+          missing=''
+          [ -n "$ROLE_ARN" ] || missing="$missing AWS_DEPLOY_ROLE_ARN"
+          [ -n "$INSTANCE_ID" ] || missing="$missing EC2_INSTANCE_ID"
+          if [ -n "$missing" ]; then
+            echo "::notice title=Deploy skipped::The $ENVIRONMENT environment has no value for:$missing (repository or environment variables, see deploy/README.md)."
+            echo "### Deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "The \`$ENVIRONMENT\` environment is missing:$missing. Nothing was built or deployed." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - if: steps.config.outputs.ready == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: deploy-${{ github.run_id }}
+
+      - if: steps.config.outputs.ready == 'true'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+
+      # Builds, scans (a fixable CRITICAL finding stops the release) and pushes the four images.
+      # Skipped when redeploying an existing tag (a rollback) or when the tag is already in ECR.
+      - name: Build, scan and push images
+        if: steps.config.outputs.ready == 'true' && needs.plan.outputs.build == 'true'
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          NS: ${{ env.ECR_NS }}
+          PUSH: '1'
+          PLATFORM: linux/arm64
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: deploy/build-images.sh "$ENVIRONMENT" "$IMAGE_TAG"
+
+      - name: Roll out through SSM
+        if: steps.config.outputs.ready == 'true'
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+
+          # Runs a script on the instance through SSM Run Command and prints its output.
+          run_on_instance() {
+            local script=$1 cmd status
+            cmd=$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+              --document-name AWS-RunShellScript --timeout-seconds 1200 \
+              --comment "deploy $ENVIRONMENT $IMAGE_TAG (run ${{ github.run_id }})" \
+              --parameters "$(jq -cn --arg s "$script" '{commands: [$s], executionTimeout: ["1200"]}')" \
+              --query Command.CommandId --output text)
+            status=Pending
+            while [ "$status" = Pending ] || [ "$status" = InProgress ] || [ "$status" = Delayed ]; do
+              sleep 10
+              status=$(aws ssm get-command-invocation --command-id "$cmd" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+            done
+            aws ssm get-command-invocation --command-id "$cmd" --instance-id "$INSTANCE_ID" \
+              --query '[StandardOutputContent, StandardErrorContent]' --output text || true
+            [ "$status" = Success ]
+          }
+
+          # What is running now, for the summary and for a manual rollback.
+          set +e
+          before=$(run_on_instance 'cat /var/lib/supporters/current-tag 2>/dev/null || true' | head -1 | awk '{print $1}')
+          set -e
+
+          # Copy the deploy files out of the release's own migrate image, then run start.sh. It loads
+          # SSM parameters, migrates once, rolls the containers, waits for healthchecks and rolls back
+          # by itself when they fail (exit 1).
+          rollout=$(cat <<SCRIPT
+          set -euo pipefail
+          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+          image="$REGISTRY/$ECR_NS/migrate:$IMAGE_TAG"
+          docker pull --quiet "\$image"
+          cid=\$(docker create "\$image")
+          install -d -m 0755 /opt/supporters
+          docker cp "\$cid":/deploy/. /opt/supporters/
+          docker rm "\$cid" >/dev/null
+          ECR_REGISTRY="$REGISTRY" ECR_REPOSITORY_NS="$ECR_NS" AWS_REGION="$AWS_REGION" /opt/supporters/start.sh "$ENVIRONMENT" "$IMAGE_TAG"
+          SCRIPT
+          )
+          if ! run_on_instance "$rollout"; then
+            echo "::error title=Rollout failed::start.sh reported a failure; it rolls back to the previous release on its own. Previous tag: ${before:-none}"
+            exit 1
+          fi
+
+          # Outside-in check through the public URL (CloudFront -> Caddy -> API), when configured.
+          if [ -n "$PUBLIC_URL" ]; then
+            ok=false
+            for _ in $(seq 1 12); do
+              if curl --fail --silent --show-error --max-time 10 "$PUBLIC_URL/health" >/dev/null; then ok=true; break; fi
+              sleep 10
+            done
+            if [ "$ok" != true ]; then
+              echo "::error title=Public health check failed::$PUBLIC_URL/health did not answer after the rollout."
+              if [ -n "${before:-}" ] && [ "$before" != "$IMAGE_TAG" ]; then
+                echo "Rolling back to $before"
+                run_on_instance "set -euo pipefail; aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY >/dev/null; ECR_REGISTRY=$REGISTRY ECR_REPOSITORY_NS=$ECR_NS AWS_REGION=$AWS_REGION /opt/supporters/start.sh $ENVIRONMENT $before" || true
+              fi
+              exit 1
+            fi
+          fi
+
+          {
+            echo "### Deployed \`$IMAGE_TAG\` to $ENVIRONMENT"
+            echo "Previous release: \`${before:-none}\`. To roll back, run this workflow with that tag as \`image_tag\`."
+          } >> "$GITHUB_STEP_SUMMARY"
