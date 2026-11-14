@@ -17,6 +17,11 @@ apps/api/src/generated
 docs
 deploy/*
 !deploy/migrate
+!deploy/compose.prod.yml
+!deploy/start.sh
+!deploy/ops.sh
+!deploy/load-env.sh
+!deploy/cloudwatch
 infra
 **/.env
 **/.env.*

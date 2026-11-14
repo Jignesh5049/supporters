@@ -3,6 +3,7 @@
 // @supporters/shared workspace package (which ships TypeScript source) are bundled; every other
 // dependency stays external and is installed from the lockfile by `pnpm deploy --prod`.
 import { readFile } from 'node:fs/promises';
+import { URL } from 'node:url';
 import { build } from 'esbuild';
 
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));

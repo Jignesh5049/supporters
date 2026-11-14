@@ -1,0 +1,2 @@
+# Local smoke test only (CADDY_TLS_MODE=internal): Caddy's own CA, no network needed.
+tls internal
