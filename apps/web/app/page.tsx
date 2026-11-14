@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { z } from 'zod';
 import { RightSidebar } from '@/components/layout/RightSidebar';
+import { getMyBusiness } from '@/dal/my-business';
 import { getSession } from '@/dal/session';
 import { getFeedPage } from '@/dal/social';
+import { PinnedRequirement } from '@/features/requirements/pinned-requirement';
 import { FeedSkeleton, HomeFeed } from '@/features/social/home-feed';
 
 /** The home feed: the first page renders on the server, the rest loads as you scroll. */
@@ -29,6 +31,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<'/'>['searchPara
   const parsedCity = z.uuid().safeParse(cityParam);
   const city = !session && parsedCity.success ? parsedCity.data : null;
   const firstPage = await getFeedPage(city ?? undefined);
+  // Sellers see the newest buyer requirement matched to their business pinned on top.
+  const hasBusiness = session !== null && (await getMyBusiness()) !== null;
 
   return (
     <>
@@ -45,6 +49,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<'/'>['searchPara
           </Button>
         </div>
       )}
+      {hasBusiness && <PinnedRequirement />}
       <HomeFeed initialPage={firstPage} isSignedIn={session !== null} city={city} />
     </>
   );
