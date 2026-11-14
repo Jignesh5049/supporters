@@ -82,6 +82,10 @@ const envSchema = z
     JWT_PREVIOUS_KEY_ID: z.string().min(1).max(64).optional(),
     /** HMAC key for OTP codes. */
     OTP_HMAC_KEY: secretBytes(32),
+    /** Encrypts admin TOTP secrets at rest. Required on staging and production. */
+    TOTP_ENCRYPTION_KEY: secretBytes(32)
+      .refine((key) => key.length === 32, 'must decode to exactly 32 bytes')
+      .optional(),
     /** Check new passwords against Have I Been Pwned's k-anonymity range API. */
     BREACHED_PASSWORD_CHECK: booleanString.default(true),
     SMS_PROVIDER: z.enum(['console']).default('console'),
@@ -138,6 +142,9 @@ const envSchema = z
         path: ['VAPID_PRIVATE_KEY'],
         message: 'set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT, or none',
       });
+    }
+    if (isDeployed && !env.TOTP_ENCRYPTION_KEY) {
+      ctx.addIssue({ code: 'custom', path: ['TOTP_ENCRYPTION_KEY'], message: 'is required' });
     }
     if (isDeployed && DEV_ONLY_SMS_PROVIDERS.has(env.SMS_PROVIDER)) {
       ctx.addIssue({ code: 'custom', path: ['SMS_PROVIDER'], message: 'console is dev-only' });

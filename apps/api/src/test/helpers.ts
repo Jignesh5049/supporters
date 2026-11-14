@@ -13,6 +13,9 @@ export const APP_ORIGIN = 'https://supporters.test';
 export const PASSWORD = 'correct horse battery staple';
 export const BREACHED_PASSWORD = 'password1234';
 
+/** Shared by every test app, so admins enrolled by one test sign in to another. */
+export const TEST_TOTP_KEY = randomBytes(32);
+
 export const newSigningKey = () =>
   generateKeyPairSync('ed25519').privateKey.export({ format: 'pem', type: 'pkcs8' }).toString();
 
@@ -25,6 +28,7 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     JWT_PRIVATE_KEY: newSigningKey(),
     JWT_KEY_ID: 'test-key',
     OTP_HMAC_KEY: randomBytes(32).toString('base64'),
+    TOTP_ENCRYPTION_KEY: TEST_TOTP_KEY.toString('base64'),
     S3_BUCKET: TEST_BUCKET,
     S3_ENDPOINT: inject('s3Endpoint'),
     S3_FORCE_PATH_STYLE: 'true',

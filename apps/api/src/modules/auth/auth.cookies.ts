@@ -40,6 +40,19 @@ export function setSessionCookies(
   reply.setCookie(COOKIE.csrf, csrf, { ...base, httpOnly: false, maxAge: tokens.refreshMaxAgeSec });
 }
 
+/**
+ * The admin session: only the access cookie (8 hours) and a CSRF cookie of the
+ * same lifetime. There is no `__Host-rt`, so nothing can refresh it.
+ */
+export function setAdminSessionCookies(
+  reply: FastifyReply,
+  accessToken: string,
+  maxAgeSec: number,
+) {
+  reply.setCookie(COOKIE.access, accessToken, { ...base, httpOnly: true, maxAge: maxAgeSec });
+  reply.setCookie(COOKIE.csrf, randomToken(), { ...base, httpOnly: false, maxAge: maxAgeSec });
+}
+
 export function setCsrfCookie(reply: FastifyReply, token: string, maxAgeSec: number) {
   reply.setCookie(COOKIE.csrf, token, { ...base, httpOnly: false, maxAge: maxAgeSec });
 }
