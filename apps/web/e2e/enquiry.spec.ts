@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { createBusinessPage, jpeg, registerFreshUser } from './helpers';
 
 test('a buyer sends an enquiry; the owner sees it live, replies, and the buyer sees the reply', async ({

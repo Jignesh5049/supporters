@@ -8,6 +8,7 @@ import {
   loginUrlFor,
   readJwtClaims,
 } from '@/lib/auth/session-cookies';
+import { type CspPolicy, buildCsp, generateNonce, readCspConfig } from '@/lib/security/csp';
 
 /**
  * Signed-in-only routes. They move into an `(app)` route group later; until
@@ -76,6 +77,20 @@ function requestHeadersFor(request: NextRequest, outcome: RefreshOutcome): Heade
   return headers;
 }
 
+/** Extra headers the page render must see (the CSP nonce), merged over the request's own. */
+export type RenderHeaders = Record<string, string>;
+
+function withRenderHeaders(
+  request: NextRequest,
+  base: Headers | undefined,
+  extra: RenderHeaders | undefined,
+): Headers | undefined {
+  if (!extra) return base;
+  const headers = base ?? new Headers(request.headers);
+  for (const [name, value] of Object.entries(extra)) headers.set(name, value);
+  return headers;
+}
+
 export const isAdminRoute = (pathname: string) =>
   pathname === '/admin' || pathname.startsWith('/admin/');
 
@@ -85,15 +100,21 @@ export const isAdminRoute = (pathname: string) =>
  * being present and unexpired; the `(admin)` layout and the API decide access.
  * Every admin response, sign-in included, is `no-store` and `noindex`.
  */
-export function withAdminSession(request: NextRequest, nowSec = Date.now() / 1000): NextResponse {
+export function withAdminSession(
+  request: NextRequest,
+  nowSec = Date.now() / 1000,
+  renderHeaders?: RenderHeaders,
+): NextResponse {
   const { pathname, search } = request.nextUrl;
   const access = request.cookies.get(SESSION_COOKIE.access)?.value;
   const claims = access ? readJwtClaims(access) : null;
   const isSignedIn = typeof claims?.exp === 'number' && claims.exp > nowSec;
   const isAdminToken = claims?.role === 'admin' && claims.mfa === true;
   let response: NextResponse;
+  const headers = withRenderHeaders(request, undefined, renderHeaders);
+  const next = () => (headers ? NextResponse.next({ request: { headers } }) : NextResponse.next());
   if (pathname === ADMIN_LOGIN_PATH) {
-    response = NextResponse.next();
+    response = next();
   } else if (!isSignedIn) {
     response = NextResponse.redirect(
       new URL(adminLoginUrlFor(`${pathname}${search}`), request.url),
@@ -103,7 +124,7 @@ export function withAdminSession(request: NextRequest, nowSec = Date.now() / 100
     // streams inside Suspense, after a 200 is already sent.
     response = new NextResponse('Not found', { status: 404 });
   } else {
-    response = NextResponse.next();
+    response = next();
   }
   response.headers.set('cache-control', 'no-store');
   response.headers.set('x-robots-tag', 'noindex, nofollow');
@@ -112,12 +133,12 @@ export function withAdminSession(request: NextRequest, nowSec = Date.now() / 100
 
 /**
  * Session step: refresh the access token when needed, then send signed-out
- * visitors of signed-in routes to login. Returns the response for the next
- * step (the CSP nonce and security headers are added in a follow-up).
+ * visitors of signed-in routes to login.
  */
 export async function withSession(
   request: NextRequest,
   refresh: typeof refreshSession = refreshSession,
+  renderHeaders?: RenderHeaders,
 ): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
   const outcome = await refresh(request.cookies, request.headers);
@@ -134,7 +155,7 @@ export async function withSession(
     return response;
   }
 
-  const headers = requestHeadersFor(request, outcome);
+  const headers = withRenderHeaders(request, requestHeadersFor(request, outcome), renderHeaders);
   const response = headers ? NextResponse.next({ request: { headers } }) : NextResponse.next();
   applySetCookies(response, outcome);
   if (isSignedInRoute(pathname)) response.headers.set('cache-control', 'private, no-store');
@@ -161,9 +182,25 @@ export async function legacyBusinessRedirect(
   return NextResponse.redirect(target, 308);
 }
 
+/** Sets the CSP and its reporting header on a response, whatever step produced it. */
+export function applyCsp(response: NextResponse, policy: CspPolicy): NextResponse {
+  response.headers.set(policy.headerName, policy.value);
+  response.headers.set('reporting-endpoints', policy.reportingEndpoints);
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
-  if (isAdminRoute(request.nextUrl.pathname)) return withAdminSession(request);
-  return (await legacyBusinessRedirect(request)) ?? withSession(request);
+  // A fresh nonce per request. Next reads it back out of the CSP *request* header and puts it
+  // on every script and style it renders; `x-nonce` is for our own `next/script` uses.
+  const nonce = generateNonce();
+  const policy = buildCsp(readCspConfig(process.env, nonce));
+  const renderHeaders: RenderHeaders = { 'x-nonce': nonce, [policy.headerName]: policy.value };
+
+  const response = isAdminRoute(request.nextUrl.pathname)
+    ? withAdminSession(request, undefined, renderHeaders)
+    : ((await legacyBusinessRedirect(request)) ??
+      (await withSession(request, undefined, renderHeaders)));
+  return applyCsp(response, policy);
 }
 
 export const config = {
@@ -171,7 +208,7 @@ export const config = {
     {
       // Pages only: not the API (`/v1`), Next internals or static files.
       source:
-        '/((?!v1/|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-z0-9]+$).*)',
+        '/((?!v1/|csp-report|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-z0-9]+$).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

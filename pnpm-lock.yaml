@@ -469,6 +469,9 @@ importers:
       '@tanstack/react-query':
         specifier: 5.105.0
         version: 5.105.0(@types/react@19.3.0)(react@19.3.0)
+      get-nonce:
+        specifier: 1.0.1
+        version: 1.0.1
       lucide-react:
         specifier: ^1.52.0
         version: 1.62.0(@types/react@19.3.0)(react@19.3.0)
