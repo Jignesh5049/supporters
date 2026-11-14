@@ -94,6 +94,7 @@ export const POLICY = {
     'GET /v1/me/notification-prefs',
     'GET /v1/me/saves',
     'GET /v1/notifications',
+    'GET /v1/uploads/:id',
     'PATCH /v1/buyer-requirements/:id',
     'PATCH /v1/conversations/:id',
     'PATCH /v1/me/business',

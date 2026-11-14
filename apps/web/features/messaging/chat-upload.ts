@@ -18,7 +18,7 @@ export function pickChatFiles(files: readonly File[]): ChatFiles {
     }
     return { type: 'file', files: [documents[0]] };
   }
-  if (!files.every(isImage)) throw new UploadError('Use JPEG, PNG, WebP or HEIC photos, or a PDF.');
+  if (!files.every(isImage)) throw new UploadError('Use JPEG, PNG or WebP photos, or a PDF.');
   if (files.length > MEDIA_LIMITS.imagesPerMessage.max) {
     throw new UploadError(`Send up to ${MEDIA_LIMITS.imagesPerMessage.max} photos at a time.`);
   }

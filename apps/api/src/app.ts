@@ -70,7 +70,6 @@ import { searchRoutes } from './modules/search/search.routes';
 import { SearchService } from './modules/search/search.service';
 import { SaveLookup, SavesService } from './modules/saves/saves.service';
 import { servicesRoutes } from './modules/services/services.routes';
-import { type MediaProcessor, PassthroughMediaProcessor } from './modules/uploads/media-processor';
 import { type ObjectStorage, S3Storage, createS3Client } from './modules/uploads/storage';
 import { uploadsRoutes } from './modules/uploads/uploads.routes';
 import { UploadsService } from './modules/uploads/uploads.service';
@@ -95,7 +94,6 @@ export interface BuildAppOptions {
   sms?: SmsSender;
   breachChecker?: BreachedPasswordChecker;
   storage?: ObjectStorage;
-  mediaProcessor?: MediaProcessor;
   logger?: FastifyServerOptions['logger'];
   /** Tests only: sees every route as it is registered (the route-matrix test). */
   onRoute?: (route: RouteOptions) => void;
@@ -144,11 +142,6 @@ export const REDACT_PATHS = [
 
 export async function buildApp(options: BuildAppOptions) {
   const { env } = options;
-  const mediaProcessor = options.mediaProcessor ?? new PassthroughMediaProcessor();
-  if (env.NODE_ENV === 'production' && mediaProcessor instanceof PassthroughMediaProcessor) {
-    // Images would be served with their EXIF and GPS metadata.
-    throw new Error('Refusing to start in production without a real media processor');
-  }
   const app = Fastify({
     logger: options.logger ?? {
       level: env.LOG_LEVEL,
@@ -214,7 +207,6 @@ export async function buildApp(options: BuildAppOptions) {
     app.prisma,
     app.limiter,
     storage,
-    mediaProcessor,
     env.MEDIA_PUBLIC_URL,
     app.log,
   );
