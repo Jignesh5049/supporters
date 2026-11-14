@@ -42,6 +42,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Every page renders per request: the CSP nonce (proxy.ts) can only be applied to HTML that is
+// rendered with that request's headers, never to a prerendered one.
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

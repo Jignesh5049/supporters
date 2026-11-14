@@ -22,6 +22,14 @@ export const securityPlugin = fp(
       });
     }
 
+    // Nothing here is meant to be cached by a shared cache or a browser unless a route says so
+    // (the public reference lists do). Without this, a signed-in response with no Cache-Control
+    // could be stored by CloudFront or an intermediary and served to someone else.
+    app.addHook('onSend', async (_request, reply, payload) => {
+      if (!reply.hasHeader('cache-control')) reply.header('cache-control', 'no-store');
+      return payload;
+    });
+
     await app.register(underPressure, {
       maxEventLoopDelay: 1_000,
       maxHeapUsedBytes: Math.floor(getHeapStatistics().heap_size_limit * 0.9),

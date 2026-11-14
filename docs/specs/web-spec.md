@@ -125,8 +125,9 @@ The web app follows OWASP ASVS 5.0 Level 2. Its main jobs are to stop XSS, keep 
 default-src 'self';
 script-src 'self' 'nonce-<nonce>' 'strict-dynamic' https://checkout.razorpay.com;
 style-src 'self' 'nonce-<nonce>';
-img-src 'self' blob: data: https://media.<domain>;
-media-src 'self' blob: https://media.<domain>;
+style-src-attr 'unsafe-inline';
+img-src 'self' blob: data: https://media.<domain> https://<s3-upload-host>;
+media-src 'self' blob: https://media.<domain> https://<s3-upload-host>;
 connect-src 'self' wss://<domain> https://media.<domain> https://<s3-upload-host> https://*.ingest.sentry.io https://api.razorpay.com https://lumberjack.razorpay.com;
 frame-src https://api.razorpay.com https://checkout.razorpay.com;
 worker-src 'self';
@@ -141,7 +142,10 @@ Reporting-Endpoints: csp-endpoint="<sentry-security-endpoint>"
 `<s3-upload-host>` is the bucket's regional S3 endpoint that presigned PUT URLs point to. The Razorpay hosts are taken from Razorpay's current CSP guidance and re-checked before launch.
 
 - The policy ships in `Content-Security-Policy-Report-Only` on staging for a week first, then is enforced. Violations are reported to Sentry.
-- No `'unsafe-inline'` or `'unsafe-eval'` in production. Third-party scripts are limited to Razorpay Checkout and Sentry, and each new one needs a security review.
+- No `'unsafe-eval'` in production, and `'unsafe-inline'` only for style *attributes* (`style-src-attr`): `next/image` and Radix write `style="..."` into server HTML, which a nonce cannot cover. Scripts and `<style>` elements are nonce-only. `<s3-upload-host>` is also in `img-src`/`media-src` because private chat attachments redirect to a presigned S3 URL.
+- Runtime config: `CSP_MODE` (`enforce` by default, `report-only` for a staged rollout), `CSP_REPORT_URL` (Sentry security endpoint; default is the built-in `/csp-report` log sink), `CSP_UPLOAD_ORIGINS`, `MEDIA_PUBLIC_URL`, `APP_ORIGIN`.
+- No Cache Components or Partial Prefetching (a prerendered shell cannot carry the nonce); the root layout is `force-dynamic`.
+- No Third-party scripts are limited to Razorpay Checkout and Sentry, and each new one needs a security review.
 
 **Other headers** (set in `proxy.ts` and on CloudFront)
 

@@ -1,0 +1,39 @@
+name: DAST (ZAP baseline, local stack)
+
+# Manual only. It builds a throwaway stack on the runner (Postgres, Valkey, MinIO, Meilisearch from
+# apps/api/docker-compose.yml, the API and the web app) and scans http://localhost on that runner.
+# It never takes a URL as input and never touches staging or production.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    name: ZAP baseline against the local stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start the stack
+        run: scripts/security/dast-stack.sh up
+      - name: Scan the API
+        run: scripts/security/zap-baseline.sh api
+      - name: Scan the web app
+        run: scripts/security/zap-baseline.sh web
+      - name: Stop the stack
+        if: always()
+        run: scripts/security/dast-stack.sh down
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: zap-reports
+          path: zap-reports/
+          retention-days: 14
