@@ -6,6 +6,7 @@ import { adminLoginUrlFor } from '@/lib/auth/session-cookies';
 import { PopupBlockedError, openInNewTab, queryString } from './admin-api';
 import { formatBytes, targetHref, workingDaysSince } from './admin-format';
 import { adminLoginError } from './admin-login-form';
+import { slugFromName } from './categories-editor';
 
 const NOW = 1_800_000_000;
 /** An unsigned JWT-shaped token; the proxy only reads claims (the API verifies). */
@@ -123,7 +124,8 @@ describe('admin helpers', () => {
     expect(formatBytes(3 * 1024 * 1024)).toBe('3.0 MB');
   });
 
-  it('gives one sign-in error message', () => {
+  it('suggests slugs and gives one sign-in error message', () => {
+    expect(slugFromName('  Corrugated Boxes & Cartons ')).toBe('corrugated-boxes-cartons');
     const error = new ApiError({ status: 401, code: 'INVALID_CREDENTIALS', title: 'x' });
     expect(adminLoginError(error)).toMatch(/Codes work once/);
   });
