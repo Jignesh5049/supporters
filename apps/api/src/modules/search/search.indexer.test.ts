@@ -4,7 +4,15 @@ import { inject } from 'vitest';
 import { relayOutbox } from '../../jobs/outbox-relay';
 import { startNotificationWorker } from '../../jobs/worker';
 import { type ReferenceData, call, referenceData, signUpOwner } from '../../test/catalog';
-import { type TestContext, createTestApp, prisma, resetState, valkey } from '../../test/helpers';
+import {
+  type TestContext,
+  createTestApp,
+  prisma,
+  registerMobile,
+  resetState,
+  valkey,
+} from '../../test/helpers';
+import { recomputeRating } from '../reviews/reviews.service';
 import { FakeEmail, FakeExpo } from '../../test/notifications';
 import {
   createProduct,
@@ -205,6 +213,49 @@ describe('search indexing', () => {
     expect(await recordPremiumExpirySyncs(prisma, new Date(later.getTime() + 4 * 3600_000))).toBe(
       0,
     );
+  });
+
+  it('indexes the shown rating once a business has 3 visible reviews', async () => {
+    const { business } = await signUpOwner(ctx, refs, { name: 'Rated Co' });
+    const [first, second, third] = await Promise.all([1, 2, 3].map(() => registerMobile(ctx)));
+    if (!first || !second || !third) throw new Error('setup failed');
+    const review = async (userId: string, rating: number) =>
+      prisma.$transaction(async (tx) => {
+        const row = await tx.review.create({
+          data: { userId, businessId: business.id, rating, body: 'Seeded review body text.' },
+        });
+        await recomputeRating(tx, business.id);
+        return row.id;
+      });
+    const search = async (query: string) =>
+      (await call(ctx, 'GET', `/v1/search?type=business&${query}`))
+        .json<{
+          data: { business: { id: string; rating: number | null; reviewCount: number } }[];
+        }>()
+        .data.map((hit) => hit.business);
+
+    await review(first.user.id, 5);
+    await review(second.user.id, 4);
+    await drainSearch();
+    // "New": no rating field, so ratingMin leaves it out.
+    expect(await docOf('business', business.id)).not.toHaveProperty('rating');
+    expect(await search('ratingMin=1')).toEqual([]);
+    expect(await search('q=rated')).toMatchObject([{ rating: null, reviewCount: 2 }]);
+
+    const thirdId = await review(third.user.id, 4);
+    await drainSearch();
+    expect(await docOf('business', business.id)).toMatchObject({ rating: 4.3 });
+    expect(await search('ratingMin=4')).toMatchObject([
+      { id: business.id, rating: 4.3, reviewCount: 3 },
+    ]);
+
+    // Moderation hides a review through the same recompute, so the index follows.
+    await prisma.$transaction(async (tx) => {
+      await tx.review.update({ where: { id: thirdId }, data: { hiddenAt: new Date() } });
+      await recomputeRating(tx, business.id);
+    });
+    await drainSearch();
+    expect(await docOf('business', business.id)).not.toHaveProperty('rating');
   });
 
   it('rebuilds everything with a full reindex', async () => {

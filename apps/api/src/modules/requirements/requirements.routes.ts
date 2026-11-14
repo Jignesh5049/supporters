@@ -1,8 +1,11 @@
 import {
+  createQuoteSchema,
   createRequirementSchema,
+  idempotencyKeyHeaderSchema,
   myRequirementsQuerySchema,
   pageSchema,
   paginationQuerySchema,
+  quoteSchema,
   requirementIdParamsSchema,
   requirementSchema,
   updateRequirementSchema,
@@ -74,5 +77,43 @@ export const requirementsRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) =>
       requirements.update(signedIn(request.auth).userId, request.params.id, request.body.status),
+  );
+
+  /** The buyer's view of the quotes on their requirement. */
+  app.get(
+    '/buyer-requirements/:id/quotes',
+    {
+      config: { auth: 'user' },
+      schema: {
+        params: requirementIdParamsSchema,
+        querystring: paginationQuerySchema,
+        response: { 200: pageSchema(quoteSchema) },
+      },
+    },
+    async (request) =>
+      requirements.listQuotes(signedIn(request.auth).userId, request.params.id, request.query),
+  );
+
+  /** Needs an Idempotency-Key (a UUID); a retry answers 200 with the stored quote. */
+  app.post(
+    '/buyer-requirements/:id/quotes',
+    {
+      config: { auth: 'user' },
+      schema: {
+        params: requirementIdParamsSchema,
+        headers: idempotencyKeyHeaderSchema,
+        body: createQuoteSchema,
+        response: { 200: quoteSchema, 201: quoteSchema },
+      },
+    },
+    async (request, reply) => {
+      const { quote, replayed } = await requirements.quote(
+        signedIn(request.auth).userId,
+        request.params.id,
+        request.headers['idempotency-key'],
+        request.body,
+      );
+      return reply.status(replayed ? 200 : 201).send(quote);
+    },
   );
 };

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { ActivityIndicator, Linking, Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { AlertCircle, Check, CheckCheck, Clock, FileText, ImageOff } from 'lucide-react-native';
 import type { ChatAttachment, ListingCard, Message } from '@supporters/shared';
 import { Icon } from '@supporters/ui-native/components/icon';
@@ -185,6 +186,46 @@ function MessageContent({
             </Text>
           ) : null}
           {text}
+        </View>
+      );
+    case 'quote':
+      return (
+        <View className="gap-1.5">
+          <View className="flex-row items-center gap-2">
+            <Text
+              className={cn(
+                'text-xs font-bold uppercase',
+                isMine ? 'text-primary-foreground' : 'text-highlight',
+              )}
+            >
+              Quote
+            </Text>
+            {message.quote ? (
+              <Text className={cn('text-sm font-black', isMine && 'text-primary-foreground')}>
+                {formatPrice(message.quote.price)}
+              </Text>
+            ) : null}
+          </View>
+          {message.listing ? (
+            <ListingCardView listing={message.listing} onOpen={onOpenListing} />
+          ) : null}
+          {text}
+          {message.quote ? (
+            <Pressable
+              onPress={() => router.push(`/requirements/${message.quote?.requirementId ?? ''}`)}
+              accessibilityRole="link"
+              className="min-h-11 justify-center"
+            >
+              <Text
+                className={cn(
+                  'text-xs underline',
+                  isMine ? 'text-primary-foreground' : 'text-primary',
+                )}
+              >
+                View requirement
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       );
     default:

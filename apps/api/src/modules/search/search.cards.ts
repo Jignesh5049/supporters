@@ -1,6 +1,6 @@
 import type { BusinessCard, ListingResult, PostCard } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
-import { summaryInclude, toBusinessSummary } from '../businesses/businesses.service';
+import { summaryInclude, toBusinessSummary, toRating } from '../businesses/businesses.service';
 import { toCategoryRef } from '../categories/categories.service';
 import { toMoney } from '../listings/listings.service';
 import type { MediaUrl } from '../uploads/uploads.service';
@@ -64,9 +64,9 @@ export class SearchCards {
       },
       about: row.about,
       followerCount: row.followerCount,
-      // Reviews are not built yet; every business shows "New" until they are.
-      rating: null,
-      reviewCount: 0,
+      // Null below 3 visible reviews: the business shows "New".
+      rating: toRating(row).average,
+      reviewCount: row.ratingCount,
     };
   }
 

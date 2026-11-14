@@ -90,6 +90,7 @@ model User {
   reportsMade          Report[]               @relation("Reporter")
   reportsResolved      Report[]               @relation("ReportResolver")
   auditLogs            AuditLog[]
+  reviews              Review[]
 
   @@map("users")
 }
@@ -331,6 +332,9 @@ model Business {
   followerCount      Int                @default(0) @map("follower_count")
   /// Hidden by moderation: gone from every public read, with its posts and listings.
   hiddenAt           DateTime?          @map("hidden_at") @db.Timestamptz(6)
+  /// Average of visible reviews to one decimal (null with none), recomputed on every review change.
+  ratingAvg          Decimal?           @map("rating_avg") @db.Decimal(2, 1)
+  ratingCount        Int                @default(0) @map("rating_count")
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -350,6 +354,7 @@ model Business {
   requirementMatches RequirementMatch[]
   requirementQuotes  RequirementQuote[]
   verifications      BusinessVerification[]
+  reviews            Review[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
   @@index([subcategoryId], map: "idx_businesses_subcategory_id")
@@ -1276,4 +1281,29 @@ model RequirementQuote {
   @@index([productId], map: "idx_requirement_quotes_product_id", where: raw("product_id IS NOT NULL"))
   @@index([serviceId], map: "idx_requirement_quotes_service_id", where: raw("service_id IS NOT NULL"))
   @@map("requirement_quotes")
+}
+
+// Reviews (product spec, Reviews and ratings; backend spec, Data model: Reviews).
+
+/// One review per user per business. Hidden reviews (admin moderation) leave the average.
+model Review {
+  id             String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId     String    @map("business_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  /// 1 to 5 stars (CHECK in the migration).
+  rating         Int       @db.SmallInt
+  body           String
+  ownerReply     String?   @map("owner_reply")
+  ownerRepliedAt DateTime? @map("owner_replied_at") @db.Timestamptz(6)
+  hiddenAt       DateTime? @map("hidden_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId], map: "uq_reviews_user_id_business_id")
+  /// A business's Reviews tab, newest first.
+  @@index([businessId, id], map: "idx_reviews_business_id_id")
+  @@map("reviews")
 }

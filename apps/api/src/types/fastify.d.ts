@@ -18,6 +18,7 @@ import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
 import type { ReportsService } from '../modules/reports/reports.service';
 import type { RequirementsService } from '../modules/requirements/requirements.service';
+import type { ReviewsService } from '../modules/reviews/reviews.service';
 import type { SavesService } from '../modules/saves/saves.service';
 import type { ServicesService } from '../modules/services/services.service';
 import type { UploadsService } from '../modules/uploads/uploads.service';
@@ -63,6 +64,7 @@ declare module 'fastify' {
       search: SearchService;
       discover: DiscoverService;
       requirements: RequirementsService;
+      reviews: ReviewsService;
     };
   }
 

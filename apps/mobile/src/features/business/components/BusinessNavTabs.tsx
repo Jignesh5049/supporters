@@ -3,12 +3,13 @@ import { View } from 'react-native';
 import { Tabs, TabsList, TabsTrigger } from '@supporters/ui-native/components/tabs';
 import { Text } from '@supporters/ui-native/components/text';
 
-export type BusinessTabType = 'products' | 'services' | 'posts' | 'about';
+export type BusinessTabType = 'products' | 'services' | 'posts' | 'reviews' | 'about';
 
 const TABS: { value: BusinessTabType; label: string }[] = [
   { value: 'products', label: 'Products' },
   { value: 'services', label: 'Services' },
   { value: 'posts', label: 'Posts' },
+  { value: 'reviews', label: 'Reviews' },
   { value: 'about', label: 'About' },
 ];
 

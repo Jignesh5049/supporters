@@ -217,6 +217,24 @@ export class NotificationFanout {
         }
         return intents;
       }
+      case 'review.created': {
+        const { reviewId } = payload as DomainEvents['review.created'];
+        const review = await tx.review.findUnique({
+          where: { id: reviewId },
+          select: { userId: true, businessId: true, business: { select: { ownerUserId: true } } },
+        });
+        if (!review) return [];
+        return [
+          {
+            userId: review.business.ownerUserId,
+            type: NotificationType.ReviewNew,
+            actorUserId: review.userId,
+            targetType: NotificationTargetType.Business,
+            targetId: review.businessId,
+            groupKey: `${NotificationType.ReviewNew}:${review.businessId}`,
+          },
+        ];
+      }
       case 'requirement.created': {
         const { requirementId } = payload as DomainEvents['requirement.created'];
         const match = await matchRequirement(tx, requirementId, this.now());
@@ -229,6 +247,27 @@ export class NotificationFanout {
           targetId: requirementId,
           groupKey: null,
         }));
+      }
+      case 'requirement.quoted': {
+        const { quoteId } = payload as DomainEvents['requirement.quoted'];
+        const quote = await tx.requirementQuote.findUnique({
+          where: { id: quoteId },
+          select: {
+            requirement: { select: { id: true, userId: true } },
+            business: { select: { ownerUserId: true } },
+          },
+        });
+        if (!quote) return [];
+        return [
+          {
+            userId: quote.requirement.userId,
+            type: NotificationType.RequirementQuoted,
+            actorUserId: quote.business.ownerUserId,
+            targetType: NotificationTargetType.Requirement,
+            targetId: quote.requirement.id,
+            groupKey: null,
+          },
+        ];
       }
       case 'security.login':
       case 'security.password_changed': {
