@@ -22,8 +22,10 @@ import {
   BusinessServicesTab,
 } from '../features/business/components/BusinessTabs';
 import { FollowersModal } from '../features/business/components/FollowersModal';
+import { ReviewsTab } from '../features/reviews/components/ReviewsTab';
 import { followedIds, useFollowing, useToggleFollow } from '../features/social/hooks/use-follow';
 import { useRequireAuth } from '../features/social/use-require-auth';
+import { SessionStatus, useSessionStore } from '../stores/session-store';
 
 function TopBar({ title }: { title: string }) {
   return (
@@ -55,6 +57,7 @@ export function BusinessDetailScreen() {
   const myBusiness = useMyBusiness();
   const following = useFollowing();
   const toggleFollow = useToggleFollow();
+  const isSignedIn = useSessionStore((state) => state.status === SessionStatus.SignedIn);
 
   if (business.isPending && slug) {
     return (
@@ -144,6 +147,12 @@ export function BusinessDetailScreen() {
           <BusinessServicesTab businessId={data.id} onOpen={(path) => router.push(path as never)} />
         ) : null}
         {activeTab === 'posts' ? <BusinessPostsTab businessId={data.id} /> : null}
+        {activeTab === 'reviews' ? (
+          <ReviewsTab
+            businessId={data.id}
+            mode={!isSignedIn ? 'guest' : isOwner ? 'owner' : 'viewer'}
+          />
+        ) : null}
         {activeTab === 'about' ? <BusinessAboutTab business={data} /> : null}
       </ScrollView>
 

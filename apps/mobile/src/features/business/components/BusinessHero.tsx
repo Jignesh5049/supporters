@@ -1,7 +1,15 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import { CheckCircle2, MapPin, Share2, UserCheck, UserPlus, Users } from 'lucide-react-native';
+import {
+  CheckCircle2,
+  MapPin,
+  Share2,
+  Star,
+  UserCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react-native';
 import type { Business } from '@supporters/shared';
 import { Avatar, AvatarFallback, AvatarImage } from '@supporters/ui-native/components/avatar';
 import { Button } from '@supporters/ui-native/components/button';
@@ -9,6 +17,7 @@ import { Icon } from '@supporters/ui-native/components/icon';
 import { Text } from '@supporters/ui-native/components/text';
 import { businessTypeLabel } from '../labels';
 import { formatCount } from '../../social/mappers';
+import { ratingText } from '../../reviews/review-form';
 
 interface BusinessHeroProps {
   business: Business;
@@ -109,6 +118,17 @@ export function BusinessHero({
             <Icon as={MapPin} size={13} className="text-muted-foreground" />
             <Text variant="muted" className="text-xs">
               {business.city.name}, {business.state.name}
+            </Text>
+          </View>
+          <View
+            className="flex-row items-center gap-1"
+            accessible
+            accessibilityLabel={`Rating ${ratingText(business.rating).value}, ${ratingText(business.rating).count}`}
+          >
+            <Icon as={Star} size={13} className="fill-warning text-warning" />
+            <Text className="text-xs font-semibold">{ratingText(business.rating).value}</Text>
+            <Text variant="muted" className="text-xs">
+              ({ratingText(business.rating).count})
             </Text>
           </View>
           <Button
