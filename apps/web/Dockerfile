@@ -36,8 +36,16 @@ ENV NEXT_PUBLIC_APP_ENV=${NEXT_PUBLIC_APP_ENV} \
     NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} \
     NEXT_PUBLIC_SENTRY_RELEASE=${NEXT_PUBLIC_SENTRY_RELEASE} \
     NEXT_TELEMETRY_DISABLED=1
+# Source map upload to Sentry happens during the build, only when a token is passed as a BuildKit
+# secret (`docker build --secret id=sentry_auth_token,env=SENTRY_AUTH_TOKEN`). A secret is not part
+# of any layer or the image history, unlike an ARG. Without it nothing is uploaded and no maps ship.
+ARG SENTRY_ORG=
+ARG SENTRY_PROJECT=
+ENV SENTRY_ORG=${SENTRY_ORG} SENTRY_PROJECT=${SENTRY_PROJECT}
 WORKDIR /repo/apps/web
-RUN pnpm run build \
+RUN --mount=type=secret,id=sentry_auth_token,required=false \
+    if [ -f /run/secrets/sentry_auth_token ]; then SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_auth_token); export SENTRY_AUTH_TOKEN; fi \
+    && pnpm run build \
     && mkdir -p .next/standalone/apps/web/.next \
     && cp -r .next/static .next/standalone/apps/web/.next/static \
     && if [ -d public ]; then cp -r public .next/standalone/apps/web/public; fi

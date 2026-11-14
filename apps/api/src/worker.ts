@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import pino from 'pino';
 import { REDACT_PATHS } from './app';
 import { loadEnv } from './config/env';
@@ -55,6 +56,7 @@ const shutdown = async (signal: string) => {
   log.info({ signal }, 'worker shutting down');
   await worker.close();
   await Promise.all([prisma.$disconnect(), valkey.quit()]);
+  await Sentry.close(2000);
   process.exit(0);
 };
 process.once('SIGTERM', () => void shutdown('SIGTERM'));

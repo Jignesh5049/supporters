@@ -75,6 +75,8 @@ export S3_BUCKET=supporters-smoke MEDIA_PUBLIC_URL=http://localhost:9000/support
 export S3_ENDPOINT=http://minio:9000 S3_FORCE_PATH_STYLE=true
 export S3_ACCESS_KEY_ID=minio-$(rand 4) S3_SECRET_ACCESS_KEY=$(rand 16)
 export BREACHED_PASSWORD_CHECK=false LOG_LEVEL=info
+# A DSN that goes nowhere: exercises the Sentry start-up path (events are dropped on the floor).
+export SENTRY_DSN=https://smoke@sentry.invalid/1
 
 echo "starting the stack"
 "${DC[@]}" up -d --wait postgres

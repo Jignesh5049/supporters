@@ -13,6 +13,8 @@ await build({
   entryPoints: {
     server: 'src/server.ts',
     worker: 'src/worker.ts',
+    // Preloaded with --import so Sentry can instrument modules (src/instrument.ts).
+    instrument: 'src/instrument.ts',
     // One-off operations tasks, run in the same image (deploy/README.md).
     'scripts/init-search': 'scripts/init-search.ts',
     'scripts/reindex-search': 'scripts/reindex-search.ts',
