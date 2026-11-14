@@ -67,6 +67,24 @@ data "aws_iam_policy_document" "kms" {
       values   = ["arn:${local.partition}:cloudtrail:*:${local.account_id}:trail/*"]
     }
   }
+
+  # Lets CloudWatch alarms and EventBridge rules publish to the encrypted SNS alert topic.
+  statement {
+    sid       = "AllowAlarmsToPublishToEncryptedTopic"
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey*"]
+    resources = ["*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com", "events.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [local.account_id]
+    }
+  }
 }
 
 resource "aws_kms_key" "main" {

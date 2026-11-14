@@ -35,7 +35,8 @@ data "aws_iam_policy_document" "alerts" {
 }
 
 resource "aws_sns_topic" "alerts" {
-  name = "${var.name}-alerts"
+  name              = "${var.name}-alerts"
+  kms_master_key_id = var.kms_key_arn
 }
 
 resource "aws_sns_topic_policy" "alerts" {
@@ -51,12 +52,53 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = each.value
 }
 
-# CloudFront publishes its metrics in us-east-1 only, and an alarm can notify only a topic in its
-# own region, so the edge alarm needs a second topic.
+# SNS encryption keys are regional, so the edge topic needs its own key. CloudWatch is allowed to
+# use it to publish alarms.
+data "aws_iam_policy_document" "sns_us_east_1_key" {
+  statement {
+    sid       = "EnableIamPolicies"
+    actions   = ["kms:*"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid       = "AllowCloudWatchToPublish"
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey*"]
+    resources = ["*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_kms_key" "sns_us_east_1" {
+  provider = aws.us_east_1
+
+  description             = "${var.name} edge alarm topic"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+  policy                  = data.aws_iam_policy_document.sns_us_east_1_key.json
+}
+
+# CloudFront publishes its metrics in us-east-1 only, and an alarm can notify only a topic in its# own region, so the edge alarm needs a second topic.
 resource "aws_sns_topic" "alerts_us_east_1" {
   provider = aws.us_east_1
 
-  name = "${var.name}-alerts-edge"
+  name              = "${var.name}-alerts-edge"
+  kms_master_key_id = aws_kms_key.sns_us_east_1.arn
 }
 
 data "aws_iam_policy_document" "alerts_us_east_1" {
