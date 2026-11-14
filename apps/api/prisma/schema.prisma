@@ -96,6 +96,9 @@ model User {
   referralsReceived    Referral[]             @relation("ReferralReferred")
   wallet               Wallet?
   walletLedger         WalletLedger[]
+  payoutAccounts       PayoutAccount[]
+  withdrawals          Withdrawal[]           @relation("WithdrawalOwner")
+  withdrawalsReviewed  Withdrawal[]           @relation("WithdrawalReviewer")
 
   @@map("users")
 }
@@ -1404,19 +1407,119 @@ model Wallet {
 /// Append-only (a trigger refuses UPDATE and DELETE). Positive amounts credit, negative debit.
 /// `entry_key` makes every posting idempotent: referral:<id>, withdrawal:<id>, ...
 model WalletLedger {
-  id          String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId      String          @map("user_id") @db.Uuid
-  type        LedgerEntryType
-  amountPaise BigInt          @map("amount_paise")
-  entryKey    String          @unique(map: "uq_wallet_ledger_entry_key") @map("entry_key")
-  referralId  String?         @map("referral_id") @db.Uuid
+  id           String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String          @map("user_id") @db.Uuid
+  type         LedgerEntryType
+  amountPaise  BigInt          @map("amount_paise")
+  entryKey     String          @unique(map: "uq_wallet_ledger_entry_key") @map("entry_key")
+  referralId   String?         @map("referral_id") @db.Uuid
+  withdrawalId String?         @map("withdrawal_id") @db.Uuid
   /// Shown to the user (an admin's bonus reason, for example).
-  description String
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  description  String
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
-  referral Referral? @relation(fields: [referralId], references: [id], onDelete: Restrict)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  referral   Referral?   @relation(fields: [referralId], references: [id], onDelete: Restrict)
+  withdrawal Withdrawal? @relation(fields: [withdrawalId], references: [id], onDelete: Restrict)
 
+  @@index([withdrawalId], map: "idx_wallet_ledger_withdrawal_id")
   @@index([userId, id], map: "idx_wallet_ledger_user_id_id")
   @@map("wallet_ledger")
+}
+
+// Payout accounts and withdrawals (product spec, Wallet: Withdrawals; backend spec, Security:
+// Payments and money).
+
+enum PayoutMethod {
+  upi
+  bank
+
+  @@map("payout_method")
+}
+
+enum PayoutValidationStatus {
+  pending
+  validated
+  failed
+
+  @@map("payout_validation_status")
+}
+
+enum WithdrawalStatus {
+  pending
+  processing
+  completed
+  rejected
+  failed
+
+  @@map("withdrawal_status")
+}
+
+/// One immutable row per version of a user's payout details: a change supersedes the row and adds
+/// another, so a withdrawal always points at the exact details it was requested against. The UPI id
+/// or the account number and IFSC live only in `destination_enc` (AES-256-GCM).
+model PayoutAccount {
+  id                    String                 @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId                String                 @map("user_id") @db.Uuid
+  method                PayoutMethod
+  /// As the user typed it.
+  holderName            String                 @map("holder_name")
+  /// What the bank returned for the account, once RazorpayX has validated it.
+  registeredName        String?                @map("registered_name")
+  /// Encrypted JSON of the destination; layout nonce | tag | ciphertext, bound to the user id.
+  destinationEnc        Bytes                  @map("destination_enc")
+  /// HMAC of the normalized destination: tells "same details again" apart from a change.
+  destinationHash       String                 @map("destination_hash")
+  /// What screens may show, e.g. "••••4321" or "ra••@okaxis".
+  maskedDestination     String                 @map("masked_destination")
+  validationStatus      PayoutValidationStatus @default(pending) @map("validation_status")
+  /// The holder name matched the profile name. A mismatch flags withdrawals for admin review.
+  isNameMatch           Boolean                @map("is_name_match")
+  providerFundAccountId String?                @map("provider_fund_account_id")
+  providerValidationId  String?                @map("provider_validation_id")
+  supersededAt          DateTime?              @map("superseded_at") @db.Timestamptz(6)
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  withdrawals Withdrawal[]
+
+  @@index([userId, id], map: "idx_payout_accounts_user_id_id")
+  @@index([providerValidationId], map: "idx_payout_accounts_provider_validation_id")
+  @@map("payout_accounts")
+}
+
+/// The amount is reserved (debited from the ledger) when the request is made, and returned by a
+/// `reversal` entry if it is rejected or the payout fails.
+model Withdrawal {
+  id                   String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId               String           @map("user_id") @db.Uuid
+  payoutAccountId      String           @map("payout_account_id") @db.Uuid
+  amountPaise          BigInt           @map("amount_paise")
+  status               WithdrawalStatus @default(pending)
+  /// The client's Idempotency-Key: a retry returns this row.
+  idempotencyKey       String           @map("idempotency_key")
+  /// The holder name did not match the profile name when this was requested: look closer.
+  isNameMismatch       Boolean          @default(false) @map("is_name_mismatch")
+  rejectionReason      String?          @map("rejection_reason")
+  failureReason        String?          @map("failure_reason")
+  reviewedByUserId     String?          @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt           DateTime?        @map("reviewed_at") @db.Timestamptz(6)
+  /// The RazorpayX idempotency key, fixed at approval so every attempt for this withdrawal is one payout.
+  payoutIdempotencyKey String?          @map("payout_idempotency_key")
+  providerPayoutId     String?          @map("provider_payout_id")
+  completedAt          DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User           @relation("WithdrawalOwner", fields: [userId], references: [id], onDelete: Restrict)
+  reviewer      User?          @relation("WithdrawalReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  payoutAccount PayoutAccount  @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict)
+  ledger        WalletLedger[]
+
+  @@unique([userId, idempotencyKey], map: "uq_withdrawals_user_id_idempotency_key")
+  @@index([userId, id], map: "idx_withdrawals_user_id_id")
+  @@index([status, id], map: "idx_withdrawals_status_id")
+  @@index([providerPayoutId], map: "idx_withdrawals_provider_payout_id")
+  @@map("withdrawals")
 }

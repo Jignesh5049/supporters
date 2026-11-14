@@ -120,6 +120,21 @@ const envSchema = z
     MEILI_SEARCH_KEY: z.string().min(16),
     /** Scoped key for documents and settings, for the worker and `pnpm search:reindex`. */
     MEILI_INDEX_KEY: z.string().min(16).optional(),
+    /**
+     * Payouts. Unset: the app boots and every payout endpoint answers 503 PAYOUTS_NOT_CONFIGURED.
+     * 'fake' is for local development and tests; deployed environments refuse it.
+     */
+    PAYOUTS_PROVIDER: z.enum(['fake', 'razorpayx']).optional(),
+    /** AES-256-GCM key for payout details at rest (32 bytes, base64). */
+    PAYOUT_ENCRYPTION_KEY: secretBytes(32)
+      .refine((key) => key.length === 32, 'must decode to exactly 32 bytes')
+      .optional(),
+    RAZORPAYX_KEY_ID: z.string().min(1).optional(),
+    RAZORPAYX_KEY_SECRET: z.string().min(1).optional(),
+    /** The RazorpayX current account the payouts are paid from. */
+    RAZORPAYX_ACCOUNT_NUMBER: z.string().min(1).optional(),
+    /** Signs RazorpayX webhooks. */
+    RAZORPAYX_WEBHOOK_SECRET: z.string().min(16).optional(),
     /** Sentry (errors and 10% of traces). Unset: Sentry is off. src/instrument.ts reads it too. */
     SENTRY_DSN: z.url().optional(),
     SENTRY_RELEASE: z.string().min(1).max(200).optional(),
@@ -144,6 +159,41 @@ const envSchema = z
         code: 'custom',
         path: ['VAPID_PRIVATE_KEY'],
         message: 'set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT, or none',
+      });
+    }
+    if (env.PAYOUTS_PROVIDER && !env.PAYOUT_ENCRYPTION_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYOUT_ENCRYPTION_KEY'],
+        message: 'is required when PAYOUTS_PROVIDER is set',
+      });
+    }
+    if (isDeployed && env.PAYOUTS_PROVIDER === 'fake') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYOUTS_PROVIDER'],
+        message: 'fake is dev-only; deployed environments need razorpayx',
+      });
+    }
+    const razorpayx = [
+      env.RAZORPAYX_KEY_ID,
+      env.RAZORPAYX_KEY_SECRET,
+      env.RAZORPAYX_ACCOUNT_NUMBER,
+      env.RAZORPAYX_WEBHOOK_SECRET,
+    ];
+    if (env.PAYOUTS_PROVIDER === 'razorpayx' && !razorpayx.every(Boolean)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RAZORPAYX_KEY_ID'],
+        message:
+          'set RAZORPAYX_KEY_ID, RAZORPAYX_KEY_SECRET, RAZORPAYX_ACCOUNT_NUMBER and RAZORPAYX_WEBHOOK_SECRET',
+      });
+    }
+    if (env.PAYOUTS_PROVIDER !== 'razorpayx' && razorpayx.some(Boolean)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYOUTS_PROVIDER'],
+        message: 'RazorpayX credentials are set but PAYOUTS_PROVIDER is not razorpayx',
       });
     }
     if (isDeployed && !env.TOTP_ENCRYPTION_KEY) {

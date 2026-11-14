@@ -14,17 +14,21 @@ export class WalletService {
 
   /** `GET /me/wallet`. The balance is SUM(ledger): there is no stored balance to drift. */
   async get(userId: string): Promise<Wallet> {
-    const [all, earned] = await Promise.all([
+    const [all, earned, reserved] = await Promise.all([
       this.prisma.walletLedger.aggregate({ where: { userId }, _sum: { amountPaise: true } }),
       this.prisma.walletLedger.aggregate({
         where: { userId, type: { in: [LedgerEntryType.ReferralReward, LedgerEntryType.Bonus] } },
         _sum: { amountPaise: true },
       }),
+      this.prisma.withdrawal.aggregate({
+        where: { userId, status: { in: ['pending', 'processing'] } },
+        _sum: { amountPaise: true },
+      }),
     ]);
     return {
       balance: toMoney(all._sum.amountPaise ?? 0n),
-      // Withdrawals reserve funds by debiting the ledger at request time, so none is held aside yet.
-      reserved: toMoney(0n),
+      // Already debited from the balance: shown so the user sees where the money is.
+      reserved: toMoney(reserved._sum.amountPaise ?? 0n),
       lifetimeEarned: toMoney(earned._sum.amountPaise ?? 0n),
       minWithdrawal: toMoney(WALLET.minWithdrawalPaise),
     };

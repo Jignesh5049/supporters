@@ -27,16 +27,16 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 
 ## Scripts
 
-| Script                 | What it does                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                       |
-| `test`                 | Vitest. Starts PostgreSQL, Valkey, MinIO and Meilisearch in Testcontainers, so Docker must be running |
-| `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                           |
-| `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)        |
-| `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable |
+| Script                 | What it does                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                                                              |
+| `test`                 | Vitest. Starts PostgreSQL, Valkey, MinIO and Meilisearch in Testcontainers, so Docker must be running                    |
+| `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                                                                  |
+| `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)                                               |
+| `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable                                                     |
 | `search:init`          | With `MEILI_MASTER_KEY` in the shell: creates the scoped Meilisearch keys and the indexes, prints the keys as .env lines |
-| `search:reindex`       | Rebuilds every index from PostgreSQL in place (after a restore, a settings change, or lost jobs) |
-| `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users |
+| `search:reindex`       | Rebuilds every index from PostgreSQL in place (after a restore, a settings change, or lost jobs)                         |
+| `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users                                       |
 
 ## Layout
 
@@ -106,3 +106,12 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `PATCH/DELETE /v1/reviews/:id` (author), `PUT/DELETE /v1/reviews/:id/reply` (business owner, one editable reply). `GET /v1/businesses/:id/reviews` is public, newest first, with `rating`.
 - Every change recomputes `businesses.rating_avg` (one decimal) and `rating_count` from visible reviews in the same transaction, under the business row lock. The API shows `rating.average` as null below 3 reviews ("New"). Moderation that sets `hidden_at` must call `recomputeRating(tx, businessId)` from `modules/reviews/reviews.service.ts`.
 - `review.created` notifies the owner, batched per business for 10 minutes.
+
+## Referrals, wallet and payouts in short
+
+- Every user has an 8-character referral code (`GET /v1/me/referrals`, created on first use, case-insensitive). It is entered at signup only (`referralCode` on `POST /v1/auth/register`); an unknown code is a 400 before the OTP is spent.
+- A referral is Pending until the referred business buys Premium (`premium.activated`, emitted by the Premium module through the outbox) and the 7-day refund window ends. The worker's `referrals-finalize` job (every 15 min) then credits ₹300, ₹200, then ₹0 (cap ₹500). `premium.refunded` inside the window makes it Ineligible. Self-referral, a phone number or device seen before, and a failed attestation are Ineligible too. Device attestation is a hook (`referrals.signals.ts`): nothing verifies Play Integrity or App Attest yet.
+- The wallet is an append-only ledger (`wallet_ledger`; a trigger refuses UPDATE and DELETE). The balance is `SUM(amount_paise)`. Every wallet change is one transaction that takes `SELECT ... FOR UPDATE` on the user's `wallets` row, appends entries with a unique `entry_key` (so a replay posts nothing twice) and writes an audit row. Only `modules/wallet/wallet.ledger.ts` writes the ledger.
+- `PUT /v1/me/payout-account` (UPI id or bank account + IFSC + holder name) seals the destination with AES-256-GCM (`PAYOUT_ENCRYPTION_KEY`, bound to the user id) and returns only a masked form. A change starts a 24-hour withdrawal cooldown and sends the always-on security notification. The holder name is fuzzy-matched against the profile name (the bank's registered name when RazorpayX returns one); a mismatch flags withdrawals for the admin.
+- `POST /v1/me/withdrawals` needs an `Idempotency-Key`: minimum ₹100, one in progress at a time, a validated payout account that is more than 24 hours old, and enough balance. The amount is debited at request time and comes back as a `reversal` if it is rejected or fails.
+- Payouts are off until configured: without `PAYOUTS_PROVIDER` and `PAYOUT_ENCRYPTION_KEY` the app boots and the write endpoints answer 503 `PAYOUTS_NOT_CONFIGURED`. `PAYOUTS_PROVIDER=fake` (local development and tests) never moves money and is refused in staging and production; `razorpayx` also needs `RAZORPAYX_KEY_ID`, `RAZORPAYX_KEY_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER` and `RAZORPAYX_WEBHOOK_SECRET`. Generate the key with `openssl rand -base64 32`.
