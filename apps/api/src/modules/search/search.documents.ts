@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
-import { PUBLIC_OWNER, isPremium } from '../businesses/businesses.service';
+import { PUBLIC_OWNER, isPremium, toRating } from '../businesses/businesses.service';
 import { PUBLIC_LISTING } from '../listings/listings.service';
 import { PUBLIC_POST } from '../posts/posts.service';
 import type { SearchEntity } from './meili';
@@ -25,6 +25,11 @@ export interface BusinessDoc {
   isVerified: boolean;
   /** 1 while the business is Premium, else 0 (the search boost). */
   featured: number;
+  /**
+   * The shown average of visible reviews. Left out while the business is "New" (under 3
+   * reviews), so `ratingMin` excludes it and `sort=rating` puts it last.
+   */
+  rating?: number;
   createdAt: number;
 }
 
@@ -146,6 +151,7 @@ export async function loadBusinessDocs(
   });
   return rows.map((row) => {
     const categories = businessCategories(row);
+    const { average } = toRating(row);
     return {
       id: row.id,
       slug: row.slug,
@@ -160,6 +166,7 @@ export async function loadBusinessDocs(
       businessType: row.type,
       isVerified: row.verificationStatus === 'verified',
       featured: featured(row),
+      ...(average !== null ? { rating: average } : {}),
       createdAt: millis(row.createdAt),
     };
   });
