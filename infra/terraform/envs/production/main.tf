@@ -28,7 +28,6 @@ module "secrets" {
 
   name                   = local.name
   ssm_path               = local.ssm_path
-  secret_names           = var.secret_names
   origin_verify_rotation = var.origin_verify_rotation
 
   config_values = {
@@ -127,4 +126,59 @@ module "edge" {
   admin_allowed_ipv6_cidrs    = var.admin_allowed_ipv6_cidrs
   auth_rate_limit             = var.auth_rate_limit
   chat_signing_public_key_pem = var.chat_signing_public_key_pem
+}
+
+# The registry is shared with staging: the same image is promoted from staging to production.
+module "registry" {
+  source = "../../modules/registry"
+
+  prefix      = var.ecr_repository_prefix
+  kms_key_arn = module.secrets.kms_key_arn
+}
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  name             = local.name
+  log_group_prefix = local.ssm_path
+  kms_key_arn      = module.secrets.kms_key_arn
+  alert_emails     = var.alert_emails
+
+  instance_id                = module.compute.instance_id
+  db_identifier              = module.database.identifier
+  cloudfront_distribution_id = module.edge.app_distribution_id
+}
+
+# Account-wide protections. Staging does not repeat them: one trail and one detector per account.
+module "baseline" {
+  source = "../../modules/baseline"
+
+  name               = "supporters"
+  kms_key_arn        = module.secrets.kms_key_arn
+  alerts_topic_arn   = module.monitoring.alerts_topic_arn
+  monthly_budget_usd = var.monthly_budget_usd
+  budget_emails      = var.alert_emails
+}
+
+module "deploy_access" {
+  source = "../../modules/deploy-access"
+
+  name                = local.name
+  github_repository   = var.github_repository
+  github_subjects     = ["environment:${local.environment}"]
+  ecr_repository_arns = ["arn:aws:ecr:${var.region}:${local.account_id}:repository/${var.ecr_repository_prefix}/*"]
+  instance_arn        = module.compute.instance_arn
+}
+
+module "email" {
+  source = "../../modules/email"
+
+  domain             = var.domain
+  zone_id            = data.aws_route53_zone.this.zone_id
+  dmarc_report_email = var.dmarc_report_email
 }

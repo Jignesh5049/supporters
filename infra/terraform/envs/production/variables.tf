@@ -33,34 +33,6 @@ variable "origin_verify_rotation" {
   default     = "initial"
 }
 
-variable "secret_names" {
-  description = "SecureString parameters created as empty placeholders under /supporters/production/. Values are set out of band."
-  type        = list(string)
-  default = [
-    "DATABASE_URL",
-    "VALKEY_PASSWORD",
-    "JWT_PRIVATE_KEY",
-    "JWT_KEY_ID",
-    "OTP_HMAC_KEY",
-    "TOTP_ENCRYPTION_KEY",
-    "PAYOUT_ENCRYPTION_KEY",
-    "MEILI_MASTER_KEY",
-    "MEILI_SEARCH_KEY",
-    "MEILI_INDEX_KEY",
-    "RAZORPAY_KEY_ID",
-    "RAZORPAY_KEY_SECRET",
-    "RAZORPAY_WEBHOOK_SECRET",
-    "RAZORPAYX_KEY_ID",
-    "RAZORPAYX_KEY_SECRET",
-    "RAZORPAYX_ACCOUNT_NUMBER",
-    "MSG91_AUTH_KEY",
-    "VAPID_PRIVATE_KEY",
-    "EXPO_ACCESS_TOKEN",
-    "SENTRY_DSN",
-    "CLOUDFRONT_SIGNING_PRIVATE_KEY",
-  ]
-}
-
 variable "admin_allowed_ipv4_cidrs" {
   description = "IPv4 CIDRs allowed to reach /admin* and /v1/admin/* (client staff offices or a VPN). Empty blocks everyone."
   type        = list(string)
@@ -89,4 +61,26 @@ variable "auth_rate_limit" {
   description = "WAF: requests per client IP per 5 minutes to /v1/auth/* before blocking."
   type        = number
   default     = 300
+}
+
+variable "alert_emails" {
+  description = "Addresses that receive CloudWatch alarm, GuardDuty and budget emails. Each must confirm the SNS subscription once."
+  type        = list(string)
+}
+
+variable "monthly_budget_usd" {
+  description = "Monthly cost target in USD. AWS Budgets alerts at 80% and 100%. The spec's launch estimate is about 70; leave room for traffic."
+  type        = number
+  default     = 100
+}
+
+variable "github_repository" {
+  description = "GitHub repository (<org>/<repo>) whose production environment may assume the deploy role."
+  type        = string
+}
+
+variable "dmarc_report_email" {
+  description = "Mailbox for DMARC aggregate reports. Empty omits the rua tag."
+  type        = string
+  default     = ""
 }
