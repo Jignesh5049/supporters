@@ -13,7 +13,7 @@ resource "aws_db_subnet_group" "this" {
 resource "aws_db_parameter_group" "this" {
   name        = "${var.name}-pg${var.engine_major_version}"
   family      = local.parameter_group_family
-  description = "${var.name}: require TLS, log slow queries"
+  description = "${var.name} require TLS and log slow queries"
 
   parameter {
     name  = "rds.force_ssl"

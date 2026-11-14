@@ -44,7 +44,7 @@ terraform init
 terraform apply
 ```
 
-Copy the outputs into `envs/<env>/backend.hcl` (from `example.backend.hcl`), then `terraform init -backend-config=backend.hcl` in the environment. Back up the bootstrap `terraform.tfstate` (it is small and rarely changes), or move it into the new bucket by adding an `s3` backend block and running `terraform init -migrate-state`.
+Copy the outputs (bucket, lock table, region and the state KMS key) into `envs/<env>/backend.hcl` (from `example.backend.hcl`), then `terraform init -backend-config=backend.hcl` in the environment. Back up the bootstrap `terraform.tfstate` (it is small and rarely changes), or move it into the new bucket by adding an `s3` backend block and running `terraform init -migrate-state`.
 
 Terraform 1.11+ can lock with a lock file in S3 (`use_lockfile = true`) and deprecates DynamoDB locking. The DynamoDB table is kept because the brief asks for it and it costs nothing at this scale; switching later is a one-line change in `backend.hcl`.
 

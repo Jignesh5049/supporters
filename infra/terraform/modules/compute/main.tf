@@ -274,7 +274,7 @@ resource "aws_iam_role_policy_attachment" "dlm" {
 resource "aws_dlm_lifecycle_policy" "snapshots" {
   count = var.snapshot_retention_days > 0 ? 1 : 0
 
-  description        = "${var.name}: daily root volume snapshots"
+  description        = "${var.name} daily root volume snapshots"
   execution_role_arn = aws_iam_role.dlm[0].arn
   state              = "ENABLED"
 

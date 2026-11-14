@@ -70,7 +70,7 @@ data "aws_iam_policy_document" "kms" {
 }
 
 resource "aws_kms_key" "main" {
-  description             = "${var.name}: SSM SecureString parameters, log groups and audit trail"
+  description             = "${var.name} SSM SecureString parameters, log groups and audit trail"
   enable_key_rotation     = true
   deletion_window_in_days = 30
   policy                  = data.aws_iam_policy_document.kms.json

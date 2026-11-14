@@ -42,7 +42,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.state.arn
     }
     bucket_key_enabled = true
   }
@@ -127,4 +128,20 @@ resource "aws_dynamodb_table" "lock" {
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
+}
+
+# ---------------------------------------------------------------------------
+# Customer-managed key for state encryption
+# ---------------------------------------------------------------------------
+# State contains generated secrets, so it is encrypted with a key whose use is audited in
+# CloudTrail. The S3 backend must be told to use it: backend.hcl sets kms_key_id.
+resource "aws_kms_key" "state" {
+  description             = "Terraform state bucket encryption"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+}
+
+resource "aws_kms_alias" "state" {
+  name          = "alias/supporters-tfstate"
+  target_key_id = aws_kms_key.state.key_id
 }

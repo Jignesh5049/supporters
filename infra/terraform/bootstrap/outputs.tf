@@ -22,3 +22,8 @@ output "account_id" {
   description = "The AWS account this stack was applied to."
   value       = data.aws_caller_identity.current.account_id
 }
+
+output "state_kms_key_arn" {
+  description = "Key for the `kms_key_id` entry in each environment's backend.hcl."
+  value       = aws_kms_key.state.arn
+}

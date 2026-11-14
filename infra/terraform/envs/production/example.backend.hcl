@@ -5,3 +5,4 @@ key            = "production/terraform.tfstate"
 region         = "ap-south-1"
 dynamodb_table = "supporters-tfstate-lock"
 encrypt        = true
+kms_key_id     = "<state-kms-key-arn>"
