@@ -120,6 +120,45 @@ const envSchema = z
     MEILI_SEARCH_KEY: z.string().min(16),
     /** Scoped key for documents and settings, for the worker and `pnpm search:reindex`. */
     MEILI_INDEX_KEY: z.string().min(16).optional(),
+    /**
+     * Payments. `none`: Premium endpoints answer 503 PAYMENTS_NOT_CONFIGURED (the app still boots).
+     * `fake`: in-memory FakeRazorpay, development and tests only. `razorpay`: the real SDK; keys
+     * starting rzp_test_ are Razorpay test mode, rzp_live_ is accepted in production only.
+     */
+    PAYMENTS_PROVIDER: z.enum(['none', 'fake', 'razorpay']).default('none'),
+    RAZORPAY_KEY_ID: z
+      .string()
+      .regex(/^rzp_(test|live)_[A-Za-z0-9]+$/)
+      .optional(),
+    RAZORPAY_KEY_SECRET: z.string().min(8).optional(),
+    /** The secret set on the webhook in the Razorpay dashboard (not the API key secret). */
+    RAZORPAY_WEBHOOK_SECRET: z.string().min(16).optional(),
+    /** The yearly plan (99900 paise) created in the Razorpay dashboard. */
+    RAZORPAY_PLAN_ID: z
+      .string()
+      .regex(/^plan_[A-Za-z0-9]+$/)
+      .optional(),
+    /** Webhooks older than this (by the event's own timestamp) are refused. Razorpay retries for 24 h. */
+    WEBHOOK_MAX_AGE_SEC: z.coerce
+      .number()
+      .int()
+      .min(300)
+      .max(7 * 86_400)
+      .default(25 * 3_600),
+    /** Printed on invoices. The client and their accountant supply these. */
+    INVOICE_SELLER_NAME: z.string().min(2).max(200).optional(),
+    INVOICE_SELLER_GSTIN: z.string().length(15).optional(),
+    INVOICE_SELLER_ADDRESS: z.string().min(5).max(400).optional(),
+    /** The seller's GST state code, two digits (27 = Maharashtra). Decides CGST+SGST or IGST. */
+    INVOICE_SELLER_STATE_CODE: z
+      .string()
+      .regex(/^\d{2}$/)
+      .optional(),
+    /** Service accounting code printed on the invoice; confirm with the accountant. */
+    INVOICE_SAC_CODE: z
+      .string()
+      .regex(/^\d{4,8}$/)
+      .optional(),
     /** Sentry (errors and 10% of traces). Unset: Sentry is off. src/instrument.ts reads it too. */
     SENTRY_DSN: z.url().optional(),
     SENTRY_RELEASE: z.string().min(1).max(200).optional(),
@@ -151,6 +190,44 @@ const envSchema = z
     }
     if (isDeployed && DEV_ONLY_SMS_PROVIDERS.has(env.SMS_PROVIDER)) {
       ctx.addIssue({ code: 'custom', path: ['SMS_PROVIDER'], message: 'console is dev-only' });
+    }
+    if (isDeployed && env.PAYMENTS_PROVIDER === 'fake') {
+      ctx.addIssue({ code: 'custom', path: ['PAYMENTS_PROVIDER'], message: 'fake is dev-only' });
+    }
+    if (env.PAYMENTS_PROVIDER === 'razorpay') {
+      for (const name of [
+        'RAZORPAY_KEY_ID',
+        'RAZORPAY_KEY_SECRET',
+        'RAZORPAY_WEBHOOK_SECRET',
+        'RAZORPAY_PLAN_ID',
+      ] as const) {
+        if (!env[name]) ctx.addIssue({ code: 'custom', path: [name], message: 'is required' });
+      }
+      if (env.RAZORPAY_KEY_ID?.startsWith('rzp_live_') && env.NODE_ENV !== 'production') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['RAZORPAY_KEY_ID'],
+          message: 'live keys are for production only; use rzp_test_ keys',
+        });
+      }
+      if (env.NODE_ENV === 'production') {
+        for (const name of [
+          'INVOICE_SELLER_NAME',
+          'INVOICE_SELLER_GSTIN',
+          'INVOICE_SELLER_ADDRESS',
+          'INVOICE_SELLER_STATE_CODE',
+          'INVOICE_SAC_CODE',
+        ] as const) {
+          if (!env[name]) ctx.addIssue({ code: 'custom', path: [name], message: 'is required' });
+        }
+      }
+    }
+    if (env.PAYMENTS_PROVIDER === 'fake' && !env.RAZORPAY_WEBHOOK_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RAZORPAY_WEBHOOK_SECRET'],
+        message: 'is required for the fake provider (it signs its own webhooks)',
+      });
     }
     if (isDeployed && !env.MEDIA_PUBLIC_URL.startsWith('https://')) {
       ctx.addIssue({ code: 'custom', path: ['MEDIA_PUBLIC_URL'], message: 'must use https' });
