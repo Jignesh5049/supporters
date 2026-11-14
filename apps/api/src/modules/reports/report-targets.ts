@@ -1,0 +1,140 @@
+import type { ReportTargetType } from '@supporters/shared';
+import type { Prisma, PrismaClient } from '../../generated/prisma/client';
+import { PUBLIC_OWNER } from '../businesses/businesses.service';
+import { PUBLIC_POST } from '../posts/posts.service';
+import type { SearchEntity } from '../search/meili';
+import { recordSearchSync } from '../search/search.sync';
+
+type Tx = Prisma.TransactionClient;
+
+/** Serializes new reports and admin actions on one target (advisory lock key). */
+export const reportLockKey = (type: ReportTargetType, id: string) => `report:${type}:${id}`;
+
+/**
+ * One kind of reportable thing. Modules that add one (reviews, buyer
+ * requirements) register it with `ReportTargets.register`; until then reports
+ * of that type answer 404.
+ */
+export interface ReportTarget {
+  /**
+   * The author or owner, when the reporter can see the target; null otherwise
+   * (unknown, deleted, hidden, or private to others), which answers 404.
+   */
+  load(id: string, reporterId: string): Promise<{ subjectUserId: string } | null>;
+  /** Hides it from public reads; true only when this call hid it. */
+  hide(tx: Tx, id: string): Promise<boolean>;
+  /** Shows it again; true only when this call changed it. */
+  unhide(tx: Tx, id: string): Promise<boolean>;
+  /** Hidden for review once enough different people report it (product spec, Moderation). */
+  isAutoHidden: boolean;
+}
+
+/** Sets or clears `hidden_at` with a guard, so only the call that changes it counts. */
+const toggle = (
+  update: (args: {
+    where: { id: string; hiddenAt: null | { not: null } };
+    data: { hiddenAt: Date | null };
+  }) => Promise<{ count: number }>,
+) => ({
+  hide: async (id: string) =>
+    (await update({ where: { id, hiddenAt: null }, data: { hiddenAt: new Date() } })).count === 1,
+  unhide: async (id: string) =>
+    (await update({ where: { id, hiddenAt: { not: null } }, data: { hiddenAt: null } })).count ===
+    1,
+});
+
+/** Tells search to re-read a post or business whose visibility just changed (same transaction). */
+async function synced(
+  tx: Tx,
+  entity: SearchEntity,
+  change: Promise<boolean>,
+  id: string,
+): Promise<boolean> {
+  const changed = await change;
+  if (changed) await recordSearchSync(tx, entity, id);
+  return changed;
+}
+
+export class ReportTargets {
+  private readonly targets = new Map<ReportTargetType, ReportTarget>();
+
+  constructor(prisma: PrismaClient) {
+    this.register('post', {
+      isAutoHidden: true,
+      load: async (id) => {
+        const post = await prisma.post.findFirst({
+          where: { id, ...PUBLIC_POST },
+          select: { business: { select: { ownerUserId: true } } },
+        });
+        return post ? { subjectUserId: post.business.ownerUserId } : null;
+      },
+      hide: (tx, id) => synced(tx, 'post', toggle((args) => tx.post.updateMany(args)).hide(id), id),
+      unhide: (tx, id) =>
+        synced(tx, 'post', toggle((args) => tx.post.updateMany(args)).unhide(id), id),
+    });
+
+    this.register('comment', {
+      isAutoHidden: true,
+      load: async (id) => {
+        const comment = await prisma.comment.findFirst({
+          where: {
+            id,
+            deletedAt: null,
+            hiddenAt: null,
+            user: { status: 'active' },
+            post: PUBLIC_POST,
+          },
+          select: { userId: true },
+        });
+        return comment ? { subjectUserId: comment.userId } : null;
+      },
+      hide: (tx, id) => toggle((args) => tx.comment.updateMany(args)).hide(id),
+      unhide: (tx, id) => toggle((args) => tx.comment.updateMany(args)).unhide(id),
+    });
+
+    // Only the two ends of a thread can see, and so report, its messages.
+    this.register('message', {
+      isAutoHidden: false,
+      load: async (id, reporterId) => {
+        const message = await prisma.message.findFirst({
+          where: {
+            id,
+            hiddenAt: null,
+            hiddenFor: { none: { userId: reporterId } },
+            conversation: {
+              OR: [{ userId: reporterId }, { business: { ownerUserId: reporterId } }],
+            },
+          },
+          select: { senderUserId: true },
+        });
+        return message ? { subjectUserId: message.senderUserId } : null;
+      },
+      hide: (tx, id) => toggle((args) => tx.message.updateMany(args)).hide(id),
+      unhide: (tx, id) => toggle((args) => tx.message.updateMany(args)).unhide(id),
+    });
+
+    // A whole business page is never hidden by report count alone, only by an admin.
+    this.register('business', {
+      isAutoHidden: false,
+      load: async (id) => {
+        const business = await prisma.business.findFirst({
+          where: { id, ...PUBLIC_OWNER },
+          select: { ownerUserId: true },
+        });
+        return business ? { subjectUserId: business.ownerUserId } : null;
+      },
+      hide: (tx, id) =>
+        synced(tx, 'business', toggle((args) => tx.business.updateMany(args)).hide(id), id),
+      unhide: (tx, id) =>
+        synced(tx, 'business', toggle((args) => tx.business.updateMany(args)).unhide(id), id),
+    });
+  }
+
+  register(type: ReportTargetType, target: ReportTarget) {
+    this.targets.set(type, target);
+  }
+
+  get(type: ReportTargetType): ReportTarget | undefined {
+    return this.targets.get(type);
+  }
+}

@@ -1,7 +1,11 @@
 import type { Money } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { AppError, ErrorCode, invalidField, isUniqueViolation } from '../../lib/errors';
-import { type BusinessesService, publishedListingsLimit } from '../businesses/businesses.service';
+import {
+  type BusinessesService,
+  PUBLIC_OWNER,
+  publishedListingsLimit,
+} from '../businesses/businesses.service';
 import { toBusinessSummary } from '../businesses/businesses.service';
 import { toCategoryRef } from '../categories/categories.service';
 import { recordSearchSync } from '../search/search.sync';
@@ -16,11 +20,11 @@ export const listingInclude = {
 
 type ListingRow = Prisma.ProductGetPayload<{ include: typeof listingInclude }>;
 
-/** Public reads: published, not deleted, and the owner's account is active. */
+/** Public reads: published, not deleted, and the business itself is public. */
 export const PUBLIC_LISTING = {
   status: 'published',
   deletedAt: null,
-  business: { owner: { status: 'active' } },
+  business: PUBLIC_OWNER,
 } satisfies Prisma.ProductWhereInput & Prisma.ServiceWhereInput;
 
 export const toMoney = (paise: bigint | null): Money | null =>

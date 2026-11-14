@@ -58,6 +58,22 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'Password changed',
     body: () => "Your password was changed. If this wasn't you, contact support.",
   },
+  [NotificationType.BusinessVerified]: {
+    title: 'Business verified',
+    body: () => 'Your business now shows the Verified badge',
+  },
+  [NotificationType.BusinessVerificationRejected]: {
+    title: 'Verification not approved',
+    body: () => 'Your verification request was not approved. See the reason and try again.',
+  },
+  [NotificationType.ContentHidden]: {
+    title: 'Content hidden',
+    body: () => 'Something you posted was hidden for breaking our community guidelines',
+  },
+  [NotificationType.AccountWarned]: {
+    title: 'Account warning',
+    body: () => 'Content you posted was reported and reviewed. Please follow our guidelines.',
+  },
 };
 
 export const pushCopy = (type: NotificationType, actorCount: number) => {
@@ -82,12 +98,13 @@ export const androidChannel = (category: NotificationCategory): string => {
 /** Plain-text email for the events that send one. */
 export function emailCopy(type: NotificationType, appOrigin: string) {
   const { title, body } = pushCopy(type, 1);
-  const link =
-    type === NotificationType.EnquiryNew
-      ? `${appOrigin}/business/enquiries`
-      : type === NotificationType.RequirementQuoted
-        ? `${appOrigin}/requirements/mine`
-        : `${appOrigin}/settings`;
+  const path: Partial<Record<NotificationType, string>> = {
+    [NotificationType.EnquiryNew]: '/business/enquiries',
+    [NotificationType.RequirementQuoted]: '/requirements/mine',
+    [NotificationType.BusinessVerified]: '/business/verification',
+    [NotificationType.BusinessVerificationRejected]: '/business/verification',
+  };
+  const link = `${appOrigin}${path[type] ?? '/settings'}`;
   return {
     subject: `Supporters: ${title}`,
     text: `${body}\n\nOpen Supporters: ${link}\n\nYou can't reply to this email.`,

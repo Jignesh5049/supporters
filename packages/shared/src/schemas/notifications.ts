@@ -44,6 +44,14 @@ export const NotificationType = {
   RequirementQuoted: 'requirement.quoted',
   SecurityLogin: 'security.login',
   SecurityPasswordChanged: 'security.password_changed',
+  /** An admin approved the business's verification request. */
+  BusinessVerified: 'business.verified',
+  /** An admin rejected it; the reason is on `GET /me/business/verification`. */
+  BusinessVerificationRejected: 'business.verification_rejected',
+  /** A post, comment, message or the business page was hidden by moderation. */
+  ContentHidden: 'content.hidden',
+  /** An admin warned the account about reported content. */
+  AccountWarned: 'account.warned',
 } as const;
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 export const notificationTypeSchema = z.enum(NotificationType);

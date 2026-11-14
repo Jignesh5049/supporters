@@ -63,6 +63,12 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `NotificationFanout` turns an event into in-app rows and a delivery plan, in one transaction that marks the event processed, so a retried job never doubles a notification. Likes, comments, replies and follows grow one unread row per post or business for 10 minutes; messages grow one row per thread.
 - `GET /v1/notifications` (cursor, optional `category`, plus `unreadCount`), `POST /v1/notifications/read` (`{ ids }` or `{ all: true }`), `GET/PUT /v1/me/notification-prefs` (push and email per category; `account` is locked on).
 
+## Verification and reports in short
+
+- An owner asks for the badge with `POST /v1/me/business/verification` (`method` `gstin` or `udyam`, `registrationNumber`, one `certificateUploadId` and one or two `ownerIdUploadIds`, all `kyc` uploads). The business moves to `pending`; one pending request at a time, and a new one only after a rejection. `GET` returns the badge state and the latest request (with the rejection reason).
+- `POST /v1/reports` (`targetType` post, comment, message or business, `targetId`, `reason`, optional `details`), 20 a day. Reporting the same target again returns the first report (200). Messages can only be reported by the two ends of the thread, and nobody can report their own content. Review and requirement reports answer 404 until those modules register a target in `ReportTargets`.
+- Moderation hides by setting `hidden_at` on posts, comments, messages or businesses. Hidden rows drop out of every public read (`PUBLIC_POST`, `PUBLIC_OWNER`, `PUBLIC_LISTING`, comment lists, chat). A post or comment with 5 open reports from different people is hidden for admin review, and its author gets `content.hidden`.
+
 ## Worker and delivery
 
 - `pnpm dev:worker` runs `src/worker.ts` (same image as the API, different command: `node dist/worker.js`). It relays the outbox to BullMQ on Valkey, runs the `notifications`, `push`, `email` and `cron` queues (5 attempts, exponential backoff, then the `dead-letter` queue), and cleans up nightly at 03:00 IST (notifications after 90 days, processed outbox rows after 7).

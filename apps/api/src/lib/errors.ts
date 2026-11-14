@@ -37,6 +37,8 @@ export const ErrorCode = {
   UploadIncomplete: 'UPLOAD_INCOMPLETE',
   UploadRejected: 'UPLOAD_REJECTED',
   Blocked: 'BLOCKED',
+  VerificationPending: 'VERIFICATION_PENDING',
+  AlreadyVerified: 'ALREADY_VERIFIED',
   IdempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
   RequestInProgress: 'REQUEST_IN_PROGRESS',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',

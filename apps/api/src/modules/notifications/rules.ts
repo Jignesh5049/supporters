@@ -39,4 +39,11 @@ export const NOTIFICATION_RULES: Record<NotificationType, NotificationRule> = {
     email: true,
     isUrgent: true,
   }),
+  [NotificationType.BusinessVerified]: rule(NotificationCategory.Business, { email: true }),
+  [NotificationType.BusinessVerificationRejected]: rule(NotificationCategory.Business, {
+    email: true,
+  }),
+  // Moderation notices sit in Account, which cannot be switched off.
+  [NotificationType.ContentHidden]: rule(NotificationCategory.Account, { email: true }),
+  [NotificationType.AccountWarned]: rule(NotificationCategory.Account, { email: true }),
 };

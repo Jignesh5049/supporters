@@ -62,7 +62,7 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  city                 City?                 @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  city                 City?                  @relation(fields: [cityId], references: [id], onDelete: SetNull)
   sessions             Session[]
   devices              Device[]
   consents             Consent[]
@@ -78,14 +78,18 @@ model User {
   sentMessages         Message[]
   hiddenMessages       MessageHidden[]
   enquiries            Enquiry[]
-  blocksMade           Block[]               @relation("Blocker")
-  blocksReceived       Block[]               @relation("Blocked")
-  notifications        Notification[]        @relation("NotificationRecipient")
-  actedOn              Notification[]        @relation("NotificationActor")
+  blocksMade           Block[]                @relation("Blocker")
+  blocksReceived       Block[]                @relation("Blocked")
+  notifications        Notification[]         @relation("NotificationRecipient")
+  actedOn              Notification[]         @relation("NotificationActor")
   notificationPrefs    NotificationPref[]
   pushTokens           PushToken[]
   webPushSubscriptions WebPushSubscription[]
   buyerRequirements    BuyerRequirement[]
+  verificationReviews  BusinessVerification[] @relation("VerificationReviewer")
+  reportsMade          Report[]               @relation("Reporter")
+  reportsResolved      Report[]               @relation("ReportResolver")
+  auditLogs            AuditLog[]
   reviews              Review[]
 
   @@map("users")
@@ -326,19 +330,21 @@ model Business {
   profileCompletion  Int                @default(0) @map("profile_completion") @db.SmallInt
   /// Denormalized; changed in the same transaction as the follow.
   followerCount      Int                @default(0) @map("follower_count")
+  /// Hidden by moderation: gone from every public read, with its posts and listings.
+  hiddenAt           DateTime?          @map("hidden_at") @db.Timestamptz(6)
   /// Average of visible reviews to one decimal (null with none), recomputed on every review change.
   ratingAvg          Decimal?           @map("rating_avg") @db.Decimal(2, 1)
   ratingCount        Int                @default(0) @map("rating_count")
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  owner              User               @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  category           Category           @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
-  subcategory        Category?          @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
-  city               City               @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  state              State              @relation(fields: [stateId], references: [id], onDelete: Restrict)
-  logo               Upload?            @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
-  cover              Upload?            @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
+  owner              User                   @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  category           Category               @relation("BusinessCategory", fields: [categoryId], references: [id], onDelete: Restrict)
+  subcategory        Category?              @relation("BusinessSubcategory", fields: [subcategoryId], references: [id], onDelete: Restrict)
+  city               City                   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  state              State                  @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  logo               Upload?                @relation("BusinessLogo", fields: [logoUploadId], references: [id], onDelete: SetNull)
+  cover              Upload?                @relation("BusinessCover", fields: [coverUploadId], references: [id], onDelete: SetNull)
   products           Product[]
   posts              Post[]
   followers          Follow[]
@@ -347,6 +353,7 @@ model Business {
   enquiries          Enquiry[]
   requirementMatches RequirementMatch[]
   requirementQuotes  RequirementQuote[]
+  verifications      BusinessVerification[]
   reviews            Review[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
@@ -463,13 +470,14 @@ model Upload {
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listingMedia     ListingMedia?
-  postMedia        PostMedia?
-  businessLogo     Business?          @relation("BusinessLogo")
-  businessCover    Business?          @relation("BusinessCover")
-  attachment       MessageAttachment?
-  requirementImage RequirementImage?
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingMedia         ListingMedia?
+  postMedia            PostMedia?
+  businessLogo         Business?             @relation("BusinessLogo")
+  businessCover        Business?             @relation("BusinessCover")
+  attachment           MessageAttachment?
+  requirementImage     RequirementImage?
+  verificationDocument VerificationDocument?
 
   @@index([userId, createdAt], map: "idx_uploads_user_id_created_at")
   @@index([status, createdAt], map: "idx_uploads_status_created_at")
@@ -533,6 +541,8 @@ model Post {
   likeCount    Int        @default(0) @map("like_count")
   commentCount Int        @default(0) @map("comment_count")
   saveCount    Int        @default(0) @map("save_count")
+  /// Hidden by moderation (an admin, or enough distinct reports); gone from public reads.
+  hiddenAt     DateTime?  @map("hidden_at") @db.Timestamptz(6)
   deletedAt    DateTime?  @map("deleted_at") @db.Timestamptz(6)
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -582,6 +592,8 @@ model Comment {
   body       String
   /// Live replies; top-level comments only.
   replyCount Int       @default(0) @map("reply_count")
+  /// Hidden by moderation; gone from public reads.
+  hiddenAt   DateTime? @map("hidden_at") @db.Timestamptz(6)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -754,6 +766,8 @@ model Message {
   /// A listing_card message points at one product or service.
   productId      String?     @map("product_id") @db.Uuid
   serviceId      String?     @map("service_id") @db.Uuid
+  /// Hidden by moderation, for both sides of the thread.
+  hiddenAt       DateTime?   @map("hidden_at") @db.Timestamptz(6)
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -988,6 +1002,167 @@ model OutboxEvent {
   @@index([id], map: "idx_outbox_events_unpublished", where: raw("published_at IS NULL"))
   @@index([processedAt], map: "idx_outbox_events_processed_at", where: raw("processed_at IS NOT NULL"))
   @@map("outbox_events")
+}
+
+// Verification and trust and safety (backend spec, Data model: Business, Trust and safety).
+
+enum VerificationMethod {
+  gstin
+  udyam
+
+  @@map("verification_method")
+}
+
+enum VerificationRequestStatus {
+  pending
+  approved
+  rejected
+
+  @@map("verification_request_status")
+}
+
+enum VerificationDocumentKind {
+  certificate
+  owner_id
+
+  @@map("verification_document_kind")
+}
+
+/// One verification request. A business has at most one pending request (partial unique index
+/// in the migration); the business's verification_status is the badge itself.
+model BusinessVerification {
+  id                 String                    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId         String                    @map("business_id") @db.Uuid
+  method             VerificationMethod
+  /// The GSTIN or Udyam number the admin checks on the government portal.
+  registrationNumber String                    @map("registration_number")
+  status             VerificationRequestStatus @default(pending)
+  rejectionReason    String?                   @map("rejection_reason")
+  reviewedByUserId   String?                   @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt         DateTime?                 @map("reviewed_at") @db.Timestamptz(6)
+  createdAt          DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business  Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviewer  User?                  @relation("VerificationReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  documents VerificationDocument[]
+
+  /// At most one pending request per business.
+  @@unique([businessId], map: "uq_business_verifications_business_id_pending", where: raw("status = 'pending'"))
+  @@index([businessId, id], map: "idx_business_verifications_business_id_id")
+  /// The admin queue, oldest first per status.
+  @@index([status, id], map: "idx_business_verifications_status_id")
+  @@map("business_verifications")
+}
+
+/// A kyc upload (S3 key under the private kyc/ prefix) attached to a request.
+model VerificationDocument {
+  id             String                   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  verificationId String                   @map("verification_id") @db.Uuid
+  uploadId       String                   @unique(map: "uq_verification_documents_upload_id") @map("upload_id") @db.Uuid
+  kind           VerificationDocumentKind
+  position       Int                      @db.SmallInt
+  createdAt      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  verification BusinessVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  /// Restrict: the evidence for a decision is never dropped by upload cleanup.
+  upload       Upload               @relation(fields: [uploadId], references: [id], onDelete: Restrict)
+
+  @@index([verificationId, position], map: "idx_verification_documents_verification_id_position")
+  @@map("verification_documents")
+}
+
+enum ReportTargetType {
+  post
+  comment
+  review
+  message
+  business
+  requirement
+
+  @@map("report_target_type")
+}
+
+enum ReportReason {
+  spam
+  fraud
+  offensive
+  wrong_category
+  other
+
+  @@map("report_reason")
+}
+
+enum ReportStatus {
+  open
+  actioned
+  dismissed
+
+  @@map("report_status")
+}
+
+enum ReportAction {
+  dismiss
+  hide
+  warn
+  suspend
+
+  @@map("report_action")
+}
+
+/// A user's report of a post, comment, review, message, business or requirement. target_id has no
+/// FK (polymorphic). One report per reporter and target, so open reports count distinct people.
+model Report {
+  id               String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  reporterUserId   String           @map("reporter_user_id") @db.Uuid
+  targetType       ReportTargetType @map("target_type")
+  targetId         String           @map("target_id") @db.Uuid
+  /// The author or owner of the target when it was reported: who a warning or suspension hits.
+  subjectUserId    String           @map("subject_user_id") @db.Uuid
+  reason           ReportReason
+  details          String?
+  status           ReportStatus     @default(open)
+  action           ReportAction?
+  resolutionNote   String?          @map("resolution_note")
+  resolvedByUserId String?          @map("resolved_by_user_id") @db.Uuid
+  resolvedAt       DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  reporter   User  @relation("Reporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([reporterUserId, targetType, targetId], map: "uq_reports_reporter_user_id_target_type_target_id")
+  /// The admin queue.
+  @@index([status, id], map: "idx_reports_status_id")
+  /// Open reports on one target (auto-hide count, resolving them together).
+  @@index([targetType, targetId, status], map: "idx_reports_target_type_target_id_status")
+  @@index([subjectUserId], map: "idx_reports_subject_user_id")
+  @@map("reports")
+}
+
+/// Append-only record of admin actions (backend spec, Security: Admin). UPDATE and DELETE are
+/// refused by a trigger in the migration; rows are kept for a year. No updated_at: rows never change.
+model AuditLog {
+  id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  actorUserId String   @map("actor_user_id") @db.Uuid
+  /// resource.verb, e.g. verification.approve.
+  action      String
+  targetType  String?  @map("target_type")
+  targetId    String?  @map("target_id") @db.Uuid
+  /// Ids, statuses and reasons only: never passwords, tokens or document contents.
+  metadata    Json     @default("{}")
+  ip          String?
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, id], map: "idx_audit_logs_actor_user_id_id")
+  @@index([targetType, targetId, id], map: "idx_audit_logs_target_type_target_id_id")
+  @@index([action, id], map: "idx_audit_logs_action_id")
+  @@map("audit_logs")
 }
 
 // Buyer requirements (product spec, Discovery and buyer requirements; backend spec, Data model:

@@ -16,6 +16,7 @@ import type { PushDevicesService } from '../modules/notifications/push-devices.s
 import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
+import type { ReportsService } from '../modules/reports/reports.service';
 import type { RequirementsService } from '../modules/requirements/requirements.service';
 import type { ReviewsService } from '../modules/reviews/reviews.service';
 import type { SavesService } from '../modules/saves/saves.service';
@@ -25,6 +26,7 @@ import type { SessionService } from '../modules/auth/session.service';
 import type { DiscoverService } from '../modules/discover/discover.service';
 import type { SearchService } from '../modules/search/search.service';
 import type { UsersService } from '../modules/users/users.service';
+import type { VerificationService } from '../modules/verification/verification.service';
 import type { AccessClaims, AuthContext } from '../plugins/auth';
 
 declare module 'fastify' {
@@ -57,6 +59,8 @@ declare module 'fastify' {
       enquiries: EnquiriesService;
       notifications: NotificationsService;
       pushDevices: PushDevicesService;
+      verification: VerificationService;
+      reports: ReportsService;
       search: SearchService;
       discover: DiscoverService;
       requirements: RequirementsService;
