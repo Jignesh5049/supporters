@@ -22,6 +22,7 @@ import { Input } from '@supporters/ui-native/components/input';
 import { Text } from '@supporters/ui-native/components/text';
 import { cn } from '@supporters/ui-native/lib/utils';
 import { useApp } from '../context/AppContext';
+import { useScreenSecurity } from '../hooks/useScreenSecurity';
 import { messageForError } from '../lib/api';
 import {
   type KycFile,
@@ -53,6 +54,8 @@ const METHODS: { value: VerificationMethod; label: string; hint: string; certifi
 
 /** Business Hub > Verification (product spec, Verification): status, then the request form. */
 export function HubVerificationScreen() {
+  // GSTIN and KYC documents: no screenshots, recordings or recents-screen preview.
+  useScreenSecurity('hub-verification-screen');
   const router = useRouter();
   const verification = useMyVerification();
 

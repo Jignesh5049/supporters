@@ -147,7 +147,8 @@ The prototype's PascalCase files (for example `BusinessCard.tsx`) are renamed to
 - Every API route checks authentication, role and ownership, and has a test proving another user can't access it.
 - Never log passwords, OTPs, tokens, phone numbers, emails or payout details.
 - New dependencies need a reason in the PR description. Prefer well-maintained packages, and pin exact versions.
-- Report a suspected vulnerability privately to the tech lead, not in a public issue.
+- Report a suspected vulnerability privately, never in a public issue: see [SECURITY.md](SECURITY.md).
+- Security checks run in CI (CodeQL, gitleaks, `pnpm audit`, dependency review); keep them green. Pin every GitHub Action to a commit SHA. The ASVS and MASVS mapping is in [docs/security/checklist.md](docs/security/checklist.md).
 
 ## Definition of done
 

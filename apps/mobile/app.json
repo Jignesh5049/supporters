@@ -27,13 +27,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
-      ],
+      "permissions": ["CAMERA", "USE_BIOMETRIC", "USE_FINGERPRINT"],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -49,6 +43,14 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
+      ],
+      "allowBackup": false,
+      "blockedPermissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "SYSTEM_ALERT_WINDOW"
       ]
     },
     "web": {
@@ -62,6 +64,16 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": false,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
       "expo-notifications",
       [
         "expo-image-picker",
