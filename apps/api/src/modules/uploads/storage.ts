@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -23,6 +24,8 @@ export interface ObjectStorage {
   /** The first `length` bytes, for the magic-byte check. */
   readStart(key: string, length: number): Promise<Uint8Array>;
   delete(key: string): Promise<void>;
+  /** Server-side copy, keeping the content type. */
+  copy(from: string, to: string): Promise<void>;
 }
 
 const isNotFound = (error: unknown) =>
@@ -96,6 +99,17 @@ export class S3Storage implements ObjectStorage {
       new GetObjectCommand({ Bucket: this.bucket, Key: key, Range: `bytes=0-${length - 1}` }),
     );
     return object.Body ? object.Body.transformToByteArray() : new Uint8Array();
+  }
+
+  async copy(from: string, to: string) {
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        Key: to,
+        // Keys are server-generated (purpose/uuid), so they need no escaping.
+        CopySource: `${this.bucket}/${from}`,
+      }),
+    );
   }
 
   async delete(key: string) {

@@ -2,7 +2,7 @@ import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { CURRENT_POLICY_VERSION } from '@supporters/shared';
 import type { LightMyRequestResponse } from 'fastify';
 import { inject } from 'vitest';
-import { type App, buildApp } from '../app';
+import { type App, type BuildAppOptions, buildApp } from '../app';
 import { type Env, loadEnv } from '../config/env';
 import type { BreachedPasswordChecker } from '../modules/auth/passwords';
 import type { SmsSender } from '../modules/auth/sms';
@@ -76,6 +76,7 @@ export async function createTestApp(
   envOverrides: Record<string, string> = {},
   /** Registers test-only routes before the app is sealed. */
   beforeReady?: (app: App) => Promise<void>,
+  appOptions: Partial<BuildAppOptions> = {},
 ): Promise<TestContext> {
   const sms = new FakeSms();
   const env = testEnv(envOverrides);
@@ -86,6 +87,7 @@ export async function createTestApp(
     sms,
     breachChecker: new FakeBreachChecker(),
     logger: false,
+    ...appOptions,
   });
   if (beforeReady) await beforeReady(app);
   await app.ready();

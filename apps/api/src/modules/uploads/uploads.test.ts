@@ -1,4 +1,4 @@
-import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { MEDIA_LIMITS, RATE_LIMITS } from '@supporters/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -197,6 +197,32 @@ describe('POST /v1/uploads/:id/complete', () => {
 
     // Idempotent.
     expect((await complete(session, id)).json().status).toBe('ready');
+  });
+
+  it('cannot be swapped after validation by reusing the presigned URL', async () => {
+    const session = await registerMobile(ctx);
+    const presigned = await putFile(session, 'listing', 'image/jpeg', JPEG);
+    const done = await complete(session, presigned.id);
+    expect(done.statusCode).toBe(200);
+
+    // Within its 5 minutes the URL still works. It must not change the validated file.
+    const html = Buffer.concat([
+      Buffer.from('<script>alert(1)</script>'),
+      Buffer.alloc(JPEG.length - 25),
+    ]);
+    await fetch(presigned.url, {
+      method: 'PUT',
+      headers: presigned.headers,
+      body: new Uint8Array(html),
+    });
+
+    const { key } = await prisma.upload.findUniqueOrThrow({ where: { id: presigned.id } });
+    const served = await s3.send(new GetObjectCommand({ Bucket: TEST_BUCKET, Key: key }));
+    expect(Buffer.from((await served.Body?.transformToByteArray()) ?? []).subarray(0, 4)).toEqual(
+      JPEG.subarray(0, 4),
+    );
+    // Served from a fresh key that was never presigned, not the one the client can still write to.
+    expect(new URL(presigned.url).pathname).not.toContain(key);
   });
 
   it('never gives private media a public URL', async () => {
