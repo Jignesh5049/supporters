@@ -41,6 +41,11 @@ export const ErrorCode = {
   AlreadyVerified: 'ALREADY_VERIFIED',
   IdempotencyKeyReused: 'IDEMPOTENCY_KEY_REUSED',
   RequestInProgress: 'REQUEST_IN_PROGRESS',
+  PaymentsNotConfigured: 'PAYMENTS_NOT_CONFIGURED',
+  InvalidWebhook: 'INVALID_WEBHOOK',
+  RefundNotAllowed: 'REFUND_NOT_ALLOWED',
+  PremiumWebOnly: 'PREMIUM_WEB_ONLY',
+  PremiumExists: 'PREMIUM_EXISTS',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   InternalError: 'INTERNAL_ERROR',
 } as const;
