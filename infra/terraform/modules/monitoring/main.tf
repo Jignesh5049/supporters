@@ -93,7 +93,8 @@ resource "aws_kms_key" "sns_us_east_1" {
   policy                  = data.aws_iam_policy_document.sns_us_east_1_key.json
 }
 
-# CloudFront publishes its metrics in us-east-1 only, and an alarm can notify only a topic in its# own region, so the edge alarm needs a second topic.
+# CloudFront publishes its metrics in us-east-1 only, and an alarm can notify only a topic in its
+# own region, so the edge alarm needs a second topic.
 resource "aws_sns_topic" "alerts_us_east_1" {
   provider = aws.us_east_1
 
