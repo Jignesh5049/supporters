@@ -10,7 +10,10 @@ import {
 import type { Redis } from 'ioredis';
 import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
+import { AdminCategoriesService } from './modules/admin/admin-categories.service';
+import { AdminReportsService } from './modules/admin/admin-reports.service';
 import { AdminUsersService } from './modules/admin/admin-users.service';
+import { AdminVerificationsService } from './modules/admin/admin-verifications.service';
 import { adminRoutes } from './modules/admin/admin.routes';
 import { AuditLogService } from './modules/admin/audit.service';
 import { authRoutes } from './modules/auth/auth.routes';
@@ -202,6 +205,8 @@ export async function buildApp(options: BuildAppOptions) {
   const services = new ServicesService(app.prisma, businesses, categories, places, listingWriter);
   const posts = new PostsService(app.prisma, businesses, uploads, new SaveLookup(app.prisma));
   const blocks = new BlocksService(app.prisma);
+  const reportTargets = new ReportTargets(app.prisma);
+  const adminUsers = new AdminUsersService(app.prisma, sessions);
   const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
@@ -233,10 +238,13 @@ export async function buildApp(options: BuildAppOptions) {
     notifications: new NotificationsService(app.prisma),
     pushDevices: new PushDevicesService(app.prisma, Boolean(env.VAPID_PUBLIC_KEY)),
     verification: new VerificationService(app.prisma, businesses, uploads),
-    reports: new ReportsService(app.prisma, new ReportTargets(app.prisma), app.limiter),
+    reports: new ReportsService(app.prisma, reportTargets, app.limiter),
     admin: {
-      users: new AdminUsersService(app.prisma, sessions),
+      users: adminUsers,
       auditLogs: new AuditLogService(app.prisma),
+      verifications: new AdminVerificationsService(app.prisma, storage),
+      reports: new AdminReportsService(app.prisma, reportTargets, adminUsers),
+      categories: new AdminCategoriesService(app.prisma),
     },
     search: new SearchService(createMeili(env.MEILI_URL, env.MEILI_SEARCH_KEY), searchCards),
     discover: new DiscoverService(app.prisma, searchCards),
