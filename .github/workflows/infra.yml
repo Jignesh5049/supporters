@@ -1,0 +1,103 @@
+name: Infra
+
+# Static checks for the Terraform under infra/. Nothing here talks to AWS: `validate` and
+# `tflint` run with `init -backend=false`, and no credentials are available to these jobs.
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+  push:
+    branches: [main, dev]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+
+concurrency:
+  group: infra-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: 1.17.2
+  TFLINT_VERSION: v0.66.0
+  TF_IN_AUTOMATION: 'true'
+
+jobs:
+  fmt:
+    name: Terraform fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive -diff infra/terraform
+
+  validate:
+    name: Terraform validate (${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - infra/terraform/bootstrap
+          - infra/terraform/envs/production
+          - infra/terraform/envs/staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: Init (no backend, no credentials)
+        working-directory: ${{ matrix.dir }}
+        run: terraform init -backend=false -input=false
+      - name: Validate
+        working-directory: ${{ matrix.dir }}
+        run: terraform validate
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+      - name: Install rule sets
+        working-directory: infra/terraform
+        env:
+          # Avoids GitHub API rate limits when tflint downloads the AWS ruleset.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: tflint --init
+      - name: Lint every root and module
+        working-directory: infra/terraform
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/infra/terraform/.tflint.hcl" --format compact
+
+  security:
+    name: Security scan (trivy config)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Misconfiguration scan of the Terraform. Accepted findings are listed, with reasons, in
+      # infra/.trivyignore.yaml.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: infra/terraform
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          trivyignores: infra/.trivyignore.yaml
+          format: table
