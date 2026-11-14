@@ -11,6 +11,7 @@ import { DrawerMenu } from '../src/components/DrawerMenu';
 import { CreateModal } from '../src/components/CreateModal';
 import { EnquiryModal } from '../src/components/EnquiryModal';
 import { ShareModal } from '../src/components/ShareModal';
+import { ReportSheet } from '../src/features/moderation/ReportSheet';
 import {
   registerForPushNotificationsAsync,
   handleNotificationResponse,
@@ -65,6 +66,7 @@ export default function RootLayout() {
           <CreateModal />
           <EnquiryModal />
           <ShareModal />
+          <ReportSheet />
           <Toast />
         </AppProvider>
       </QueryClientProvider>

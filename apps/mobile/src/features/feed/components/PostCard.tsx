@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import {
   Bookmark,
   CheckCircle2,
+  Flag,
   Heart,
   MessageCircle,
   Play,
@@ -28,6 +29,8 @@ export interface PostCardProps {
   onToggleLike: (post: PostCardModel) => void;
   onToggleSave: (post: PostCardModel) => void;
   onShare: (post: PostCardModel) => void;
+  /** Opens the report sheet; the API refuses the viewer's own posts. */
+  onReport?: (post: PostCardModel) => void;
 }
 
 function PostCardView({
@@ -39,6 +42,7 @@ function PostCardView({
   onToggleLike,
   onToggleSave,
   onShare,
+  onReport,
 }: PostCardProps) {
   const initials = post.businessName
     .split(' ')
@@ -80,6 +84,16 @@ function PostCardView({
             {post.city} · {post.timeAgo}
           </Text>
         </View>
+        {onReport ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onPress={() => onReport(post)}
+            accessibilityLabel="Report post"
+          >
+            <Icon as={Flag} size={16} className="text-muted-foreground" />
+          </Button>
+        ) : null}
       </Pressable>
 
       {post.offerTag ? (

@@ -63,6 +63,7 @@ import {
   type ThreadItem,
 } from '../features/messages/hooks/use-thread';
 import { realtime } from '../lib/socket';
+import { useReportStore } from '../features/moderation/moderation';
 
 const paramsSchema = z.object({ conversationId: z.uuid() });
 
@@ -107,10 +108,13 @@ function Thread({ conversationId }: { conversationId: string }) {
     [router],
   );
 
+  const openReport = useReportStore((state) => state.open);
   const confirmDelete = useCallback(
-    (message: Message) =>
+    (message: Message, isMine: boolean) =>
       Alert.alert('Delete for me?', 'The other person still sees it.', [
         { text: 'Cancel', style: 'cancel' },
+        // Only the other person's messages can be reported (product spec, Messaging: Controls).
+        ...(isMine ? [] : [{ text: 'Report', onPress: () => openReport('message', message.id) }]),
         {
           text: 'Delete',
           style: 'destructive',
@@ -120,7 +124,7 @@ function Thread({ conversationId }: { conversationId: string }) {
             }),
         },
       ]),
-    [remove, showToast],
+    [remove, showToast, openReport],
   );
 
   const handleLocal = useCallback(
