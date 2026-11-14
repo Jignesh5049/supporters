@@ -38,6 +38,10 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'New replies',
     body: (n) => `${people(n, 'Someone', 'people')} replied to your comment`,
   },
+  [NotificationType.ReviewNew]: {
+    title: 'New reviews',
+    body: (n) => `${people(n, 'Someone', 'people')} reviewed your business`,
+  },
   [NotificationType.RequirementMatched]: {
     title: 'New buyer requirement',
     body: () => 'A buyer needs something your business offers',

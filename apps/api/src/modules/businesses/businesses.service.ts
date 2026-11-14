@@ -6,6 +6,8 @@ import {
   type MyBusiness,
   type OpeningHours,
   PLAN_LIMITS,
+  REVIEW_LIMITS,
+  type BusinessRating,
   type Socials,
   type UpdateBusinessInput,
   openingHoursSchema,
@@ -57,6 +59,18 @@ export const publishedListingsLimit = (business: { premiumUntil: Date | null }) 
 /** Posts this business may publish in any 7 days; null means no limit. */
 export const postsPer7DaysLimit = (business: { premiumUntil: Date | null }) =>
   isPremium(business) ? null : PLAN_LIMITS.free.postsPer7Days;
+
+/** The stored rating as shown: no average below REVIEW_LIMITS.minForAverage reviews ("New"). */
+export const toRating = (row: {
+  ratingAvg: { toNumber(): number } | null;
+  ratingCount: number;
+}): BusinessRating => ({
+  average:
+    row.ratingAvg !== null && row.ratingCount >= REVIEW_LIMITS.minForAverage
+      ? row.ratingAvg.toNumber()
+      : null,
+  count: row.ratingCount,
+});
 
 /** A URL-safe slug from the name; non-Latin names fall back to `business`. */
 export function slugify(name: string): string {
@@ -163,6 +177,7 @@ function toPublicBusiness(row: BusinessRow, mediaUrl: MediaUrl): Business {
     mapUrl: row.mapUrl,
     ...readJson(row),
     followerCount: row.followerCount,
+    rating: toRating(row),
     createdAt: row.createdAt.toISOString(),
   };
 }

@@ -217,6 +217,24 @@ export class NotificationFanout {
         }
         return intents;
       }
+      case 'review.created': {
+        const { reviewId } = payload as DomainEvents['review.created'];
+        const review = await tx.review.findUnique({
+          where: { id: reviewId },
+          select: { userId: true, businessId: true, business: { select: { ownerUserId: true } } },
+        });
+        if (!review) return [];
+        return [
+          {
+            userId: review.business.ownerUserId,
+            type: NotificationType.ReviewNew,
+            actorUserId: review.userId,
+            targetType: NotificationTargetType.Business,
+            targetId: review.businessId,
+            groupKey: `${NotificationType.ReviewNew}:${review.businessId}`,
+          },
+        ];
+      }
       case 'requirement.created': {
         const { requirementId } = payload as DomainEvents['requirement.created'];
         const match = await matchRequirement(tx, requirementId, this.now());

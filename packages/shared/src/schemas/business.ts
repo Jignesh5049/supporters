@@ -158,6 +158,17 @@ export const updateBusinessSchema = z.strictObject({
 });
 export type UpdateBusinessInput = z.infer<typeof updateBusinessSchema>;
 
+/**
+ * A business's rating. `average` is the mean of visible reviews to one
+ * decimal, and null below `REVIEW_LIMITS.minForAverage` reviews, where the
+ * clients show "New".
+ */
+export const businessRatingSchema = z.object({
+  average: z.number().min(1).max(5).nullable(),
+  count: z.number().int().min(0),
+});
+export type BusinessRating = z.infer<typeof businessRatingSchema>;
+
 /** A business as shown on its public page. Contact details only when the owner shows them. */
 export const businessSchema = z.object({
   id: z.uuid(),
@@ -186,6 +197,8 @@ export const businessSchema = z.object({
   isVerified: z.boolean(),
   isPremium: z.boolean(),
   followerCount: z.number().int(),
+  /** Optional only so fixtures written before reviews still type-check; the API always sends it. */
+  rating: businessRatingSchema.optional(),
   createdAt: z.iso.datetime(),
 });
 export type Business = z.infer<typeof businessSchema>;

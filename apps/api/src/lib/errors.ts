@@ -32,6 +32,8 @@ export const ErrorCode = {
   RequirementNotOpen: 'REQUIREMENT_NOT_OPEN',
   BusinessNotVerified: 'BUSINESS_NOT_VERIFIED',
   QuoteExists: 'QUOTE_EXISTS',
+  ReviewExists: 'REVIEW_EXISTS',
+  ReviewNotEligible: 'REVIEW_NOT_ELIGIBLE',
   UploadIncomplete: 'UPLOAD_INCOMPLETE',
   UploadRejected: 'UPLOAD_REJECTED',
   Blocked: 'BLOCKED',

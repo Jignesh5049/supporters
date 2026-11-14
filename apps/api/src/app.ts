@@ -51,6 +51,8 @@ import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { requirementsRoutes } from './modules/requirements/requirements.routes';
 import { RequirementsService } from './modules/requirements/requirements.service';
+import { reviewsRoutes } from './modules/reviews/reviews.routes';
+import { ReviewsService } from './modules/reviews/reviews.service';
 import { ProductsService } from './modules/products/products.service';
 import { savesRoutes } from './modules/saves/saves.routes';
 import { createMeili } from './modules/search/meili';
@@ -225,6 +227,7 @@ export async function buildApp(options: BuildAppOptions) {
       chat,
       blocks,
     ),
+    reviews: new ReviewsService(app.prisma, businesses, blocks),
   });
 
   await app.register(realtimePlugin);
@@ -252,6 +255,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(searchRoutes);
       await v1.register(discoverRoutes);
       await v1.register(requirementsRoutes);
+      await v1.register(reviewsRoutes);
     },
     { prefix: '/v1' },
   );
