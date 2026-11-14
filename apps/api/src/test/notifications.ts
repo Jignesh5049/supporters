@@ -12,6 +12,7 @@ import type {
   WebPushTarget,
 } from '../modules/notifications/channels/web-push';
 import { NotificationFanout, type Delivery } from '../modules/notifications/fanout';
+import type { ReferralsService } from '../modules/referrals/referrals.service';
 import { prisma } from './helpers';
 
 /** Outbox rows of one type, oldest first. */
@@ -22,8 +23,11 @@ export const outboxOf = (type: string) =>
  * Fans out every unprocessed outbox event in order, the way the worker does,
  * and returns the deliveries. `now` pins the clock (batch window).
  */
-export async function drainOutbox(now?: () => Date): Promise<Delivery[]> {
-  const fanout = new NotificationFanout(prisma, now);
+export async function drainOutbox(
+  now?: () => Date,
+  referrals?: ReferralsService,
+): Promise<Delivery[]> {
+  const fanout = new NotificationFanout(prisma, now, referrals);
   const events = await prisma.outboxEvent.findMany({
     where: { processedAt: null },
     orderBy: { id: 'asc' },
