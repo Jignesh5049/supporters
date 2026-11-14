@@ -120,6 +120,9 @@ const envSchema = z
     MEILI_SEARCH_KEY: z.string().min(16),
     /** Scoped key for documents and settings, for the worker and `pnpm search:reindex`. */
     MEILI_INDEX_KEY: z.string().min(16).optional(),
+    /** Sentry (errors and 10% of traces). Unset: Sentry is off. src/instrument.ts reads it too. */
+    SENTRY_DSN: z.url().optional(),
+    SENTRY_RELEASE: z.string().min(1).max(200).optional(),
   })
   .superRefine((env, ctx) => {
     const isDeployed = env.NODE_ENV === 'staging' || env.NODE_ENV === 'production';

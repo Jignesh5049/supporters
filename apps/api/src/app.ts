@@ -161,6 +161,8 @@ export async function buildApp(options: BuildAppOptions) {
     requestIdHeader: false,
     genReqId: () => randomUUID(),
     requestIdLogLabel: 'requestId',
+    // Probes every few seconds would drown the request log.
+    disableRequestLogging: (request) => request.url === '/health' || request.url === '/ready',
   }).withTypeProvider<ZodTypeProvider>();
 
   if (options.onRoute) app.addHook('onRoute', options.onRoute);

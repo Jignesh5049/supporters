@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import { securityHeaders } from './lib/security/headers';
 
@@ -50,4 +51,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps are uploaded to Sentry only when SENTRY_AUTH_TOKEN is set (the deploy workflow, never a
+// pull request or a laptop), and are deleted from the build afterwards so the image never serves them.
+const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN);
+export default withSentryConfig(nextConfig, {
+  telemetry: false,
+  silent: !process.env.CI,
+  ...(process.env.SENTRY_ORG ? { org: process.env.SENTRY_ORG } : {}),
+  ...(process.env.SENTRY_PROJECT ? { project: process.env.SENTRY_PROJECT } : {}),
+  ...(process.env.SENTRY_AUTH_TOKEN ? { authToken: process.env.SENTRY_AUTH_TOKEN } : {}),
+  sourcemaps: { disable: uploadSourceMaps ? false : true, deleteSourcemapsAfterUpload: true },
+});

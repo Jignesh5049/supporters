@@ -35,7 +35,7 @@ describe('health', () => {
     expect((await ctx.app.inject('/health')).json()).toEqual({ status: 'ok' });
     expect((await ctx.app.inject('/ready')).json()).toEqual({
       status: 'ok',
-      checks: { database: 'ok', valkey: 'ok' },
+      checks: { database: 'ok', valkey: 'ok', queue: 'ok' },
     });
   });
 });

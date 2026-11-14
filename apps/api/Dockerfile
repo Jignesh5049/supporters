@@ -84,4 +84,5 @@ EXPOSE 3001
 # Liveness only (/health never touches the database). /ready is for the load balancer and alarms.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
-CMD ["node", "dist/server.js"]
+# instrument.js starts Sentry before the app loads when SENTRY_DSN is set, and does nothing otherwise.
+CMD ["node", "--import", "./dist/instrument.js", "dist/server.js"]

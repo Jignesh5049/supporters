@@ -66,6 +66,7 @@ services:
       - NODE_OPTIONS=--max-old-space-size=640
       - APP_ORIGIN=${APP_ORIGIN:?APP_ORIGIN is required}
       - API_INTERNAL_URL=http://api:3001
+      - SENTRY_DSN
     networks: [frontend, egress]
     depends_on:
       api: { condition: service_healthy }
@@ -112,6 +113,8 @@ services:
       - VAPID_PRIVATE_KEY
       - VAPID_SUBJECT
       - EXPO_ACCESS_TOKEN
+      - SENTRY_DSN
+      - SENTRY_RELEASE
       - EMAIL_PROVIDER
       - EMAIL_FROM
       - SES_REGION
@@ -129,7 +132,7 @@ services:
   worker:
     <<: *node
     image: ${API_IMAGE:?API_IMAGE is required}
-    command: ['node', 'dist/worker.js']
+    command: ['node', '--import', './dist/instrument.js', 'dist/worker.js']
     environment: *api-env
     volumes:
       - ${RDS_CA_BUNDLE:-/etc/supporters/rds-global-bundle.pem}:/certs/rds-global-bundle.pem:ro
