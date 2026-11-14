@@ -24,6 +24,7 @@ import { usePathname } from 'next/navigation';
 import { type FormEvent, useId, useState } from 'react';
 import { FormError } from '@/features/auth/form-field';
 import { useApp } from '@/context/AppContext';
+import { ReportButton } from '@/features/moderation/report-dialog';
 import { loginUrlFor } from '@/lib/auth/session-cookies';
 import { errorMessage } from '@/lib/api/errors';
 import { initials } from '@/lib/catalog/format';
@@ -157,6 +158,9 @@ function CommentItem({ comment, viewer }: { comment: Comment; viewer: CommentVie
             </Button>
           )}
           {canDeleteComment(comment, viewer) && <DeleteComment comment={comment} />}
+          {viewer.userId && viewer.userId !== comment.author.id && (
+            <ReportButton targetType="comment" targetId={comment.id} size="xs" />
+          )}
         </div>
         {isReplying && (
           <CommentComposer

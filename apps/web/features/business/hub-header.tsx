@@ -34,6 +34,7 @@ const LINKS = [
   { label: 'Services', href: '/business/services', icon: Wrench },
   { label: 'Posts', href: '/business/posts', icon: FileText },
   { label: 'Enquiries', href: '/business/enquiries', icon: FileQuestion },
+  { label: 'Verification', href: '/business/verification', icon: BadgeCheck },
 ];
 
 export function HubHeader({ business }: { business: HubBusiness }) {

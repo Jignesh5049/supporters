@@ -23,6 +23,7 @@ const SIGNED_IN_PREFIXES = [
   '/business/products',
   '/business/services',
   '/business/settings',
+  '/business/verification',
   '/create',
   '/enquiries',
   '/messages',
