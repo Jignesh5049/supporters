@@ -73,7 +73,39 @@ export const presignedUploadSchema = z.object({
 });
 export type PresignedUpload = z.infer<typeof presignedUploadSchema>;
 
-export const UploadStatus = { Pending: 'pending', Ready: 'ready', Rejected: 'rejected' } as const;
+/**
+ * `pending` (waiting for the file) -> `processing` (the `media` job is running) -> `ready` or
+ * `failed`. Only `ready` uploads can be attached to anything. `rejected` is what an upload that
+ * failed validation was called before `processing` existed: no new upload gets it, and clients
+ * treat it like `failed`.
+ */
+export const UploadStatus = {
+  Pending: 'pending',
+  Processing: 'processing',
+  Ready: 'ready',
+  Failed: 'failed',
+  Rejected: 'rejected',
+} as const;
+export type UploadStatus = (typeof UploadStatus)[keyof typeof UploadStatus];
+
+/** Why an upload ended up `failed`: stable codes for clients, each with a sentence for people. */
+export const UPLOAD_FAILURE_MESSAGES = {
+  content_mismatch: 'The file does not match the type or size it was declared with.',
+  unsupported_format: 'This image format is not supported. Use a JPEG, PNG or WebP photo.',
+  heic_unsupported: 'HEIC photos are not supported. Export the photo as JPEG or PNG and try again.',
+  animated: 'Animated images are not supported. Use a still image.',
+  too_large_dimensions: 'The image is too large (at most 40 megapixels and 12,000 px on a side).',
+  corrupt: 'The file could not be read as an image.',
+  timeout: 'The image took too long to process.',
+  processing_error: 'The file could not be processed. Try uploading it again.',
+} as const;
+export type UploadFailureReason = keyof typeof UPLOAD_FAILURE_MESSAGES;
+export const uploadFailureReasonSchema = z.enum(
+  Object.keys(UPLOAD_FAILURE_MESSAGES) as [UploadFailureReason, ...UploadFailureReason[]],
+);
+
+export const IMAGE_VARIANT_NAMES = ['thumb', 'card', 'full'] as const;
+export type ImageVariantName = (typeof IMAGE_VARIANT_NAMES)[number];
 
 export const uploadSchema = z.object({
   id: z.uuid(),
@@ -81,10 +113,32 @@ export const uploadSchema = z.object({
   status: z.enum(Object.values(UploadStatus)),
   contentType: z.string(),
   size: z.number().int(),
-  /** Public media only (avatars, covers, listing and post media); chat and KYC files have none. */
+  /**
+   * Public media only (avatars, covers, listing and post media); chat and KYC files have none.
+   * For images this is the `full` variant.
+   */
   url: z.url().nullable(),
+  /** Public images once `ready`: the three sizes (`url` is `variants.full`). */
+  variants: z.object({ thumb: z.url(), card: z.url(), full: z.url() }).nullable().optional(),
+  /** Set when `status` is `failed`. */
+  failureReason: uploadFailureReasonSchema.nullable().optional(),
+  /** A sentence for the user, set together with `failureReason`. */
+  failureMessage: z.string().nullable().optional(),
 });
 export type Upload = z.infer<typeof uploadSchema>;
+
+/** False while the client should keep polling. */
+export const isUploadSettled = (status: UploadStatus) =>
+  status !== 'pending' && status !== 'processing';
+
+/**
+ * The URL of another size of a public image, given the URL the API returned (the `full` one).
+ * Sizes live side by side as `<base>/thumb.webp`, `<base>/card.webp` and `<base>/full.webp`;
+ * a URL that doesn't follow that layout is returned unchanged.
+ */
+export function imageVariantUrl(url: string, variant: ImageVariantName): string {
+  return url.replace(/\/(?:thumb|card|full)\.webp$/, `/${variant}.webp`);
+}
 
 /** An image attached to a listing or business. */
 export const mediaSchema = z.object({ id: z.uuid(), url: z.url() });
