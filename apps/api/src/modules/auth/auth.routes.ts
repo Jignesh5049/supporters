@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { randomToken } from '../../lib/crypto';
+import { signupSignals } from '../referrals/referrals.signals';
 import { AppError, ErrorCode } from '../../lib/errors';
 import {
   COOKIE,
@@ -88,7 +89,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     '/auth/register',
     { schema: { body: registerSchema, response: { 201: authResponseSchema } } },
     async (request, reply) => {
-      const result = await auth.register(request.body, clientMeta(request));
+      const result = await auth.register(request.body, clientMeta(request), signupSignals(request));
       return reply.status(201).send(sendSignedIn(app, request, reply, result));
     },
   );

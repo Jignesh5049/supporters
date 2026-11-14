@@ -56,6 +56,7 @@ import { postsRoutes } from './modules/posts/posts.routes';
 import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ReportTargets } from './modules/reports/report-targets';
+import { ReferralsService } from './modules/referrals/referrals.service';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { ReportsService } from './modules/reports/reports.service';
 import { requirementsRoutes } from './modules/requirements/requirements.routes';
@@ -75,6 +76,8 @@ import { type ObjectStorage, S3Storage, createS3Client } from './modules/uploads
 import { uploadsRoutes } from './modules/uploads/uploads.routes';
 import { UploadsService } from './modules/uploads/uploads.service';
 import { ServicesService } from './modules/services/services.service';
+import { WalletService } from './modules/wallet/wallet.service';
+import { walletRoutes } from './modules/wallet/wallet.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { verificationRoutes } from './modules/verification/verification.routes';
 import { VerificationService } from './modules/verification/verification.service';
@@ -131,6 +134,15 @@ const SENSITIVE_FIELDS = [
   'expoPushToken',
   'refresh_token',
   'access_token',
+  // Referrals and payouts: payout destinations are encrypted at rest and never logged.
+  'accountNumber',
+  'accountHolderName',
+  'holderName',
+  'beneficiaryName',
+  'destination',
+  'fundAccountId',
+  'referralCode',
+  'payoutDetails',
 ];
 
 /** Backend spec, Data protection: logs never carry credentials, tokens, OTPs, contact or payout details. */
@@ -227,6 +239,7 @@ export async function buildApp(options: BuildAppOptions) {
   const reportTargets = new ReportTargets(app.prisma);
   const adminUsers = new AdminUsersService(app.prisma, sessions);
   const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
+  const referrals = new ReferralsService(app.prisma, env.OTP_HMAC_KEY);
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
@@ -238,6 +251,7 @@ export async function buildApp(options: BuildAppOptions) {
       sessions,
       breachChecker,
       env.TOTP_ENCRYPTION_KEY,
+      referrals,
     ),
     users: new UsersService(app.prisma),
     categories,
@@ -277,6 +291,8 @@ export async function buildApp(options: BuildAppOptions) {
       blocks,
     ),
     reviews: new ReviewsService(app.prisma, businesses, blocks),
+    referrals,
+    wallet: new WalletService(app.prisma),
   });
 
   await app.register(realtimePlugin);
@@ -308,6 +324,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(discoverRoutes);
       await v1.register(requirementsRoutes);
       await v1.register(reviewsRoutes);
+      await v1.register(walletRoutes);
     },
     { prefix: '/v1' },
   );

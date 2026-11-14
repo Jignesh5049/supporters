@@ -74,6 +74,36 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'Account warning',
     body: () => 'Content you posted was reported and reviewed. Please follow our guidelines.',
   },
+  [NotificationType.ReferralPending]: {
+    title: 'Referral pending',
+    body: () =>
+      'Your referral bought Premium. Your reward is credited after the 7-day refund window.',
+  },
+  [NotificationType.ReferralCredited]: {
+    title: 'Referral reward credited',
+    body: () => 'A referral reward was added to your wallet',
+  },
+  [NotificationType.ReferralIneligible]: {
+    title: 'Referral not eligible',
+    body: () => 'One of your referrals did not qualify for a reward. See the reason in Referrals.',
+  },
+  [NotificationType.WithdrawalApproved]: {
+    title: 'Withdrawal approved',
+    body: () => 'Your withdrawal was approved and is being paid out',
+  },
+  [NotificationType.WithdrawalPaid]: {
+    title: 'Withdrawal paid',
+    body: () => 'Your withdrawal was paid to your account',
+  },
+  [NotificationType.WithdrawalRejected]: {
+    title: 'Withdrawal not approved',
+    body: () => 'Your withdrawal was not approved and the amount is back in your wallet',
+  },
+  [NotificationType.SecurityPayoutDetailsChanged]: {
+    title: 'Payout details changed',
+    body: () =>
+      "Your payout details were changed. Withdrawals are paused for 24 hours. If this wasn't you, contact support.",
+  },
 };
 
 export const pushCopy = (type: NotificationType, actorCount: number) => {
@@ -103,6 +133,11 @@ export function emailCopy(type: NotificationType, appOrigin: string) {
     [NotificationType.RequirementQuoted]: '/requirements/mine',
     [NotificationType.BusinessVerified]: '/business/verification',
     [NotificationType.BusinessVerificationRejected]: '/business/verification',
+    [NotificationType.ReferralCredited]: '/wallet',
+    [NotificationType.WithdrawalApproved]: '/wallet',
+    [NotificationType.WithdrawalPaid]: '/wallet',
+    [NotificationType.WithdrawalRejected]: '/wallet',
+    [NotificationType.SecurityPayoutDetailsChanged]: '/wallet/withdraw',
   };
   const link = `${appOrigin}${path[type] ?? '/settings'}`;
   return {

@@ -10,6 +10,7 @@ import {
   SesEmailSender,
 } from './modules/notifications/channels/email';
 import { VapidWebPushSender } from './modules/notifications/channels/web-push';
+import { ReferralsService } from './modules/referrals/referrals.service';
 import { createMeili } from './modules/search/meili';
 import { SearchIndexer } from './modules/search/search.indexer';
 import { createPrisma, createValkey } from './plugins/data';
@@ -48,6 +49,7 @@ const worker = await startNotificationWorker({
   webPush,
   email,
   searchIndexer,
+  referrals: new ReferralsService(prisma, env.OTP_HMAC_KEY),
   log,
 });
 log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');
