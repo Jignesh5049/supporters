@@ -42,3 +42,13 @@ output "chat_public_key_id" {
   description = "CloudFront public key id for signing chat URLs (null until chat_signing_public_key_pem is set)."
   value       = module.edge.chat_public_key_id
 }
+
+output "github_deploy_role_arn" {
+  description = "Role for GitHub Actions (OIDC) to assume when deploying to production."
+  value       = module.deploy_access.role_arn
+}
+
+output "ecr_repository_urls" {
+  description = "ECR repository URL per image."
+  value       = module.registry.repository_urls
+}

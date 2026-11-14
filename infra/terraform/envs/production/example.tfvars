@@ -18,3 +18,10 @@ admin_allowed_ipv4_cidrs = ["<office-or-vpn-ip>/32"]
 # Public half of the chat URL signing key (generate with openssl; keep the private key in SSM).
 # Leave empty until the key pair exists: chat/ is then not served by CloudFront at all.
 chat_signing_public_key_pem = ""
+
+# Alarm, GuardDuty and budget emails. Each address confirms an SNS subscription once.
+alert_emails       = ["<ops-mailbox>"]
+monthly_budget_usd = 100
+
+# GitHub repository whose "production" environment may deploy.
+github_repository = "<org>/<repo>"
