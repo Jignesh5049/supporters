@@ -1,0 +1,33 @@
+# Shared by every Dockerfile in the repo (the build context is the repository root).
+# Keep the context to sources: dependencies are installed from the lockfile inside the image,
+# and no env file or key ever enters a build.
+**/node_modules
+**/.next
+**/dist
+**/build
+**/coverage
+**/.turbo
+**/*.tsbuildinfo
+apps/api/src/generated
+.git
+.github
+.claude
+.vscode
+.idea
+docs
+deploy/*
+!deploy/migrate
+infra
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+# Not part of any server image.
+apps/mobile/*
+!apps/mobile/package.json
+apps/web/e2e
+apps/web/playwright-report
+apps/web/test-results
