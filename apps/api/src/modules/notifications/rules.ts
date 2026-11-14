@@ -28,7 +28,9 @@ export const NOTIFICATION_RULES: Record<NotificationType, NotificationRule> = {
   [NotificationType.PostLiked]: rule(NotificationCategory.Business, { isBatched: true }),
   [NotificationType.PostCommented]: rule(NotificationCategory.Business, { isBatched: true }),
   [NotificationType.CommentReplied]: rule(NotificationCategory.Business, { isBatched: true }),
+  [NotificationType.ReviewNew]: rule(NotificationCategory.Business, { isBatched: true }),
   [NotificationType.RequirementMatched]: rule(NotificationCategory.Enquiries),
+  [NotificationType.RequirementQuoted]: rule(NotificationCategory.Enquiries, { email: true }),
   [NotificationType.SecurityLogin]: rule(NotificationCategory.Account, {
     email: true,
     isUrgent: true,

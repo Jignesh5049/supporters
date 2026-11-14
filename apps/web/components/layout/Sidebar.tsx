@@ -22,6 +22,7 @@ import {
   FileQuestion,
   Wallet,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 
 import { Suspense } from 'react';
@@ -37,6 +38,7 @@ function SidebarInner() {
     { label: 'Discover', href: '/discover', icon: Compass },
     { label: 'Saved', href: '/saved', icon: Bookmark },
     { label: 'Sent enquiries', href: '/enquiries', icon: FileQuestion },
+    { label: 'Requirements', href: '/requirements', icon: ClipboardList },
     {
       label: 'Messages',
       href: '/messages',

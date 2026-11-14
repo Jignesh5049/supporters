@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { RATE_LIMITS, REQUIREMENT } from '@supporters/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type ReferenceData, call, referenceData, signUpOwner } from '../../test/catalog';
-import { publishedProduct } from '../../test/chat';
+import { openThread, postWithKey, publishedProduct } from '../../test/chat';
 import {
   type MobileSession,
   type TestContext,
@@ -60,6 +60,15 @@ async function postAndMatch(as: MobileSession, overrides: object = {}) {
   await drainOutbox();
   return response.json<{ id: string }>().id;
 }
+
+const quote = (as: MobileSession, id: string, extra: object = {}, key?: string) =>
+  postWithKey(
+    ctx,
+    as,
+    `/v1/buyer-requirements/${id}/quotes`,
+    { price: { amountPaise: 1_250_00 }, message: 'We can deliver in 5 days.', ...extra },
+    key,
+  );
 
 describe('POST /v1/buyer-requirements', () => {
   let buyer: MobileSession;
@@ -438,6 +447,204 @@ describe('PATCH /v1/buyer-requirements/:id', () => {
     });
     expect(again.statusCode).toBe(409);
     expect(problemCode(again)).toBe('REQUIREMENT_NOT_OPEN');
+  });
+});
+
+describe('POST /v1/buyer-requirements/:id/quotes', () => {
+  let buyer: MobileSession;
+  let seller: Awaited<ReturnType<typeof verifiedOwner>>;
+  let id: string;
+
+  beforeEach(async () => {
+    buyer = await registerMobile(ctx);
+    seller = await verifiedOwner({ cityId: refs.pune.id });
+    id = await postAndMatch(buyer);
+    await clearOutbox();
+  });
+
+  it('needs an Idempotency-Key and a valid body', async () => {
+    const noKey = await call(ctx, 'POST', `/v1/buyer-requirements/${id}/quotes`, {
+      as: seller.session,
+      body: { price: { amountPaise: 100 }, message: 'We can deliver in 5 days.' },
+    });
+    expect(noKey.statusCode).toBe(400);
+    for (const extra of [
+      { price: { amountPaise: 0 } },
+      { message: 'short' },
+      { listing: { type: 'post', id: randomUUID() } },
+    ]) {
+      expect((await quote(seller.session, id, extra)).statusCode, JSON.stringify(extra)).toBe(400);
+    }
+  });
+
+  it('posts the quote into a new DM thread and notifies the buyer', async () => {
+    const productId = await publishedProduct(seller.business.id, refs);
+    const response = await quote(seller.session, id, {
+      listing: { type: 'product', id: productId },
+    });
+    expect(response.statusCode).toBe(201);
+    const created = response.json();
+    expect(created).toMatchObject({
+      requirementId: id,
+      business: { id: seller.business.id, isVerified: true },
+      price: { amountPaise: 1_250_00, currency: 'INR' },
+      message: 'We can deliver in 5 days.',
+    });
+
+    const conversation = await prisma.conversation.findFirstOrThrow();
+    expect(conversation).toMatchObject({ userId: buyer.user.id, businessId: seller.business.id });
+    expect(created.conversationId).toBe(conversation.id);
+    const thread = await call(ctx, 'GET', `/v1/conversations/${conversation.id}/messages`, {
+      as: buyer,
+    });
+    expect(thread.json().data).toMatchObject([
+      {
+        id: created.messageId,
+        type: 'quote',
+        senderSide: 'business',
+        body: 'We can deliver in 5 days.',
+        listing: { id: productId },
+        quote: { id: created.id, requirementId: id, price: { amountPaise: 1_250_00 } },
+      },
+    ]);
+
+    const mine = await call(ctx, 'GET', `/v1/buyer-requirements/${id}`, { as: seller.session });
+    expect(mine.json()).toMatchObject({ quoteCount: 1, hasQuoted: true });
+
+    // Announced as a quote, not as a plain message.
+    expect(await outboxOf('message.created')).toEqual([]);
+    await drainOutbox();
+    expect(await inboxOf(buyer.user.id)).toMatchObject([
+      {
+        type: 'requirement.quoted',
+        actorUserId: seller.session.user.id,
+        targetType: 'requirement',
+        targetId: id,
+      },
+    ]);
+
+    const quotes = await call(ctx, 'GET', `/v1/buyer-requirements/${id}/quotes`, { as: buyer });
+    expect(quotes.json()).toMatchObject({ data: [{ id: created.id }], nextCursor: null });
+    const notBuyer = await call(ctx, 'GET', `/v1/buyer-requirements/${id}/quotes`, {
+      as: seller.session,
+    });
+    expect(notBuyer.statusCode).toBe(404);
+  });
+
+  it('reuses the existing thread', async () => {
+    const threadId = await openThread(ctx, buyer, seller.business.id);
+    const response = await quote(seller.session, id);
+    expect(response.json().conversationId).toBe(threadId);
+    expect(await prisma.conversation.count()).toBe(1);
+  });
+
+  it('replays a retry and quotes once per business', async () => {
+    const key = randomUUID();
+    const first = await quote(seller.session, id, {}, key);
+    const retry = await quote(seller.session, id, {}, key);
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().id).toBe(first.json().id);
+    const reused = await quote(seller.session, id, { message: 'Another body entirely.' }, key);
+    expect(reused.statusCode).toBe(422);
+    expect(problemCode(reused)).toBe('IDEMPOTENCY_KEY_REUSED');
+
+    const second = await quote(seller.session, id, { message: 'A second attempt here.' });
+    expect(second.statusCode).toBe(409);
+    expect(problemCode(second)).toBe('QUOTE_EXISTS');
+    expect(await prisma.requirementQuote.count()).toBe(1);
+    expect(await prisma.message.count()).toBe(1);
+  });
+
+  it('needs a verified business that was matched', async () => {
+    const plain = await registerMobile(ctx);
+    const noBusiness = await quote(plain, id);
+    expect(noBusiness.statusCode).toBe(403);
+    expect(problemCode(noBusiness)).toBe('BUSINESS_REQUIRED');
+
+    const unverified = await signUpOwner(ctx, refs, { cityId: refs.pune.id });
+    // Matched now, by a second requirement's job, to show the check is on verification.
+    const later = await postAndMatch(buyer, { quantity: 9 });
+    const notVerified = await quote(unverified.session, later);
+    expect(notVerified.statusCode).toBe(403);
+    expect(problemCode(notVerified)).toBe('BUSINESS_NOT_VERIFIED');
+
+    const notMatched = await verifiedOwner({ categoryId: refs.otherCategory.id });
+    expect((await quote(notMatched.session, id)).statusCode).toBe(404);
+    expect((await quote(seller.session, randomUUID())).statusCode).toBe(404);
+  });
+
+  it('refuses closed and expired requirements', async () => {
+    await call(ctx, 'PATCH', `/v1/buyer-requirements/${id}`, {
+      as: buyer,
+      body: { status: 'closed' },
+    });
+    const closed = await quote(seller.session, id);
+    expect(closed.statusCode).toBe(409);
+    expect(problemCode(closed)).toBe('REQUIREMENT_NOT_OPEN');
+
+    const lapsed = await postAndMatch(buyer, { quantity: 7 });
+    await prisma.buyerRequirement.update({
+      where: { id: lapsed },
+      data: { expiresAt: new Date(Date.now() - 1_000) },
+    });
+    expect((await quote(seller.session, lapsed)).statusCode).toBe(409);
+  });
+
+  it('refuses a blocked pair', async () => {
+    await call(ctx, 'PUT', `/v1/blocks/${buyer.user.id}`, { as: seller.session });
+    const response = await quote(seller.session, id);
+    expect(response.statusCode).toBe(403);
+    expect(problemCode(response)).toBe('BLOCKED');
+  });
+
+  it("refuses another business's listing", async () => {
+    const other = await signUpOwner(ctx, refs);
+    const productId = await publishedProduct(other.business.id, refs);
+    const response = await quote(seller.session, id, {
+      listing: { type: 'product', id: productId },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('allows 50 quotes a day per business', async () => {
+    // 50 quotes from the last day, inserted directly on other requirements.
+    const conversationId = await openThread(ctx, buyer, seller.business.id);
+    for (let i = 0; i < RATE_LIMITS.quotesPerBusinessPerDay; i += 1) {
+      const requirement = await prisma.buyerRequirement.create({
+        data: {
+          userId: buyer.user.id,
+          categoryId: refs.category.id,
+          description: DESCRIPTION,
+          quantity: 1,
+          unit: 'piece',
+          deliveryCityId: refs.pune.id,
+          expiresAt: new Date(Date.now() + DAY_MS),
+        },
+      });
+      const message = await prisma.message.create({
+        data: {
+          conversationId,
+          senderUserId: seller.session.user.id,
+          senderSide: 'business',
+          clientId: randomUUID(),
+          requestHash: 'x',
+          type: 'quote',
+        },
+      });
+      await prisma.requirementQuote.create({
+        data: {
+          requirementId: requirement.id,
+          businessId: seller.business.id,
+          pricePaise: 100n,
+          message: 'Seeded quote',
+          conversationId,
+          messageId: message.id,
+        },
+      });
+    }
+    const response = await quote(seller.session, id);
+    expect(response.statusCode).toBe(429);
+    expect(problemCode(response)).toBe('RATE_LIMITED');
   });
 });
 

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { LISTING_LIMITS, MEDIA_LIMITS, TEXT_LIMITS } from '../limits';
+import { businessSummarySchema } from './business';
 import { categoryRefSchema } from './categories';
+import { listingRefSchema } from './chat';
 import { moneyInputSchema, moneySchema, paginationQuerySchema } from './common';
 import { productUnitSchema } from './listings';
 import { citySchema } from './places';
@@ -78,3 +80,26 @@ export const myRequirementsQuerySchema = paginationQuerySchema.extend({
   status: requirementStatusSchema.optional(),
 });
 export type MyRequirementsQuery = z.infer<typeof myRequirementsQuerySchema>;
+
+// Quotes: only verified businesses, once per requirement each.
+
+export const createQuoteSchema = z.strictObject({
+  price: moneyInputSchema,
+  message: z.string().trim().min(TEXT_LIMITS.quoteMessage.min).max(TEXT_LIMITS.quoteMessage.max),
+  /** A published product or service of the quoting business. */
+  listing: listingRefSchema.optional(),
+});
+export type CreateQuoteInput = z.input<typeof createQuoteSchema>;
+
+export const quoteSchema = z.object({
+  id: z.uuid(),
+  requirementId: z.uuid(),
+  business: businessSummarySchema,
+  price: moneySchema,
+  message: z.string(),
+  /** The DM thread the quote was posted into. */
+  conversationId: z.uuid(),
+  messageId: z.uuid(),
+  createdAt: z.iso.datetime(),
+});
+export type Quote = z.infer<typeof quoteSchema>;

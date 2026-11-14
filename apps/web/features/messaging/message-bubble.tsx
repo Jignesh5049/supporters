@@ -16,6 +16,7 @@ import { Button } from '@supporters/ui-web/components/button';
 import { cn } from '@supporters/ui-web/lib/utils';
 import {
   AlertCircle,
+  BadgeIndianRupee,
   Check,
   CheckCheck,
   Clock,
@@ -45,7 +46,7 @@ const DELIVERY_LABELS = {
 
 export function MessageBubble({ message, onDelete, onRetry, onDiscard }: MessageBubbleProps) {
   const isMine = message.isMine;
-  const isEnquiry = message.type === 'enquiry';
+  const isEnquiry = message.type === 'enquiry' || message.type === 'quote';
   return (
     <div
       role="article"
@@ -62,7 +63,7 @@ export function MessageBubble({ message, onDelete, onRetry, onDiscard }: Message
               : 'rounded-bl-sm border border-border bg-card text-foreground',
         )}
       >
-        {isEnquiry && (
+        {message.type === 'enquiry' && (
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-highlight text-highlight-foreground">
               <FileQuestion aria-hidden />
@@ -74,6 +75,21 @@ export function MessageBubble({ message, onDelete, onRetry, onDiscard }: Message
                 {message.enquiry.quantityText && ` · Qty ${message.enquiry.quantityText}`}
               </span>
             )}
+          </div>
+        )}
+        {message.quote && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="bg-highlight text-highlight-foreground">
+              <BadgeIndianRupee aria-hidden />
+              Quote
+            </Badge>
+            <span className="font-bold text-foreground">{message.quote.priceText}</span>
+            <Link
+              href={message.quote.requirementHref}
+              className="text-caption text-muted-foreground underline underline-offset-2"
+            >
+              View requirement
+            </Link>
           </div>
         )}
         {message.listing && (

@@ -38,9 +38,17 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'New replies',
     body: (n) => `${people(n, 'Someone', 'people')} replied to your comment`,
   },
+  [NotificationType.ReviewNew]: {
+    title: 'New reviews',
+    body: (n) => `${people(n, 'Someone', 'people')} reviewed your business`,
+  },
   [NotificationType.RequirementMatched]: {
     title: 'New buyer requirement',
     body: () => 'A buyer needs something your business offers',
+  },
+  [NotificationType.RequirementQuoted]: {
+    title: 'New quote',
+    body: () => 'A business quoted on your requirement',
   },
   [NotificationType.SecurityLogin]: {
     title: 'New sign-in',
@@ -92,6 +100,7 @@ export function emailCopy(type: NotificationType, appOrigin: string) {
   const { title, body } = pushCopy(type, 1);
   const path: Partial<Record<NotificationType, string>> = {
     [NotificationType.EnquiryNew]: '/business/enquiries',
+    [NotificationType.RequirementQuoted]: '/requirements/mine',
     [NotificationType.BusinessVerified]: '/business/verification',
     [NotificationType.BusinessVerificationRejected]: '/business/verification',
   };

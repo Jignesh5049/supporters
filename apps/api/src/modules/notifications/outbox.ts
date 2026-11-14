@@ -23,6 +23,8 @@ export interface DomainEvents {
   'account.warned': { userId: string; reportId: string };
   /** A buyer posted a requirement; its fan-out runs the matching. */
   'requirement.created': { requirementId: string };
+  'requirement.quoted': { quoteId: string };
+  'review.created': { reviewId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -40,6 +42,8 @@ export const DOMAIN_EVENT_TYPES = [
   'content.hidden',
   'account.warned',
   'requirement.created',
+  'requirement.quoted',
+  'review.created',
 ] as const satisfies readonly DomainEventType[];
 
 /**

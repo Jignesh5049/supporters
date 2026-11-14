@@ -31,6 +31,7 @@ const SIGNED_IN_PREFIXES = [
   '/onboarding',
   '/profile',
   '/referral',
+  '/requirements',
   '/saved',
   '/settings',
   '/subscription',

@@ -1,210 +1,196 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus, Search } from 'lucide-react-native';
-import { colors } from '../styles/theme';
-import { useApp } from '../context/AppContext';
-import { SAMPLE_REQUIREMENTS, BuyerRequirement } from '../features/requirements/types';
-import { RequirementCard, QuoteSubmissionModal } from '../features/requirements/components';
+import { ClipboardList, Inbox, Plus } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { Requirement, RequirementStatus } from '@supporters/shared';
+import { Button } from '@supporters/ui-native/components/button';
+import { Icon } from '@supporters/ui-native/components/icon';
+import { Tabs, TabsList, TabsTrigger } from '@supporters/ui-native/components/tabs';
+import { Text } from '@supporters/ui-native/components/text';
+import { messageForError } from '../lib/api';
+import { useMyBusiness } from '../features/business/hooks';
+import { QuoteSheet, RequirementCard } from '../features/requirements/components';
+import { ScreenHeader } from '../features/requirements/components/ScreenHeader';
+import { RequirementOwnerActions } from '../features/requirements/components/RequirementOwnerActions';
+import { useMatchedRequirements, useMyRequirements } from '../features/requirements/hooks';
+import { REQUIREMENT_STATUS_LABEL } from '../features/requirements/requirement-form';
 
+type Tab = 'matched' | 'mine';
+
+const FILTERS: { label: string; status: RequirementStatus | null }[] = [
+  { label: 'All', status: null },
+  { label: REQUIREMENT_STATUS_LABEL.open, status: 'open' },
+  { label: REQUIREMENT_STATUS_LABEL.fulfilled, status: 'fulfilled' },
+  { label: REQUIREMENT_STATUS_LABEL.closed, status: 'closed' },
+  { label: REQUIREMENT_STATUS_LABEL.expired, status: 'expired' },
+];
+
+/** Requirements: matched to my business, and the ones I posted (product spec, Buyer requirements). */
 export function RequirementsScreen() {
   const router = useRouter();
-  const { showToast } = useApp();
-
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [quoteTarget, setQuoteTarget] = useState<BuyerRequirement | null>(null);
-
-  const categories = [
-    'All',
-    'Packaging & Printing',
-    'Textiles & Apparel',
-    'Engineering & Machinery',
-    'Chemicals & Plastics',
-  ];
-
-  const filteredRequirements = SAMPLE_REQUIREMENTS.filter((req) => {
-    const matchesSearch =
-      req.title.toLowerCase().includes(search.toLowerCase()) ||
-      req.buyerCity.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || req.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleQuoteSubmit = (_data: {
-    pricePerUnit: string;
-    deliveryDays: string;
-    note: string;
-  }) => {
-    showToast('Quotation proposal submitted successfully!', 'success');
-  };
+  const myBusiness = useMyBusiness();
+  const hasBusiness = Boolean(myBusiness.data);
+  const isVerified = myBusiness.data?.verificationStatus === 'verified';
+  const [tab, setTab] = useState<Tab>('matched');
+  const activeTab: Tab = hasBusiness ? tab : 'mine';
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Buyer Requirements (RFQ)</Text>
-          <TouchableOpacity
-            style={styles.newButton}
-            onPress={() => router.push('/requirements/new' as any)}
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+      <ScreenHeader
+        title="Buyer requirements"
+        action={
+          <Button
+            size="sm"
+            onPress={() => router.push('/requirements/new')}
+            accessibilityLabel="Post a requirement"
           >
-            <Plus size={16} color="#FFFFFF" />
-            <Text style={styles.newButtonText}>Post RFQ</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Input */}
-        <View style={styles.searchBar}>
-          <Search size={16} color="#9CA3AF" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search tenders, materials, cities..."
-            placeholderTextColor="#9CA3AF"
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-
-        {/* Category Filter Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterList}
-        >
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text
-                style={[
-                  styles.categoryPillText,
-                  selectedCategory === cat && styles.categoryPillTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* List */}
-      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsCount}>Active Requests ({filteredRequirements.length})</Text>
-        {filteredRequirements.map((req) => (
-          <RequirementCard
-            key={req.id}
-            requirement={req}
-            onPress={() => router.push(`/requirements/${req.id}` as any)}
-            onSubmitQuote={() => setQuoteTarget(req)}
-          />
-        ))}
-      </ScrollView>
-
-      {/* Quotation Submission Modal */}
-      <QuoteSubmissionModal
-        visible={Boolean(quoteTarget)}
-        requirement={quoteTarget}
-        onClose={() => setQuoteTarget(null)}
-        onSubmit={handleQuoteSubmit}
+            <Icon as={Plus} size={16} className="text-primary-foreground" />
+            <Text>Post</Text>
+          </Button>
+        }
       />
-    </View>
+      {hasBusiness ? (
+        <View className="border-border border-b px-4 py-2">
+          <Tabs value={activeTab} onValueChange={(value) => setTab(value as Tab)}>
+            <TabsList className="w-full">
+              <TabsTrigger value="matched" className="flex-1">
+                <Text>For your business</Text>
+              </TabsTrigger>
+              <TabsTrigger value="mine" className="flex-1">
+                <Text>My requirements</Text>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </View>
+      ) : null}
+      {activeTab === 'matched' ? <MatchedList isVerified={isVerified} /> : <MyList />}
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingHorizontal: 14,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  newButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
-  },
-  newButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 8,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  filterList: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  categoryPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-  },
-  categoryPillActive: {
-    backgroundColor: colors.primary,
-  },
-  categoryPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  categoryPillTextActive: {
-    color: '#FFFFFF',
-  },
-  listContent: {
-    padding: 14,
-    paddingBottom: 30,
-  },
-  resultsCount: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-});
+function MatchedList({ isVerified }: { isVerified: boolean }) {
+  const router = useRouter();
+  const query = useMatchedRequirements();
+  const [quoting, setQuoting] = useState<Requirement | null>(null);
+  return (
+    <>
+      <RequirementList
+        query={query}
+        header={
+          !isVerified ? (
+            <Text className="bg-warning-soft text-warning rounded-xl p-3 text-sm">
+              Only verified businesses can quote. Request the badge from the Business Hub.
+            </Text>
+          ) : null
+        }
+        emptyIcon={Inbox}
+        emptyTitle="No matching requirements"
+        emptyText="When a buyer needs something in your category and area, it shows here."
+        renderActions={(requirement) =>
+          isVerified && requirement.status === 'open' && !requirement.hasQuoted ? (
+            <Button size="sm" onPress={() => setQuoting(requirement)}>
+              <Text>Send quote</Text>
+            </Button>
+          ) : null
+        }
+        onOpen={(requirement) => router.push(`/requirements/${requirement.id}`)}
+      />
+      <QuoteSheet requirement={quoting} onClose={() => setQuoting(null)} />
+    </>
+  );
+}
+
+function MyList() {
+  const router = useRouter();
+  const [status, setStatus] = useState<RequirementStatus | null>(null);
+  const query = useMyRequirements(status);
+  return (
+    <RequirementList
+      query={query}
+      header={
+        <View className="flex-row flex-wrap gap-2" accessibilityRole="radiogroup">
+          {FILTERS.map((filter) => (
+            <Button
+              key={filter.label}
+              size="sm"
+              variant={filter.status === status ? 'default' : 'outline'}
+              onPress={() => setStatus(filter.status)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: filter.status === status }}
+            >
+              <Text>{filter.label}</Text>
+            </Button>
+          ))}
+        </View>
+      }
+      emptyIcon={ClipboardList}
+      emptyTitle="No requirements here"
+      emptyText="Post what you need, and matching suppliers will send you quotes."
+      renderActions={(requirement) => <RequirementOwnerActions requirement={requirement} />}
+      onOpen={(requirement) => router.push(`/requirements/${requirement.id}`)}
+    />
+  );
+}
+
+function RequirementList({
+  query,
+  header,
+  emptyIcon,
+  emptyTitle,
+  emptyText,
+  renderActions,
+  onOpen,
+}: {
+  query: ReturnType<typeof useMatchedRequirements>;
+  header: React.ReactElement | null;
+  emptyIcon: typeof Inbox;
+  emptyTitle: string;
+  emptyText: string;
+  renderActions: (requirement: Requirement) => React.ReactNode;
+  onOpen: (requirement: Requirement) => void;
+}) {
+  const items = query.data?.pages.flatMap((page) => page.data) ?? [];
+  return (
+    <FlatList
+      data={items}
+      keyExtractor={(item) => item.id}
+      contentContainerClassName="gap-3 p-4"
+      ListHeaderComponent={header ?? undefined}
+      renderItem={({ item }) => (
+        <RequirementCard
+          requirement={item}
+          onPress={() => onOpen(item)}
+          actions={renderActions(item)}
+        />
+      )}
+      onEndReached={() => query.hasNextPage && !query.isFetchingNextPage && query.fetchNextPage()}
+      onEndReachedThreshold={0.5}
+      refreshing={query.isRefetching && !query.isFetchingNextPage}
+      onRefresh={() => query.refetch()}
+      ListFooterComponent={
+        query.isFetchingNextPage ? <ActivityIndicator className="my-4" /> : undefined
+      }
+      ListEmptyComponent={
+        query.isPending ? (
+          <ActivityIndicator className="mt-10" />
+        ) : query.isError ? (
+          <View className="items-center gap-3 py-10">
+            <Text className="text-center">{messageForError(query.error)}</Text>
+            <Button variant="outline" onPress={() => query.refetch()}>
+              <Text>Try again</Text>
+            </Button>
+          </View>
+        ) : (
+          <View className="items-center gap-2 px-6 py-16">
+            <Icon as={emptyIcon} size={36} className="text-muted-foreground" />
+            <Text className="text-base font-bold">{emptyTitle}</Text>
+            <Text variant="muted" className="text-center text-sm">
+              {emptyText}
+            </Text>
+          </View>
+        )
+      }
+    />
+  );
+}
