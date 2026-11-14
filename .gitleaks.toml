@@ -1,0 +1,13 @@
+# gitleaks configuration (see .github/workflows/security.yml). Extends the default ruleset.
+title = "supporters"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives. Add an entry only with a comment saying why it is safe."
+regexes = [
+  # The VAPID *public* key from the web-push documentation, used as a decoding fixture in
+  # apps/web/lib/push/use-web-push.test.ts. Public by definition.
+  '''BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U''',
+]

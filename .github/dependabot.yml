@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Keeps the SHA-pinned GitHub Actions in ci.yml up to date.
+  # Keeps the SHA-pinned GitHub Actions in the workflows up to date.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -8,3 +8,37 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+    groups:
+      actions:
+        patterns: ['*']
+
+  # npm (pnpm workspace). One PR per group instead of one per package; majors stay separate so a
+  # breaking change is never bundled with routine patches. Security updates open on their own,
+  # immediately, regardless of these groups. pnpm's minimumReleaseAge still applies to installs.
+  - package-ecosystem: npm
+    directories:
+      - /
+      - /apps/*
+      - /packages/*
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    # The repo pins exact versions; keep it that way instead of widening to ranges.
+    versioning-strategy: increase
+    commit-message:
+      prefix: build
+      prefix-development: build
+      include: scope
+    groups:
+      production-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+      development-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Moves together with the Expo SDK (apps/mobile); upgraded deliberately, not by bot.
+      - dependency-name: expo
+        update-types: ['version-update:semver-major']
+      - dependency-name: react-native
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
