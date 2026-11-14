@@ -1,0 +1,41 @@
+# Local production-like smoke test (deploy/smoke.sh). Adds what RDS and S3 provide in production:
+# a PostgreSQL 18 and a MinIO, both on the outbound network next to the API. Throwaway credentials
+# only, passed in by smoke.sh. Never use this file on a server.
+services:
+  postgres:
+    image: postgres:18.1-alpine
+    restart: 'no'
+    environment:
+      - POSTGRES_USER=supporters
+      - POSTGRES_PASSWORD=${SMOKE_POSTGRES_PASSWORD:?}
+      - POSTGRES_DB=supporters
+    networks: [egress]
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U supporters -d supporters']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Same Chainguard build as apps/api/docker-compose.yml, pinned by digest.
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:3b6e40c30ecd5cea627e382ff0b82ca841f58c52294578787043ee80c8ef7c82
+    restart: 'no'
+    user: '0'
+    command: ['server', '/data']
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID:?}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY:?}
+    networks: [egress]
+    tmpfs:
+      - /data
+
+  api:
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+
+  migrate:
+    depends_on:
+      postgres: { condition: service_healthy }

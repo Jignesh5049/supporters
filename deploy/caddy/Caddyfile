@@ -1,0 +1,96 @@
+# The origin behind CloudFront (product spec, "Networking and delivery").
+#
+# Environment (all set by deploy/compose.prod.yml):
+#   ORIGIN_DOMAIN                  the name CloudFront connects to, e.g. origin.<domain>
+#   ORIGIN_VERIFY_SECRET         CloudFront's secret X-Origin-Verify header value
+#   ORIGIN_VERIFY_SECRET_PREVIOUS  the previous value during a rotation (defaults to the current one)
+#   ACME_DNS_ZONE_ID             Route 53 hosted zone that holds the _acme-challenge record
+#   CADDY_TLS_MODE               route53 (default, production) or internal (local smoke test)
+{
+	admin off
+	# Do not bind port 80: the security group never opens it, and certificates use DNS-01.
+	auto_https disable_redirects
+	log {
+		output stderr
+		format json
+		level WARN
+	}
+	servers {
+		# CloudFront connects from many addresses, and only requests that carry the origin secret get
+		# past the check below, so trust X-Forwarded-For from any peer. Caddy appends the peer
+		# address, which gives the API CloudFront -> Caddy = 2 hops (TRUST_PROXY=2).
+		trusted_proxies static 0.0.0.0/0 ::/0
+	}
+}
+
+# Container healthcheck only. Loopback inside the container, never published.
+http://127.0.0.1:8081 {
+	bind 127.0.0.1
+	respond /healthz 200
+}
+
+{$ORIGIN_DOMAIN} {
+	import /etc/caddy/tls/{$CADDY_TLS_MODE:route53}.caddy
+
+	# Anything that did not come through CloudFront is dropped without a response. Two values are
+	# accepted so the secret can be rotated without downtime (docs/specs/backend-spec.md: rotated
+	# quarterly). compose.prod.yml refuses to start with an empty secret: an empty value here would
+	# match every request that merely has the header.
+	@unverified {
+		not header X-Origin-Verify {$ORIGIN_VERIFY_SECRET}
+		not header X-Origin-Verify {$ORIGIN_VERIFY_SECRET_PREVIOUS}
+	}
+	handle @unverified {
+		abort
+	}
+
+	# Everything below only runs for requests that carry the secret (directives such as
+	# request_header run before any handle block, so they must live inside this one).
+	handle {
+		# The upstreams never see the secret.
+		request_header -X-Origin-Verify
+
+		# Defence-in-depth headers that only apply when the app has not set them itself (the "?"
+		# prefix sets a header only if the upstream response lacks it), so the CSP and HSTS owned by
+		# the API (helmet) and the web proxy never get duplicated or overridden.
+		header {
+			?Strict-Transport-Security "max-age=31536000; includeSubDomains"
+			?X-Content-Type-Options nosniff
+			?Referrer-Policy strict-origin-when-cross-origin
+			-Server
+			-X-Powered-By
+		}
+
+		# /v1/* (REST) and /v1/ws (Socket.IO; WebSocket upgrades are proxied automatically) go to the
+		# API. /health (liveness only) is public for uptime monitoring; /ready stays internal.
+		@api path /v1 /v1/* /health
+		handle @api {
+			reverse_proxy api:3001 {
+				flush_interval -1
+			}
+		}
+
+		# Everything else goes to Next.js.
+		handle {
+			reverse_proxy web:3000
+		}
+	}
+
+	# Access log on stdout (picked up by the CloudWatch agent). No credentials or tokens in it.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>headers>Authorization delete
+			request>headers>Cookie delete
+			request>headers>X-Csrf-Token delete
+			request>headers>X-Origin-Verify delete
+			resp_headers>Set-Cookie delete
+			request>uri query {
+				replace token REDACTED
+				replace otp REDACTED
+				replace code REDACTED
+			}
+		}
+	}
+}
