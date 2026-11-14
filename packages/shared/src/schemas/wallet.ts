@@ -91,3 +91,88 @@ export const ledgerEntrySchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type LedgerEntry = z.infer<typeof ledgerEntrySchema>;
+
+// Payout account and withdrawals.
+
+export const PayoutMethod = { Upi: 'upi', Bank: 'bank' } as const;
+export type PayoutMethod = (typeof PayoutMethod)[keyof typeof PayoutMethod];
+
+const holderNameSchema = z.string().trim().min(2).max(100);
+
+/** `name@bank`: 2 to 256 characters before the `@`, letters after it. */
+export const upiIdSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9.\-_]{2,256}@[a-z][a-z0-9]{1,63}$/, 'Enter a valid UPI id');
+export const ifscSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Enter a valid IFSC');
+export const bankAccountNumberSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{9,18}$/, 'Enter a valid account number');
+
+/** `PUT /me/payout-account`: UPI or bank, never both. */
+export const putPayoutAccountSchema = z.discriminatedUnion('method', [
+  z.strictObject({ method: z.literal('upi'), upiId: upiIdSchema, holderName: holderNameSchema }),
+  z.strictObject({
+    method: z.literal('bank'),
+    accountNumber: bankAccountNumberSchema,
+    ifsc: ifscSchema,
+    holderName: holderNameSchema,
+  }),
+]);
+export type PutPayoutAccountInput = z.infer<typeof putPayoutAccountSchema>;
+
+export const PayoutValidationStatus = {
+  Pending: 'pending',
+  Validated: 'validated',
+  Failed: 'failed',
+} as const;
+export type PayoutValidationStatus =
+  (typeof PayoutValidationStatus)[keyof typeof PayoutValidationStatus];
+
+/** Never holds the full UPI id or account number: only a masked form. */
+export const payoutAccountSchema = z.object({
+  method: z.enum(PayoutMethod),
+  holderName: z.string(),
+  maskedDestination: z.string(),
+  validationStatus: z.enum(PayoutValidationStatus),
+  isNameMatch: z.boolean(),
+  updatedAt: z.iso.datetime(),
+  /** Withdrawals are blocked until this time after the details change. */
+  withdrawalsAllowedAt: z.iso.datetime(),
+});
+export type PayoutAccount = z.infer<typeof payoutAccountSchema>;
+
+export const payoutAccountResponseSchema = z.object({ account: payoutAccountSchema.nullable() });
+
+export const WithdrawalStatus = {
+  Pending: 'pending',
+  Processing: 'processing',
+  Completed: 'completed',
+  Rejected: 'rejected',
+  Failed: 'failed',
+} as const;
+export type WithdrawalStatus = (typeof WithdrawalStatus)[keyof typeof WithdrawalStatus];
+
+export const createWithdrawalSchema = z.strictObject({
+  amountPaise: z.number().int().min(1).max(10_000_000_00),
+});
+export type CreateWithdrawalInput = z.infer<typeof createWithdrawalSchema>;
+
+export const withdrawalSchema = z.object({
+  id: z.uuid(),
+  amount: moneyOutSchema,
+  status: z.enum(WithdrawalStatus),
+  method: z.enum(PayoutMethod),
+  maskedDestination: z.string(),
+  /** Why an admin rejected it, or why the payout failed (generic). */
+  reason: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  completedAt: z.iso.datetime().nullable(),
+});
+export type Withdrawal = z.infer<typeof withdrawalSchema>;
