@@ -1,0 +1,9 @@
+{
+  "name": "@supporters/migrate",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pins the Prisma CLI that the migrate image runs (`prisma migrate deploy`). Not part of any app.",
+  "dependencies": {
+    "prisma": "7.10.1"
+  }
+}

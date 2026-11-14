@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import { securityHeaders } from './lib/security/headers';
 
@@ -8,6 +9,10 @@ const proxyApi = isDev || process.env.LOCAL_API_PROXY === '1';
 const apiInternalUrl = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001';
 
 const nextConfig: NextConfig = {
+  // The production image runs `node apps/web/server.js` from a minimal trace (deploy/README.md).
+  output: 'standalone',
+  // The workspace root, so the trace includes the packages/* sources that transpilePackages compiles.
+  outputFileTracingRoot: fileURLToPath(new URL('../..', import.meta.url)),
   // Workspace packages ship TypeScript source; Next compiles them.
   transpilePackages: ['@supporters/ui-web', '@supporters/design-tokens', '@supporters/shared'],
   poweredByHeader: false,

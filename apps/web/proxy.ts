@@ -206,9 +206,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      // Pages only: not the API (`/v1`), Next internals or static files.
+      // Pages only: not the API (`/v1`), the health check, the CSP report endpoint, Next internals or static files.
       source:
-        '/((?!v1/|csp-report|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-z0-9]+$).*)',
+        '/((?!v1/|api/health|csp-report|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.[a-z0-9]+$).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

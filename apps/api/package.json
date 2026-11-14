@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
     "dev:worker": "tsx watch --env-file=.env src/worker.ts",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -55,6 +58,7 @@
     "@testcontainers/postgresql": "12.2.1",
     "@types/node": "24.19.2",
     "@types/web-push": "3.6.4",
+    "esbuild": "0.28.2",
     "eslint": "10.13.0",
     "prisma": "7.10.1",
     "socket.io-client": "4.8.4",
