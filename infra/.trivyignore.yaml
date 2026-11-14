@@ -1,0 +1,6 @@
+# Accepted trivy findings. Every entry needs a reason; review them when the design changes.
+misconfigurations:
+  - id: AVD-AWS-0104
+    statement: >-
+      The app server needs outbound internet access (ECR, SSM, SES, Razorpay, MSG91, Expo Push)
+      and the design has no NAT Gateway by cost rule. Ingress is limited to CloudFront.

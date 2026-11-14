@@ -1,0 +1,71 @@
+#!/bin/bash
+# First-boot setup for the Supporters app server (Amazon Linux 2023, arm64).
+# Installs Docker and the CloudWatch agent and prepares /opt/supporters. It does NOT start the
+# application: images and the compose file arrive through the deploy pipeline (SSM Run Command).
+set -euo pipefail
+exec > >(tee -a /var/log/supporters-bootstrap.log) 2>&1
+
+dnf -y update --security
+dnf -y install docker amazon-cloudwatch-agent jq
+
+# The SSM agent ships with AL2023. Session Manager (no SSH) and Run Command both rely on it.
+systemctl enable --now amazon-ssm-agent
+
+cat > /etc/docker/daemon.json <<'JSON'
+{
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "20m", "max-file": "5" },
+  "live-restore": true
+}
+JSON
+systemctl enable --now docker
+
+# Docker Compose v2 plugin, verified against the checksum published with the release.
+compose_dir=/usr/local/lib/docker/cli-plugins
+compose_base="https://github.com/docker/compose/releases/download/${docker_compose_version}"
+mkdir -p "$compose_dir"
+tmp=$(mktemp -d)
+curl -fsSL -o "$tmp/docker-compose-linux-aarch64" "$compose_base/docker-compose-linux-aarch64"
+curl -fsSL -o "$tmp/docker-compose-linux-aarch64.sha256" "$compose_base/docker-compose-linux-aarch64.sha256"
+(cd "$tmp" && sha256sum -c docker-compose-linux-aarch64.sha256)
+install -m 0755 "$tmp/docker-compose-linux-aarch64" "$compose_dir/docker-compose"
+rm -rf "$tmp"
+
+# Application directory. The deploy pipeline writes the compose file here.
+install -d -m 0750 /opt/supporters
+
+# TODO(deploy): the compose file comes from deploy/compose.prod.yml, owned by the containers and
+# deploy-pipeline session. The pipeline should copy it to /opt/supporters/compose.yml through SSM
+# Run Command and run `docker compose -f /opt/supporters/compose.yml up -d`. Nothing in this
+# script fetches it, so no repository credentials live on the server.
+
+# Helper the pipeline calls before `docker compose pull`. Uses the instance role.
+cat > /usr/local/bin/supporters-ecr-login <<'SH'
+#!/bin/bash
+set -euo pipefail
+aws ecr get-login-password --region "${region}" \
+  | docker login --username AWS --password-stdin "${ecr_registry}"
+SH
+chmod 0755 /usr/local/bin/supporters-ecr-login
+
+# CloudWatch agent: memory and disk metrics (the disk alarm reads disk_used_percent on "/").
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'JSON'
+{
+  "agent": { "metrics_collection_interval": 60, "run_as_user": "cwagent" },
+  "metrics": {
+    "namespace": "CWAgent",
+    "append_dimensions": { "InstanceId": "$${aws:InstanceId}" },
+    "aggregation_dimensions": [["InstanceId"], ["InstanceId", "path"]],
+    "metrics_collected": {
+      "mem": { "measurement": ["mem_used_percent"] },
+      "disk": {
+        "resources": ["/"],
+        "measurement": ["used_percent"],
+        "ignore_file_system_types": ["sysfs", "devtmpfs", "tmpfs", "overlay"]
+      }
+    }
+  }
+}
+JSON
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json

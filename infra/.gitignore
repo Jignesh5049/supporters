@@ -1,0 +1,16 @@
+# Terraform local state and caches. Never commit state, plans or real variable values.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!example.tfvars
+backend.hcl
+!example.backend.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
