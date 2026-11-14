@@ -27,8 +27,11 @@ import { PageSkeleton } from '@/components/catalog/page-skeleton';
 import { ListingCard } from '@/components/catalog/listing-card';
 import { getPublicBusiness, listBusinessProducts, listBusinessServices } from '@/dal/catalog';
 import { getMyBusiness } from '@/dal/my-business';
+import { listBusinessReviews } from '@/dal/reviews';
 import { getSession } from '@/dal/session';
 import { isFollowingBusiness, listBusinessPosts } from '@/dal/social';
+import { ratingText } from '@/features/reviews/review-form-values';
+import { ReviewsTab } from '@/features/reviews/reviews-tab';
 import { BusinessPosts } from '@/features/social/business-posts';
 import { FollowButton } from '@/features/social/follow-button';
 import { serverEnv } from '@/dal/config';
@@ -64,12 +67,14 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
   const business = await getPublicBusiness((await params).slug);
   if (!business) notFound();
 
-  const [products, services, posts, session] = await Promise.all([
+  const [products, services, posts, reviews, session] = await Promise.all([
     listBusinessProducts(business.id),
     listBusinessServices(business.id),
     listBusinessPosts(business.id),
+    listBusinessReviews(business.id),
     getSession(),
   ]);
+  const rating = ratingText(reviews.rating);
   const myBusiness = session ? await getMyBusiness() : null;
   const isOwner = myBusiness?.id === business.id;
   const isFollowing = session && !isOwner ? await isFollowingBusiness(business.id) : false;
@@ -124,6 +129,12 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                     <span className="flex items-center gap-1">
                       <MapPin className="size-3.5" aria-hidden />
                       {business.city.name}, {business.state.name}
+                    </span>
+                    <span aria-hidden>·</span>
+                    <span className="flex items-center gap-1">
+                      <Star className="size-3.5 fill-warning text-warning" aria-hidden />
+                      <span className="font-semibold text-foreground">{rating.value}</span>
+                      <span>({rating.count})</span>
                     </span>
                   </p>
                 </div>
@@ -187,7 +198,7 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
                 Posts{posts.data.length > 0 ? ` (${tabCount(posts)})` : ''}
               </TabsTrigger>
               <TabsTrigger value="reviews" className="py-3">
-                Reviews
+                Reviews ({reviews.rating.count})
               </TabsTrigger>
             </TabsList>
           </div>
@@ -236,10 +247,11 @@ async function BusinessProfile({ params }: { params: Promise<{ slug: string }> }
         </TabsContent>
 
         <TabsContent value="reviews" forceMount className="data-[state=inactive]:hidden">
-          <EmptyPanel
-            icon={Star}
-            title="No reviews yet"
-            description="Reviews from buyers who have traded with this business will show here."
+          <ReviewsTab
+            businessId={business.id}
+            initialPage={reviews}
+            mode={!session ? 'guest' : isOwner ? 'owner' : 'viewer'}
+            returnTo={businessPath(business.slug)}
           />
         </TabsContent>
       </Tabs>
