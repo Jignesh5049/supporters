@@ -1,3 +1,4 @@
+import { pathSegment, safeInternalPath } from './safe-route';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -106,29 +107,25 @@ export function handleNotificationResponse(response: Notifications.NotificationR
 
   if (!data) return;
 
-  if (data.url) {
-    // Direct path routing
-    try {
-      router.push(data.url as any);
-      return;
-    } catch {
-      // Fallback to pattern matching
-    }
+  const direct = safeInternalPath(data.url);
+  if (direct) {
+    router.push(direct as never);
+    return;
   }
 
   if (data.targetType === 'requirement' && data.targetId) {
-    router.push(`/requirements/${encodeURIComponent(data.targetId)}` as any);
+    router.push(`/requirements/${pathSegment(data.targetId)}` as never);
   } else if (data.type === 'message' && (data.conversationId || data.id)) {
-    router.push(`/messages/${data.conversationId || data.id}` as any);
+    router.push(`/messages/${pathSegment(data.conversationId || data.id || '')}` as never);
   } else if (data.type === 'enquiry') {
-    router.push('/hub/enquiries' as any);
+    router.push('/hub/enquiries' as never);
   } else if (data.type === 'requirement' && (data.requirementId || data.id)) {
-    router.push(`/requirements/${data.requirementId || data.id}` as any);
+    router.push(`/requirements/${pathSegment(data.requirementId || data.id || '')}` as never);
   } else if (data.type === 'business' && data.businessSlug) {
-    router.push(`/business/${data.businessSlug}` as any);
+    router.push(`/business/${pathSegment(data.businessSlug)}` as never);
   } else if (data.type === 'wallet' || data.type === 'withdrawal') {
-    router.push('/wallet/history' as any);
+    router.push('/wallet/history' as never);
   } else {
-    router.push('/notifications' as any);
+    router.push('/notifications' as never);
   }
 }

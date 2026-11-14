@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import cookie from '@fastify/cookie';
-import Fastify, { type FastifyServerOptions } from 'fastify';
+import Fastify, { type FastifyServerOptions, type RouteOptions } from 'fastify';
 import fp from 'fastify-plugin';
 import {
   type ZodTypeProvider,
@@ -97,6 +97,8 @@ export interface BuildAppOptions {
   storage?: ObjectStorage;
   mediaProcessor?: MediaProcessor;
   logger?: FastifyServerOptions['logger'];
+  /** Tests only: sees every route as it is registered (the route-matrix test). */
+  onRoute?: (route: RouteOptions) => void;
 }
 
 const SENSITIVE_FIELDS = [
@@ -115,6 +117,20 @@ const SENSITIVE_FIELDS = [
   'ifsc',
   'upiId',
   'vpa',
+  // Added in the security review: one-time and TOTP codes, KYC identifiers and web-push
+  // subscription secrets (the endpoint URL is itself a bearer credential for that device).
+  'code',
+  'totpSecret',
+  'secret',
+  'gstin',
+  'pan',
+  'aadhaar',
+  'endpoint',
+  'p256dh',
+  'pushToken',
+  'expoPushToken',
+  'refresh_token',
+  'access_token',
 ];
 
 /** Backend spec, Data protection: logs never carry credentials, tokens, OTPs, contact or payout details. */
@@ -147,6 +163,7 @@ export async function buildApp(options: BuildAppOptions) {
     requestIdLogLabel: 'requestId',
   }).withTypeProvider<ZodTypeProvider>();
 
+  if (options.onRoute) app.addHook('onRoute', options.onRoute);
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   app.addHook('onRequest', async (request, reply) => {
