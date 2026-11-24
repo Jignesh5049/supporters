@@ -11,12 +11,6 @@ import {
   MOCK_SERVICES,
   MOCK_BUSINESSES,
   MOCK_NOTIFICATIONS,
-  MOCK_REFERRAL_DATA,
-  ReferralStat,
-  WalletSummary,
-  WalletTransaction,
-  WithdrawalRequest,
-  MOCK_WALLET_DATA,
 } from '../../mock';
 import {
   authService,
@@ -144,21 +138,6 @@ interface AppContextType {
   markAllNotificationsAsRead: () => void;
   unreadNotificationsCount: number;
 
-  // Referral
-  referralData: ReferralStat;
-
-  // Wallet & Withdrawals
-  walletData: WalletSummary;
-  requestWithdrawal: (params: {
-    amount: number;
-    method: 'UPI' | 'Bank Account';
-    upiId?: string;
-    accountHolderName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    bankName?: string;
-  }) => { success: boolean; message: string };
-
   // Modals
   enquiryModal: EnquiryTarget;
   openEnquiryModal: (info: EnquiryRequest) => void;
@@ -204,8 +183,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [services] = useState<Service[]>(MOCK_SERVICES);
   const [businesses, setBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
-  const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
-  const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
 
   const [savedProductIds, setSavedProductIds] = useState<string[]>(['p-1', 'p-2']);
   const [savedServiceIds, setSavedServiceIds] = useState<string[]>(['s-1']);
@@ -399,72 +376,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('Profile updated successfully!', 'success');
   };
 
-  // Wallet & Withdrawal Management
-  const requestWithdrawal = (params: {
-    amount: number;
-    method: 'UPI' | 'Bank Account';
-    upiId?: string;
-    accountHolderName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    bankName?: string;
-  }): { success: boolean; message: string } => {
-    if (params.amount <= 0) {
-      return { success: false, message: 'Withdrawal amount must be greater than ₹0' };
-    }
-    if (params.amount > walletData.availableBalance) {
-      return { success: false, message: 'Amount exceeds available wallet balance' };
-    }
-    if (params.amount < 100) {
-      return { success: false, message: 'Minimum withdrawal amount is ₹100' };
-    }
-
-    const newReqId = `wd-${Date.now()}`;
-    const refId = `WDL-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const newWithdrawal: WithdrawalRequest = {
-      id: newReqId,
-      referenceId: refId,
-      amount: params.amount,
-      method: params.method,
-      upiId: params.upiId,
-      accountHolderName: params.accountHolderName,
-      accountNumber: params.accountNumber,
-      ifscCode: params.ifscCode,
-      bankName: params.bankName,
-      status: 'Pending',
-      createdAt: 'Just now',
-      estimatedDate: 'Within 24-48 business hours',
-    };
-
-    const newTx: WalletTransaction = {
-      id: `tx-${Date.now()}`,
-      referenceId: refId,
-      title: `Withdrawal Request (${params.method})`,
-      amount: -params.amount,
-      type: 'withdrawal',
-      status: 'Pending',
-      createdAt: 'Just now',
-      withdrawalMethod: params.method,
-      payoutDetails:
-        params.method === 'UPI'
-          ? `UPI: ${params.upiId}`
-          : `${params.bankName || 'Bank'} A/C: ••••${params.accountNumber?.slice(-4) || 'XXXX'}`,
-      description: 'Payout requested to linked account. Under automated verification.',
-    };
-
-    setWalletData((prev) => ({
-      ...prev,
-      availableBalance: prev.availableBalance - params.amount,
-      pendingWithdrawals: prev.pendingWithdrawals + params.amount,
-      transactions: [newTx, ...prev.transactions],
-      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests],
-    }));
-
-    showToast(`Withdrawal of ₹${params.amount.toLocaleString('en-IN')} requested!`, 'success');
-    return { success: true, message: 'Withdrawal request submitted successfully' };
-  };
-
   const openConversationWithBusiness = useCallback(
     (businessId: string) => {
       if (sessionStatus !== SessionStatus.SignedIn) {
@@ -558,9 +469,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         markNotificationAsRead,
         markAllNotificationsAsRead,
         unreadNotificationsCount,
-        referralData,
-        walletData,
-        requestWithdrawal,
         enquiryModal,
         openEnquiryModal,
         closeEnquiryModal,
