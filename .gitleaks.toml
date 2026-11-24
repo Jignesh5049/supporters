@@ -1,11 +1,7 @@
 # gitleaks configuration (see .github/workflows/security.yml). Extends the default ruleset.
 title = "supporters"
 
-[extend  # The fixed webhook secret the API test suite signs fake Razorpay deliveries with
-  # (apps/api/src/test/helpers.ts). It protects nothing: the fake provider only exists in tests and
-  # local development, and production refuses it.
-  '''whsec_test_0123456789abcdef0123456789abcdef''',
-]
+[extend]
 useDefault = true
 
 [allowlist]
@@ -14,4 +10,8 @@ regexes = [
   # The VAPID *public* key from the web-push documentation, used as a decoding fixture in
   # apps/web/lib/push/use-web-push.test.ts. Public by definition.
   '''BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U''',
+  # The fixed webhook secret the API test suite signs fake Razorpay deliveries with
+  # (apps/api/src/test/helpers.ts). It protects nothing: the fake provider only exists in tests and
+  # local development, and production refuses it.
+  '''whsec_test_0123456789abcdef0123456789abcdef''',
 ]
