@@ -179,9 +179,11 @@ const envSchema = z
       env.RAZORPAYX_KEY_ID,
       env.RAZORPAYX_KEY_SECRET,
       env.RAZORPAYX_ACCOUNT_NUMBER,
-      env.RAZORPAYX_WEBHOOK_SECRET,
     ];
-    if (env.PAYOUTS_PROVIDER === 'razorpayx' && !razorpayx.every(Boolean)) {
+    if (
+      env.PAYOUTS_PROVIDER === 'razorpayx' &&
+      !(razorpayx.every(Boolean) && env.RAZORPAYX_WEBHOOK_SECRET)
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['RAZORPAYX_KEY_ID'],

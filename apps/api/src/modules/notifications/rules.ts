@@ -52,6 +52,7 @@ export const NOTIFICATION_RULES: Record<NotificationType, NotificationRule> = {
   [NotificationType.WithdrawalApproved]: rule(NotificationCategory.Referrals, { email: true }),
   [NotificationType.WithdrawalPaid]: rule(NotificationCategory.Referrals, { email: true }),
   [NotificationType.WithdrawalRejected]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.WithdrawalFailed]: rule(NotificationCategory.Referrals, { email: true }),
   [NotificationType.SecurityPayoutDetailsChanged]: rule(NotificationCategory.Account, {
     email: true,
     isUrgent: true,

@@ -95,7 +95,7 @@ export async function createTestApp(
 }
 
 const TRUNCATE_ALL =
-  'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen, outbox_events CASCADE';
+  'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen, outbox_events, razorpayx_webhook_events CASCADE';
 
 /** PostgreSQL `deadlock_detected` (SQLSTATE 40P01), as Prisma's pg adapter reports it. */
 const isDeadlock = (error: unknown) => /40P01|deadlock detected/.test(String(error));

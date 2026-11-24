@@ -368,7 +368,8 @@ export class NotificationFanout {
       }
       case 'withdrawal.approved':
       case 'withdrawal.paid':
-      case 'withdrawal.rejected': {
+      case 'withdrawal.rejected':
+      case 'withdrawal.failed': {
         const { withdrawalId } = payload as DomainEvents['withdrawal.approved'];
         const withdrawal = await tx.withdrawal.findUnique({
           where: { id: withdrawalId },
@@ -383,7 +384,9 @@ export class NotificationFanout {
                 ? NotificationType.WithdrawalApproved
                 : type === 'withdrawal.paid'
                   ? NotificationType.WithdrawalPaid
-                  : NotificationType.WithdrawalRejected,
+                  : type === 'withdrawal.rejected'
+                    ? NotificationType.WithdrawalRejected
+                    : NotificationType.WithdrawalFailed,
             actorUserId: null,
             targetType: NotificationTargetType.Wallet,
             targetId: null,

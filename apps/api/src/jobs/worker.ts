@@ -17,6 +17,7 @@ import {
 import { NotificationFanout } from '../modules/notifications/fanout';
 import type { SearchIndexer } from '../modules/search/search.indexer';
 import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
+import type { PayoutJob, PayoutProcessor } from '../modules/payouts/payout-processor';
 import type { ReferralsService } from '../modules/referrals/referrals.service';
 import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { cleanupNotifications } from './cleanup';
@@ -30,6 +31,8 @@ export const QUEUE = {
   cron: 'cron',
   /** Upserts or deletes businesses, products, services and posts in Meilisearch. */
   searchIndex: 'search-index',
+  /** Runs approved withdrawals through RazorpayX. One try: retries are manual (backend spec, Queues). */
+  payouts: 'payouts',
   /** Jobs that used up their retries, kept for inspection and manual replay. */
   deadLetter: 'dead-letter',
 } as const;
@@ -60,6 +63,8 @@ export interface NotificationWorkerOptions {
   searchIndexer?: SearchIndexer;
   /** Consumes `premium.*` events and runs the referral finalizer. */
   referrals?: ReferralsService;
+  /** Without it (payouts not configured) approved withdrawals wait in the outbox. */
+  payoutProcessor?: PayoutProcessor;
   log: FastifyBaseLogger;
   /** First retry delay; doubles on each attempt. */
   backoffMs?: number;
@@ -97,6 +102,11 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
     searchIndex: queue<SearchIndexJob>(QUEUE.searchIndex, {
       ...defaultJobOptions,
       attempts: SEARCH_JOB_ATTEMPTS,
+    }),
+    payouts: queue<PayoutJob>(QUEUE.payouts, {
+      attempts: 1,
+      removeOnComplete: defaultJobOptions.removeOnComplete ?? true,
+      removeOnFail: defaultJobOptions.removeOnFail ?? false,
     }),
     deadLetter: queue<DeadLetter>(QUEUE.deadLetter, { removeOnComplete: false }),
   };
@@ -159,6 +169,8 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
           return expireRequirements(prisma, options.now?.());
         case 'search-premium-expiry':
           return recordPremiumExpirySyncs(prisma, options.now?.());
+        case 'payouts-reconcile':
+          return options.payoutProcessor ? options.payoutProcessor.reconcileStale() : null;
         case 'referrals-finalize': {
           if (!options.referrals) return null;
           const finalized = await options.referrals.finalizeDue();
@@ -170,7 +182,13 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       }
     }),
   ];
-  const { searchIndexer } = options;
+  const { searchIndexer, payoutProcessor } = options;
+  if (payoutProcessor) {
+    // One at a time: a payout is slow, and nothing here is urgent enough to risk a pile-up.
+    workers.push(
+      worker<PayoutJob>(QUEUE.payouts, 1, async (job) => payoutProcessor.process(job.data.eventId)),
+    );
+  }
   if (searchIndexer) {
     // One at a time: each job re-reads its row and writes it, so two jobs for the same row
     // can never interleave and leave the older state in the index.
@@ -194,6 +212,14 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
       { name: 'expire-requirements' },
     );
+    if (payoutProcessor) {
+      // Catches up on payouts whose webhook never arrived.
+      await queues.cron.upsertJobScheduler(
+        'payouts-reconcile',
+        { pattern: '*/10 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'payouts-reconcile' },
+      );
+    }
     if (options.referrals) {
       // Credits referrals whose 7-day refund window has ended.
       await queues.cron.upsertJobScheduler(
@@ -214,7 +240,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
 
   let isStopped = false;
   let relaying: Promise<unknown> = Promise.resolve();
-  const relayOnce = () => relayOutbox(prisma, queues);
+  const { payouts: payoutsQueue, ...queuesWithoutPayouts } = queues;
+  const relayOnce = () =>
+    relayOutbox(
+      prisma,
+      payoutProcessor ? { ...queuesWithoutPayouts, payouts: payoutsQueue } : queuesWithoutPayouts,
+    );
   const loop = async () => {
     while (!isStopped) {
       try {

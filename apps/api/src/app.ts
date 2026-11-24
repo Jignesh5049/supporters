@@ -12,6 +12,7 @@ import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
 import { AdminCategoriesService } from './modules/admin/admin-categories.service';
 import { AdminReportsService } from './modules/admin/admin-reports.service';
+import { AdminWithdrawalsService } from './modules/admin/admin-withdrawals.service';
 import { AdminUsersService } from './modules/admin/admin-users.service';
 import { AdminVerificationsService } from './modules/admin/admin-verifications.service';
 import { adminRoutes } from './modules/admin/admin.routes';
@@ -60,6 +61,8 @@ import { PayoutAccountService } from './modules/payouts/payout-account.service';
 import { createPayoutsRuntime } from './modules/payouts/payouts.config';
 import type { PayoutsProvider } from './modules/payouts/payouts.provider';
 import { payoutsRoutes } from './modules/payouts/payouts.routes';
+import { RazorpayxWebhookService } from './modules/payouts/razorpayx-webhook.service';
+import { razorpayxWebhookRoutes } from './modules/payouts/webhooks.routes';
 import { WithdrawalsService } from './modules/payouts/withdrawals.service';
 import { ReferralsService } from './modules/referrals/referrals.service';
 import { reportsRoutes } from './modules/reports/reports.routes';
@@ -286,6 +289,7 @@ export async function buildApp(options: BuildAppOptions) {
       verifications: new AdminVerificationsService(app.prisma, storage),
       reports: new AdminReportsService(app.prisma, reportTargets, adminUsers),
       categories: new AdminCategoriesService(app.prisma),
+      withdrawals: new AdminWithdrawalsService(app.prisma),
     },
     search: new SearchService(createMeili(env.MEILI_URL, env.MEILI_SEARCH_KEY), searchCards),
     discover: new DiscoverService(app.prisma, searchCards),
@@ -303,6 +307,11 @@ export async function buildApp(options: BuildAppOptions) {
     wallet: new WalletService(app.prisma),
     payoutAccounts: new PayoutAccountService(app.prisma, payoutsRuntime, app.limiter),
     withdrawals: new WithdrawalsService(app.prisma, payoutsRuntime),
+    razorpayxWebhooks: new RazorpayxWebhookService(
+      app.prisma,
+      env.RAZORPAYX_WEBHOOK_SECRET ?? null,
+      app.log,
+    ),
   });
 
   await app.register(realtimePlugin);
@@ -336,6 +345,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(reviewsRoutes);
       await v1.register(walletRoutes);
       await v1.register(payoutsRoutes);
+      await v1.register(razorpayxWebhookRoutes);
     },
     { prefix: '/v1' },
   );

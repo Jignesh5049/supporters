@@ -1,5 +1,6 @@
 import {
   ADMIN_LIMITS,
+  adminBonusSchema,
   adminCategoriesSchema,
   adminCategorySchema,
   adminIdParamsSchema,
@@ -10,13 +11,18 @@ import {
   adminUserSchema,
   adminUsersQuerySchema,
   adminVerificationSchema,
+  adminWithdrawalSchema,
+  adminWithdrawalsQuerySchema,
   adminVerificationsQuerySchema,
   auditLogSchema,
   auditLogsQuerySchema,
   createCategorySchema,
   documentLinkSchema,
+  idempotencyKeyHeaderSchema,
+  ledgerEntrySchema,
   pageSchema,
   rejectVerificationSchema,
+  rejectWithdrawalSchema,
   reportActionInputSchema,
   reportActionResultSchema,
   suspendUserSchema,
@@ -222,6 +228,63 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request, reply) => {
       await admin.categories.remove(adminActor(request), request.params.id);
       return reply.status(204).send(null);
+    },
+  );
+
+  // Withdrawals and wallet bonuses
+  app.get(
+    '/withdrawals',
+    {
+      schema: {
+        querystring: adminWithdrawalsQuerySchema,
+        response: { 200: pageSchema(adminWithdrawalSchema) },
+      },
+    },
+    async (request) => admin.withdrawals.list(request.query),
+  );
+
+  app.post(
+    '/withdrawals/:id/approve',
+    { schema: { params: adminIdParamsSchema, response: { 200: adminWithdrawalSchema } } },
+    async (request) => admin.withdrawals.approve(adminActor(request), request.params.id),
+  );
+
+  app.post(
+    '/withdrawals/:id/reject',
+    {
+      schema: {
+        params: adminIdParamsSchema,
+        body: rejectWithdrawalSchema,
+        response: { 200: adminWithdrawalSchema },
+      },
+    },
+    async (request) =>
+      admin.withdrawals.reject(adminActor(request), request.params.id, request.body),
+  );
+
+  // Manual retry of a payout whose first attempt ended with an unknown outcome.
+  app.post(
+    '/withdrawals/:id/retry',
+    { schema: { params: adminIdParamsSchema, response: { 200: adminWithdrawalSchema } } },
+    async (request) => admin.withdrawals.retry(adminActor(request), request.params.id),
+  );
+
+  app.post(
+    '/wallet/bonus',
+    {
+      schema: {
+        headers: idempotencyKeyHeaderSchema,
+        body: adminBonusSchema,
+        response: { 200: ledgerEntrySchema, 201: ledgerEntrySchema },
+      },
+    },
+    async (request, reply) => {
+      const { entry, replayed } = await admin.withdrawals.bonus(
+        adminActor(request),
+        request.headers['idempotency-key'],
+        request.body,
+      );
+      return reply.status(replayed ? 200 : 201).send(entry);
     },
   );
 

@@ -10,6 +10,8 @@ import {
   SesEmailSender,
 } from './modules/notifications/channels/email';
 import { VapidWebPushSender } from './modules/notifications/channels/web-push';
+import { PayoutProcessor } from './modules/payouts/payout-processor';
+import { createPayoutsRuntime } from './modules/payouts/payouts.config';
 import { ReferralsService } from './modules/referrals/referrals.service';
 import { createMeili } from './modules/search/meili';
 import { SearchIndexer } from './modules/search/search.indexer';
@@ -41,6 +43,8 @@ if (!env.MEILI_INDEX_KEY) {
 }
 const searchIndexer = new SearchIndexer(prisma, createMeili(env.MEILI_URL, env.MEILI_INDEX_KEY));
 
+const payoutsRuntime = createPayoutsRuntime(env);
+
 const worker = await startNotificationWorker({
   env,
   prisma,
@@ -50,9 +54,17 @@ const worker = await startNotificationWorker({
   email,
   searchIndexer,
   referrals: new ReferralsService(prisma, env.OTP_HMAC_KEY),
+  ...(payoutsRuntime ? { payoutProcessor: new PayoutProcessor(prisma, payoutsRuntime) } : {}),
   log,
 });
-log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');
+log.info(
+  {
+    webPush: Boolean(webPush),
+    email: env.EMAIL_PROVIDER,
+    payouts: payoutsRuntime?.provider.name ?? 'off',
+  },
+  'worker started',
+);
 
 const shutdown = async (signal: string) => {
   log.info({ signal }, 'worker shutting down');

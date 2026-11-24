@@ -34,6 +34,8 @@ export const POLICY = {
     'GET /v1/search/suggest',
     'GET /v1/services/:id',
   ],
+  // Server-to-server: no token; the HMAC signature over the raw body is the credential.
+  webhook: ['POST /v1/webhooks/razorpayx'],
   signin: [
     'GET /v1/auth/csrf',
     'POST /v1/auth/login',
@@ -51,6 +53,7 @@ export const POLICY = {
     'GET /v1/admin/reports',
     'GET /v1/admin/users',
     'GET /v1/admin/verifications',
+    'GET /v1/admin/withdrawals',
     'GET /v1/admin/verifications/:id/documents/:documentId',
     'PATCH /v1/admin/categories/:id',
     'POST /v1/admin/categories',
@@ -59,6 +62,10 @@ export const POLICY = {
     'POST /v1/admin/users/:id/suspend',
     'POST /v1/admin/verifications/:id/approve',
     'POST /v1/admin/verifications/:id/reject',
+    'POST /v1/admin/wallet/bonus',
+    'POST /v1/admin/withdrawals/:id/approve',
+    'POST /v1/admin/withdrawals/:id/reject',
+    'POST /v1/admin/withdrawals/:id/retry',
   ],
   user: [
     'DELETE /v1/blocks/:userId',
