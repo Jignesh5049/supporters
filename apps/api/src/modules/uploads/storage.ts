@@ -26,6 +26,16 @@ export interface ObjectStorage {
   delete(key: string): Promise<void>;
   /** Server-side copy, keeping the content type. */
   copy(from: string, to: string): Promise<void>;
+  /** The whole object. Refuses (throws) anything larger than `maxBytes`, so a swapped file can't exhaust memory. */
+  get(key: string, maxBytes: number): Promise<Buffer>;
+  /** Creates or replaces an object. */
+  put(key: string, body: Buffer, options: PutOptions): Promise<void>;
+}
+
+export interface PutOptions {
+  contentType: string;
+  /** `Cache-Control` for the object; public variants are immutable because their keys are never reused. */
+  cacheControl?: string;
 }
 
 const isNotFound = (error: unknown) =>
@@ -108,6 +118,27 @@ export class S3Storage implements ObjectStorage {
         Key: to,
         // Keys are server-generated (purpose/uuid), so they need no escaping.
         CopySource: `${this.bucket}/${from}`,
+      }),
+    );
+  }
+
+  async get(key: string, maxBytes: number) {
+    const object = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if ((object.ContentLength ?? 0) > maxBytes) {
+      await object.Body?.transformToWebStream().cancel();
+      throw new Error('object is larger than expected');
+    }
+    return Buffer.from((await object.Body?.transformToByteArray()) ?? []);
+  }
+
+  async put(key: string, body: Buffer, options: PutOptions) {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: options.contentType,
+        ...(options.cacheControl ? { CacheControl: options.cacheControl } : {}),
       }),
     );
   }
