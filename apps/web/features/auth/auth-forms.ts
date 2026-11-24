@@ -3,6 +3,7 @@ import {
   otpCodeSchema,
   passwordSchema,
   phoneSchema,
+  referralCodeSchema,
   registerSchema,
 } from '@supporters/shared';
 import { z } from 'zod';
@@ -14,7 +15,16 @@ const mismatch = { path: ['confirmPassword'], message: 'Passwords do not match' 
 
 export const registerFormSchema = registerSchema
   .pick({ name: true, password: true })
-  .extend({ phone: typedPhone, confirmPassword: z.string() })
+  .extend({
+    phone: typedPhone,
+    confirmPassword: z.string(),
+    /** Optional; blank is no code. Checked with the API's own rule. */
+    referralCode: z
+      .string()
+      .trim()
+      .transform((value) => (value === '' ? undefined : value))
+      .pipe(referralCodeSchema.optional()),
+  })
   .refine((value) => value.password === value.confirmPassword, mismatch);
 
 export const otpFormSchema = z.object({ otp: otpCodeSchema });
