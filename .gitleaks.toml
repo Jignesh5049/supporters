@@ -1,7 +1,11 @@
 # gitleaks configuration (see .github/workflows/security.yml). Extends the default ruleset.
 title = "supporters"
 
-[extend]
+[extend  # The fixed webhook secret the API test suite signs fake Razorpay deliveries with
+  # (apps/api/src/test/helpers.ts). It protects nothing: the fake provider only exists in tests and
+  # local development, and production refuses it.
+  '''whsec_test_0123456789abcdef0123456789abcdef''',
+]
 useDefault = true
 
 [allowlist]
