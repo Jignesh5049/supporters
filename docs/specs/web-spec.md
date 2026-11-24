@@ -6,7 +6,7 @@ The web app moves the existing Next.js 16 prototype in `frontend/` from mock dat
 
 ## Stack and versions
 
-The web app runs on Next.js 16.4 (App Router) with React 19.3 on Node.js 24 LTS. The repo is on 16.4.2 today; we bump it to 16.4.3, the latest patch as of 28 Oct 2026.
+The web app runs on Next.js 16.4 (App Router) with React 19.3 on Node.js 24 LTS. The repo is on 16.4.6, the latest patch as of 14 Nov 2026 (it clears every advisory the registry lists for 16.4.2 to 16.4.4).
 
 | Layer | Choice | Version | Notes |
 | --- | --- | --- | --- |
