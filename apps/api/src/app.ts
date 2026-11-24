@@ -50,6 +50,13 @@ import { notificationsRoutes } from './modules/notifications/notifications.route
 import { NotificationsService } from './modules/notifications/notifications.service';
 import { pushDevicesRoutes } from './modules/notifications/push-devices.routes';
 import { PushDevicesService } from './modules/notifications/push-devices.service';
+import { S3InvoiceStore } from './modules/payments/invoice-store';
+import { InvoicesService } from './modules/payments/invoices.service';
+import { createPaymentsProvider, invoiceSellerFromEnv } from './modules/payments/payments.factory';
+import { PaymentsProcessor } from './modules/payments/payments.processor';
+import { webhookRoutes } from './modules/payments/webhook.routes';
+import type { PaymentsProvider } from './modules/payments/provider';
+import { WebhookService } from './modules/payments/webhook.service';
 import { placesRoutes } from './modules/places/places.routes';
 import { PlacesService } from './modules/places/places.service';
 import { postsRoutes } from './modules/posts/posts.routes';
@@ -96,6 +103,8 @@ export interface BuildAppOptions {
   breachChecker?: BreachedPasswordChecker;
   storage?: ObjectStorage;
   mediaProcessor?: MediaProcessor;
+  /** Injected in tests (a FakeRazorpay they can drive); created from the env otherwise. */
+  paymentsProvider?: PaymentsProvider | null;
   logger?: FastifyServerOptions['logger'];
   /** Tests only: sees every route as it is registered (the route-matrix test). */
   onRoute?: (route: RouteOptions) => void;
@@ -131,6 +140,15 @@ const SENSITIVE_FIELDS = [
   'expoPushToken',
   'refresh_token',
   'access_token',
+  // Payments: provider credentials and webhook material never reach a log line.
+  'keySecret',
+  'key_secret',
+  'webhookSecret',
+  'RAZORPAY_KEY_SECRET',
+  'RAZORPAY_WEBHOOK_SECRET',
+  'signature',
+  'razorpay_signature',
+  'x-razorpay-signature',
 ];
 
 /** Backend spec, Data protection: logs never carry credentials, tokens, OTPs, contact or payout details. */
@@ -138,6 +156,7 @@ export const REDACT_PATHS = [
   'req.headers.authorization',
   'req.headers.cookie',
   'req.headers["x-csrf-token"]',
+  'req.headers["x-razorpay-signature"]',
   'res.headers["set-cookie"]',
   ...SENSITIVE_FIELDS.flatMap((field) => [field, `*.${field}`, `*.*.${field}`]),
 ];
@@ -227,6 +246,14 @@ export async function buildApp(options: BuildAppOptions) {
   const reportTargets = new ReportTargets(app.prisma);
   const adminUsers = new AdminUsersService(app.prisma, sessions);
   const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
+  const paymentsProvider =
+    options.paymentsProvider === undefined ? createPaymentsProvider(env) : options.paymentsProvider;
+  const invoices = new InvoicesService(
+    app.prisma,
+    invoiceSellerFromEnv(env),
+    new S3InvoiceStore(createS3Client(env), env.S3_BUCKET),
+    app.log,
+  );
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
@@ -277,6 +304,17 @@ export async function buildApp(options: BuildAppOptions) {
       blocks,
     ),
     reviews: new ReviewsService(app.prisma, businesses, blocks),
+    invoices,
+    webhooks: new WebhookService(
+      app.prisma,
+      env.PAYMENTS_PROVIDER === 'none' ? null : (env.RAZORPAY_WEBHOOK_SECRET ?? null),
+      env.WEBHOOK_MAX_AGE_SEC,
+      app.log,
+    ),
+    payments: {
+      provider: paymentsProvider,
+      processor: new PaymentsProcessor(app.prisma, paymentsProvider, invoices, app.log),
+    },
   });
 
   await app.register(realtimePlugin);
@@ -308,6 +346,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(discoverRoutes);
       await v1.register(requirementsRoutes);
       await v1.register(reviewsRoutes);
+      await v1.register(webhookRoutes);
     },
     { prefix: '/v1' },
   );

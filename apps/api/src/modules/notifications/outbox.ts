@@ -1,3 +1,4 @@
+import type { PremiumActivatedEvent, PremiumRefundedEvent } from '@supporters/shared';
 import type { Prisma } from '../../generated/prisma/client';
 
 /**
@@ -25,6 +26,14 @@ export interface DomainEvents {
   'requirement.created': { requirementId: string };
   'requirement.quoted': { quoteId: string };
   'review.created': { reviewId: string };
+  /** A business bought Premium (first payment captured). Referrals consume it; it notifies nobody. */
+  'premium.activated': PremiumActivatedEvent;
+  /** The first payment was refunded and Premium ended. Referrals consume it; it notifies nobody. */
+  'premium.refunded': PremiumRefundedEvent;
+  'premium.renewing': { subscriptionId: string };
+  'premium.renewed': { subscriptionId: string; paymentId: string };
+  'premium.payment_failed': { subscriptionId: string };
+  'premium.expired': { subscriptionId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -44,6 +53,12 @@ export const DOMAIN_EVENT_TYPES = [
   'requirement.created',
   'requirement.quoted',
   'review.created',
+  'premium.activated',
+  'premium.refunded',
+  'premium.renewing',
+  'premium.renewed',
+  'premium.payment_failed',
+  'premium.expired',
 ] as const satisfies readonly DomainEventType[];
 
 /**

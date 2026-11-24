@@ -10,6 +10,16 @@ export interface SearchIndexJob {
   eventId: string;
 }
 
+/** A `payments.webhook` or `payments.invoice` outbox event for the `payments` queue. */
+export interface PaymentsQueueJob {
+  webhookEventId?: string;
+  invoiceId?: string;
+}
+
+/** Outbox types that go to the `payments` queue. */
+export const PAYMENTS_WEBHOOK_EVENT = 'payments.webhook';
+export const PAYMENTS_INVOICE_EVENT = 'payments.invoice';
+
 /** The slice of a queue the relay uses. */
 export interface BulkQueue<T> {
   addBulk(jobs: { name: string; data: T; opts: { jobId: string } }[]): Promise<unknown>;
@@ -18,6 +28,7 @@ export interface BulkQueue<T> {
 export interface RelayQueues {
   notifications: BulkQueue<FanoutJob>;
   searchIndex: BulkQueue<SearchIndexJob>;
+  payments: BulkQueue<PaymentsQueueJob>;
 }
 
 const BATCH = 100;
@@ -31,12 +42,26 @@ const BATCH = 100;
  */
 export async function relayOutbox(prisma: PrismaClient, queues: RelayQueues): Promise<number> {
   return prisma.$transaction(async (tx) => {
-    const rows = await tx.$queryRaw<{ id: string; type: string }[]>`
-      SELECT id, type FROM outbox_events WHERE published_at IS NULL
+    const rows = await tx.$queryRaw<{ id: string; type: string; payload: PaymentsQueueJob }[]>`
+      SELECT id, type, payload FROM outbox_events WHERE published_at IS NULL
       ORDER BY id LIMIT ${BATCH} FOR UPDATE SKIP LOCKED`;
     if (rows.length === 0) return 0;
     const search = rows.filter((row) => row.type === SEARCH_SYNC_EVENT);
-    const fanout = rows.filter((row) => row.type !== SEARCH_SYNC_EVENT);
+    const payments = rows.filter(
+      (row) => row.type === PAYMENTS_WEBHOOK_EVENT || row.type === PAYMENTS_INVOICE_EVENT,
+    );
+    const fanout = rows.filter(
+      (row) => row.type !== SEARCH_SYNC_EVENT && !payments.some((p) => p.id === row.id),
+    );
+    if (payments.length > 0) {
+      await queues.payments.addBulk(
+        payments.map(({ id, type, payload }) => ({
+          name: type === PAYMENTS_WEBHOOK_EVENT ? 'webhook' : 'invoice-pdf',
+          data: payload,
+          opts: { jobId: `pay-${id}` },
+        })),
+      );
+    }
     if (fanout.length > 0) {
       await queues.notifications.addBulk(
         fanout.map(({ id }) => ({

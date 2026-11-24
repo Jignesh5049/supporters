@@ -38,6 +38,13 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     MEILI_URL: inject('meiliUrl'),
     MEILI_SEARCH_KEY: inject('meiliSearchKey'),
     MEILI_INDEX_KEY: inject('meiliIndexKey'),
+    // Payments: the in-memory FakeRazorpay, and the supplier printed on invoices (Maharashtra).
+    PAYMENTS_PROVIDER: 'fake',
+    RAZORPAY_WEBHOOK_SECRET: 'whsec_test_0123456789abcdef0123456789abcdef',
+    INVOICE_SELLER_NAME: 'Supporters Test Pvt Ltd',
+    INVOICE_SELLER_GSTIN: '27AAPFU0939F1ZV',
+    INVOICE_SELLER_ADDRESS: '1 Test Street, Mumbai, Maharashtra 400001',
+    INVOICE_SELLER_STATE_CODE: '27',
     ...overrides,
   });
 }
@@ -95,7 +102,7 @@ export async function createTestApp(
 }
 
 const TRUNCATE_ALL =
-  'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen, outbox_events CASCADE';
+  'TRUNCATE users, sessions, otp_codes, devices, consents, user_interests, businesses, products, services, uploads, listing_media, posts, post_media, comments, likes, saves, follows, feed_seen, outbox_events, webhook_events, invoice_sequences, premium_listing_holds CASCADE';
 
 /** PostgreSQL `deadlock_detected` (SQLSTATE 40P01), as Prisma's pg adapter reports it. */
 const isDeadlock = (error: unknown) => /40P01|deadlock detected/.test(String(error));

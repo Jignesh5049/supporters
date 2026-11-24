@@ -15,11 +15,20 @@ import {
   type ReceiptsJob,
 } from '../modules/notifications/delivery';
 import { NotificationFanout } from '../modules/notifications/fanout';
+import type { InvoicesService } from '../modules/payments/invoices.service';
+import { PremiumLifecycle } from '../modules/payments/lifecycle';
+import { PaymentsProcessor } from '../modules/payments/payments.processor';
+import type { PaymentsProvider } from '../modules/payments/provider';
 import type { SearchIndexer } from '../modules/search/search.indexer';
 import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
 import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { cleanupNotifications } from './cleanup';
-import { type FanoutJob, type SearchIndexJob, relayOutbox } from './outbox-relay';
+import {
+  type FanoutJob,
+  type PaymentsQueueJob,
+  type SearchIndexJob,
+  relayOutbox,
+} from './outbox-relay';
 
 /** Queue names (backend spec, Queues). */
 export const QUEUE = {
@@ -29,6 +38,8 @@ export const QUEUE = {
   cron: 'cron',
   /** Upserts or deletes businesses, products, services and posts in Meilisearch. */
   searchIndex: 'search-index',
+  /** Razorpay webhooks, then invoice PDFs. */
+  payments: 'payments',
   /** Jobs that used up their retries, kept for inspection and manual replay. */
   deadLetter: 'dead-letter',
 } as const;
@@ -37,6 +48,8 @@ export const QUEUE = {
 export const JOB_ATTEMPTS = 5;
 /** Search indexing retries 10 times (backend spec, Queues). */
 export const SEARCH_JOB_ATTEMPTS = 10;
+/** Payments retry 10 times with exponential backoff, then dead-letter (backend spec, Queues). */
+export const PAYMENTS_JOB_ATTEMPTS = 10;
 
 export interface DeadLetter {
   queue: string;
@@ -57,6 +70,8 @@ export interface NotificationWorkerOptions {
   email: EmailSender;
   /** Consumes `search-index`; without it, sync events are queued but wait for a worker that has one. */
   searchIndexer?: SearchIndexer;
+  /** Consumes `payments` and runs the Premium cron jobs; without it, payments jobs wait for a worker that has it. */
+  payments?: { provider: PaymentsProvider | null; invoices: InvoicesService };
   log: FastifyBaseLogger;
   /** First retry delay; doubles on each attempt. */
   backoffMs?: number;
@@ -95,6 +110,10 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       ...defaultJobOptions,
       attempts: SEARCH_JOB_ATTEMPTS,
     }),
+    payments: queue<PaymentsQueueJob>(QUEUE.payments, {
+      ...defaultJobOptions,
+      attempts: PAYMENTS_JOB_ATTEMPTS,
+    }),
     deadLetter: queue<DeadLetter>(QUEUE.deadLetter, { removeOnComplete: false }),
   };
 
@@ -114,6 +133,7 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
   );
   const email = new EmailDelivery(prisma, options.email, options.env.APP_ORIGIN);
 
+  const lifecycle = new PremiumLifecycle(prisma, options.payments?.provider ?? null, log);
   const worker = <T>(name: string, concurrency: number, run: (job: Job<T>) => Promise<unknown>) => {
     const instance = new Worker<T>(name, run, { connection, prefix, concurrency });
     instance.on('failed', (job, error) => {
@@ -138,7 +158,7 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
     return instance;
   };
 
-  const workers = [
+  const workers: { close(): Promise<void> }[] = [
     worker<FanoutJob>(QUEUE.notifications, 10, async (job) => {
       const deliveries = await fanout.process(job.data.eventId);
       await scheduler.schedule(job.data.eventId, deliveries);
@@ -156,12 +176,29 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
           return expireRequirements(prisma, options.now?.());
         case 'search-premium-expiry':
           return recordPremiumExpirySyncs(prisma, options.now?.());
+        case 'premium-expiry':
+          return lifecycle.expireDue(options.now?.());
+        case 'premium-reminders':
+          return lifecycle.sendRenewalReminders(options.now?.());
         default:
           return null;
       }
     }),
   ];
-  const { searchIndexer } = options;
+  const { searchIndexer, payments } = options;
+  if (payments) {
+    const processor = new PaymentsProcessor(prisma, payments.provider, payments.invoices, log);
+    // Two jobs for one subscription are serialised by its row lock, so several run at once.
+    workers.push(
+      worker<PaymentsQueueJob>(QUEUE.payments, 5, async (job) => {
+        if (job.name === 'invoice-pdf' && job.data.invoiceId) {
+          return payments.invoices.generatePdf(job.data.invoiceId);
+        }
+        if (job.data.webhookEventId) return processor.process(job.data.webhookEventId);
+        return null;
+      }),
+    );
+  }
   if (searchIndexer) {
     // One at a time: each job re-reads its row and writes it, so two jobs for the same row
     // can never interleave and leave the older state in the index.
@@ -185,6 +222,20 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
       { name: 'expire-requirements' },
     );
+    if (payments) {
+      // Premium ends by time: close out finished periods and graces hourly, and remind owners
+      // once a day (10:00 IST) that renewal is a week away.
+      await queues.cron.upsertJobScheduler(
+        'premium-expiry',
+        { pattern: '10 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'premium-expiry' },
+      );
+      await queues.cron.upsertJobScheduler(
+        'premium-reminders',
+        { pattern: '0 10 * * *', tz: 'Asia/Kolkata' },
+        { name: 'premium-reminders' },
+      );
+    }
     if (searchIndexer) {
       // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
       await queues.cron.upsertJobScheduler(

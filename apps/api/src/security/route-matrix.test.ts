@@ -128,6 +128,8 @@ describe('mass assignment', () => {
       'POST /v1/admin/users/:id/restore',
       'POST /v1/admin/verifications/:id/approve',
       'POST /v1/uploads/:id/complete',
+      // The webhook body is raw bytes, verified by signature and parsed by hand.
+      'POST /v1/webhooks/razorpay',
       'PUT /v1/blocks/:userId',
       'PUT /v1/follows/:businessId',
       'PUT /v1/posts/:id/like',

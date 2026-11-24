@@ -10,6 +10,10 @@ import {
   SesEmailSender,
 } from './modules/notifications/channels/email';
 import { VapidWebPushSender } from './modules/notifications/channels/web-push';
+import { S3InvoiceStore } from './modules/payments/invoice-store';
+import { InvoicesService } from './modules/payments/invoices.service';
+import { createPaymentsProvider, invoiceSellerFromEnv } from './modules/payments/payments.factory';
+import { createS3Client } from './modules/uploads/storage';
 import { createMeili } from './modules/search/meili';
 import { SearchIndexer } from './modules/search/search.indexer';
 import { createPrisma, createValkey } from './plugins/data';
@@ -40,6 +44,13 @@ if (!env.MEILI_INDEX_KEY) {
 }
 const searchIndexer = new SearchIndexer(prisma, createMeili(env.MEILI_URL, env.MEILI_INDEX_KEY));
 
+const invoices = new InvoicesService(
+  prisma,
+  invoiceSellerFromEnv(env),
+  new S3InvoiceStore(createS3Client(env), env.S3_BUCKET),
+  log,
+);
+
 const worker = await startNotificationWorker({
   env,
   prisma,
@@ -48,6 +59,7 @@ const worker = await startNotificationWorker({
   webPush,
   email,
   searchIndexer,
+  payments: { provider: createPaymentsProvider(env), invoices },
   log,
 });
 log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');
