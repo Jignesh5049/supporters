@@ -77,7 +77,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/subscription" className="hover:text-[#2E3192]">
+                <Link href="/business/premium" className="hover:text-[#2E3192]">
                   Supporters Premium
                 </Link>
               </li>

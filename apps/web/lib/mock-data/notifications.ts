@@ -58,7 +58,7 @@ export const MOCK_NOTIFICATIONS: NotificationItem[] = [
       'Your annual Supporters Premium subscription is active. Enjoy verified badge & top search placement.',
     time: '3 days ago',
     read: true,
-    actionUrl: '/subscription',
+    actionUrl: '/business/premium',
     avatar:
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
     timeGroup: 'Earlier',

@@ -21,6 +21,7 @@ const SIGNED_IN_PREFIXES = [
   '/business/enquiries',
   '/business/manage',
   '/business/posts',
+  '/business/premium',
   '/business/products',
   '/business/services',
   '/business/settings',
@@ -35,7 +36,6 @@ const SIGNED_IN_PREFIXES = [
   '/requirements',
   '/saved',
   '/settings',
-  '/subscription',
   '/wallet',
 ];
 
@@ -193,7 +193,7 @@ export async function proxy(request: NextRequest) {
   // A fresh nonce per request. Next reads it back out of the CSP *request* header and puts it
   // on every script and style it renders; `x-nonce` is for our own `next/script` uses.
   const nonce = generateNonce();
-  const policy = buildCsp(readCspConfig(process.env, nonce));
+  const policy = buildCsp(readCspConfig(process.env, nonce, request.nextUrl.pathname));
   const renderHeaders: RenderHeaders = { 'x-nonce': nonce, [policy.headerName]: policy.value };
 
   const response = isAdminRoute(request.nextUrl.pathname)

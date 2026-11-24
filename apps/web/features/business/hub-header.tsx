@@ -6,6 +6,7 @@ import { cn } from '@supporters/ui-web/lib/utils';
 import {
   BadgeCheck,
   Building2,
+  Crown,
   Eye,
   FileQuestion,
   FileText,
@@ -35,6 +36,7 @@ const LINKS = [
   { label: 'Posts', href: '/business/posts', icon: FileText },
   { label: 'Enquiries', href: '/business/enquiries', icon: FileQuestion },
   { label: 'Verification', href: '/business/verification', icon: BadgeCheck },
+  { label: 'Premium', href: '/business/premium', icon: Crown },
 ];
 
 export function HubHeader({ business }: { business: HubBusiness }) {

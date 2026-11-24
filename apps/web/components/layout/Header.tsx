@@ -198,7 +198,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                       <span>Refer & Earn (Up to ₹500)</span>
                     </Link>
                     <Link
-                      href="/subscription"
+                      href="/business/premium"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center px-4 py-2 hover:bg-[#F7F8FC] gap-2.5"
                     >
@@ -333,7 +333,7 @@ export function Header({ viewer }: { viewer: HeaderViewer | null }) {
                 <ChevronRight className="w-4 h-4 text-[#A3238E]" />
               </Link>
               <Link
-                href="/subscription"
+                href="/business/premium"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#F7F8FC]"
               >

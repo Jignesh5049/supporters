@@ -203,3 +203,35 @@ describe('securityHeaders', () => {
     expect(headers(false)).not.toHaveProperty('Strict-Transport-Security');
   });
 });
+
+describe('Razorpay hosts (Premium page only)', () => {
+  const policyFor = (pathname: string) =>
+    buildCsp(readCspConfig({ NODE_ENV: 'production' }, 'nonce', pathname));
+  const directiveOf = (value: string, name: string) =>
+    (value.split('; ').find((part) => part.startsWith(`${name} `)) ?? '').split(' ').slice(1);
+
+  it('allows exactly the spec hosts on /business/premium, and nothing broader', () => {
+    const { value } = policyFor('/business/premium');
+    expect(directiveOf(value, 'script-src')).toContain('https://checkout.razorpay.com');
+    expect(directiveOf(value, 'frame-src').sort()).toEqual([
+      'https://api.razorpay.com',
+      'https://checkout.razorpay.com',
+    ]);
+    expect(directiveOf(value, 'connect-src')).toEqual(
+      expect.arrayContaining(['https://api.razorpay.com', 'https://lumberjack.razorpay.com']),
+    );
+    // No wildcard, and still no inline or eval script.
+    expect(value).not.toMatch(/\*\.razorpay\.com/);
+    expect(directiveOf(value, 'script-src')).not.toContain("'unsafe-inline'");
+    expect(directiveOf(value, 'script-src')).not.toContain("'unsafe-eval'");
+    expect(directiveOf(value, 'frame-ancestors')).toEqual(["'none'"]);
+  });
+
+  it('keeps Razorpay out of every other page, including look-alike paths', () => {
+    for (const path of ['/', '/business/manage', '/business/premium/x', '/business/premiums']) {
+      const { value } = policyFor(path);
+      expect(value, path).not.toContain('razorpay');
+      expect(directiveOf(value, 'frame-src'), path).toEqual(["'none'"]);
+    }
+  });
+});
