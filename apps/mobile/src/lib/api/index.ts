@@ -8,6 +8,7 @@ import { createProductsApi } from './products';
 import { createServicesApi } from './services';
 import { createCategoriesApi } from './categories';
 import { createPlacesApi } from './places';
+import { createPremiumApi } from './premium';
 import { createUploadsApi } from './uploads';
 import { createPostsApi } from './posts';
 import { createSocialApi } from './social';
@@ -35,6 +36,7 @@ export type { ModerationApi } from './moderation';
 export type { RequirementsApi } from './requirements';
 export type { ReviewsApi } from './reviews';
 export type { SearchApi } from './search';
+export type { PremiumApi } from './premium';
 
 /** The one API client for the app. Screens use Query hooks or specific domain APIs, never raw fetch. */
 export const apiClient = createApiClient({
@@ -64,3 +66,4 @@ export const moderationApi = createModerationApi(apiClient);
 export const requirementsApi = createRequirementsApi(apiClient);
 export const reviewsApi = createReviewsApi(apiClient);
 export const searchApi = createSearchApi(apiClient);
+export const premiumApi = createPremiumApi(apiClient);
