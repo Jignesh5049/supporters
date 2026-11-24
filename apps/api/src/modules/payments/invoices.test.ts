@@ -1,8 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type ReferenceData, referenceData } from '../../test/catalog';
-import { type TestContext, createTestApp, prisma, resetState } from '../../test/helpers';
+import {
+  type TestContext,
+  createTestApp,
+  prisma,
+  registerMobile,
+  resetState,
+} from '../../test/helpers';
 import {
   DAY_MS,
+  type PremiumOwner,
+  api,
   buyPremium,
   charge,
   deliver,
@@ -27,6 +35,9 @@ afterAll(async () => {
   await ctx.app.close();
 });
 beforeEach(resetState);
+
+const invoicesOf = (owner: PremiumOwner) =>
+  api(ctx, 'GET', '/v1/me/business/invoices', { as: owner.session });
 
 describe('invoice numbers', () => {
   it('issues one invoice per payment, numbered in sequence per financial year', async () => {
@@ -116,42 +127,106 @@ describe('invoice numbers', () => {
   });
 });
 
-describe('invoice PDF', () => {
-  it('stores the PDF under a private prefix and links it with a short-lived signature', async () => {
+describe('invoice content', () => {
+  it('splits CGST and SGST when buyer and supplier are in the same state', async () => {
+    const owner = await premiumOwner(ctx, refs); // Mumbai, Maharashtra; the supplier is code 27
+    await buyPremium(ctx, owner);
+    const [invoice] = (await invoicesOf(owner)).json<{ data: { id: string }[] }>().data;
+    const detail = (
+      await api(ctx, 'GET', `/v1/me/business/invoices/${invoice?.id}`, { as: owner.session })
+    ).json();
+    expect(detail).toMatchObject({
+      total: { amountPaise: 99_900, currency: 'INR' },
+      taxable: { amountPaise: 84_661 },
+      tax: { amountPaise: 15_239 },
+      taxBreakup: {
+        ratePercent: 18,
+        cgst: { amountPaise: 7_619 },
+        sgst: { amountPaise: 7_620 },
+        igst: { amountPaise: 0 },
+      },
+    });
+  });
+
+  it('charges IGST across states, and prefers the buyer GSTIN given at checkout', async () => {
+    const gujarat = await premiumOwner(ctx, refs, {
+      cityId: (await prisma.city.findFirstOrThrow({ where: { state: { code: 'GJ' } } })).id,
+    });
+    await buyPremium(ctx, gujarat);
+    const [first] = (await invoicesOf(gujarat)).json<{ data: { id: string }[] }>().data;
+    const igst = (
+      await api(ctx, 'GET', `/v1/me/business/invoices/${first?.id}`, { as: gujarat.session })
+    ).json<{ taxBreakup: { igst: { amountPaise: number }; cgst: { amountPaise: number } } }>();
+    expect(igst.taxBreakup).toMatchObject({
+      igst: { amountPaise: 15_239 },
+      cgst: { amountPaise: 0 },
+    });
+
+    // A Mumbai business that gives a Karnataka GSTIN is billed as inter-state, with that GSTIN.
+    const mumbai = await premiumOwner(ctx, refs);
+    const buyerGstin = gstinFor('29');
+    await buyPremium(ctx, mumbai, { buyerGstin });
+    const [second] = (await invoicesOf(mumbai)).json<{ data: { id: string }[] }>().data;
+    const detail = (
+      await api(ctx, 'GET', `/v1/me/business/invoices/${second?.id}`, { as: mumbai.session })
+    ).json<{ buyerGstin: string; taxBreakup: { igst: { amountPaise: number } } }>();
+    expect(detail).toMatchObject({ buyerGstin, taxBreakup: { igst: { amountPaise: 15_239 } } });
+  });
+});
+
+describe('invoice access and PDF', () => {
+  it('is for the owner only: guests 401, other owners 404, users without a business 403', async () => {
+    const owner = await premiumOwner(ctx, refs);
+    await buyPremium(ctx, owner);
+    const [invoice] = (await invoicesOf(owner)).json<{ data: { id: string }[] }>().data;
+    const url = `/v1/me/business/invoices/${invoice?.id}`;
+
+    expect((await api(ctx, 'GET', '/v1/me/business/invoices')).statusCode).toBe(401);
+    expect((await api(ctx, 'GET', url)).statusCode).toBe(401);
+
+    const other = await premiumOwner(ctx, refs);
+    expect((await api(ctx, 'GET', url, { as: other.session })).statusCode).toBe(404);
+    expect((await invoicesOf(other)).json()).toEqual({ data: [], nextCursor: null });
+
+    const stranger = await registerMobile(ctx);
+    expect((await api(ctx, 'GET', url, { as: stranger })).statusCode).toBe(403);
+    expect((await api(ctx, 'GET', url, { as: owner.session })).statusCode).toBe(200);
+  });
+
+  it('serves the PDF through a short-lived signed link under a private prefix', async () => {
     const owner = await premiumOwner(ctx, refs);
     await buyPremium(ctx, owner);
     const row = await prisma.invoice.findFirstOrThrow();
-    const { invoices } = ctx.app.services;
+    const url = `/v1/me/business/invoices/${row.id}`;
 
-    const before = await invoices.get(owner.businessId, row.id);
+    const before = (await api(ctx, 'GET', url, { as: owner.session })).json<{
+      isPdfReady: boolean;
+      downloadUrl: string | null;
+    }>();
     expect(before).toMatchObject({ isPdfReady: false, downloadUrl: null });
 
-    expect(await invoices.generatePdf(row.id)).toBe(true);
+    expect(await ctx.app.services.invoices.generatePdf(row.id)).toBe(true);
     const stored = await prisma.invoice.findUniqueOrThrow({ where: { id: row.id } });
     expect(stored.pdfKey).toBe(`invoices/${owner.businessId}/${row.id}.pdf`);
+    expect(stored.pdfKey?.startsWith('public/')).toBe(false);
 
-    const after = await invoices.get(owner.businessId, row.id);
+    const after = (await api(ctx, 'GET', url, { as: owner.session })).json<{
+      isPdfReady: boolean;
+      downloadUrl: string;
+    }>();
     expect(after.isPdfReady).toBe(true);
-    const link = new URL(after.downloadUrl ?? '');
-    expect(link.searchParams.get('X-Amz-Expires')).toBe('300');
-    const file = await fetch(link);
+    expect(new URL(after.downloadUrl).searchParams.get('X-Amz-Expires')).toBe('300');
+
+    const file = await fetch(after.downloadUrl);
     expect(file.status).toBe(200);
     expect(file.headers.get('content-type')).toBe('application/pdf');
     const bytes = Buffer.from(await file.arrayBuffer());
     expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
-    expect(bytes.toString('latin1')).toContain(row.number);
-    // The bare key is not readable without the signature.
-    expect((await fetch(`${link.origin}${link.pathname}`)).status).toBe(403);
-  });
+    expect(bytes.toString('latin1')).toContain(row.number.replaceAll('(', '\\('));
 
-  it('is only readable through the business that owns it', async () => {
-    const owner = await premiumOwner(ctx, refs);
-    const other = await premiumOwner(ctx, refs);
-    await buyPremium(ctx, owner);
-    const row = await prisma.invoice.findFirstOrThrow();
-    await expect(ctx.app.services.invoices.get(other.businessId, row.id)).rejects.toMatchObject({
-      statusCode: 404,
-    });
+    // The bare key is not readable without the signature.
+    const bare = await fetch(after.downloadUrl.split('?')[0] ?? '');
+    expect(bare.status).toBe(403);
   });
 
   it('writes a well-formed PDF with the GSTINs, SAC and tax lines', () => {

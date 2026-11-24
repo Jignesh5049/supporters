@@ -26,6 +26,7 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { COOKIE, clearSessionCookies, setAdminSessionCookies } from '../auth/auth.cookies';
+import { adminPaymentsRoutes } from '../payments/payments.routes';
 import { adminActor, writeAudit } from './audit.service';
 
 /** Every admin route, as `METHOD /url`, for the authorization test matrix. */
@@ -236,4 +237,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => admin.auditLogs.list(request.query),
   );
+
+  // Payments and refunds (inherits the admin guard, audit and no-store hooks above).
+  await app.register(adminPaymentsRoutes);
 };

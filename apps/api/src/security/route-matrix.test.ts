@@ -127,8 +127,9 @@ describe('mass assignment', () => {
     expect(missing.sort()).toEqual([
       'POST /v1/admin/users/:id/restore',
       'POST /v1/admin/verifications/:id/approve',
+      // Cancels the caller's own subscription; the webhook body is raw bytes, verified by signature.
+      'POST /v1/me/business/premium/cancel',
       'POST /v1/uploads/:id/complete',
-      // The webhook body is raw bytes, verified by signature and parsed by hand.
       'POST /v1/webhooks/razorpay',
       'PUT /v1/blocks/:userId',
       'PUT /v1/follows/:businessId',

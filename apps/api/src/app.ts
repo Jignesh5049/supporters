@@ -54,8 +54,10 @@ import { S3InvoiceStore } from './modules/payments/invoice-store';
 import { InvoicesService } from './modules/payments/invoices.service';
 import { createPaymentsProvider, invoiceSellerFromEnv } from './modules/payments/payments.factory';
 import { PaymentsProcessor } from './modules/payments/payments.processor';
+import { fakeCheckoutRoutes, premiumRoutes } from './modules/payments/payments.routes';
 import { webhookRoutes } from './modules/payments/webhook.routes';
 import type { PaymentsProvider } from './modules/payments/provider';
+import { PremiumService } from './modules/payments/premium.service';
 import { WebhookService } from './modules/payments/webhook.service';
 import { placesRoutes } from './modules/places/places.routes';
 import { PlacesService } from './modules/places/places.service';
@@ -304,6 +306,7 @@ export async function buildApp(options: BuildAppOptions) {
       blocks,
     ),
     reviews: new ReviewsService(app.prisma, businesses, blocks),
+    premium: new PremiumService(app.prisma, app.valkey, paymentsProvider, app.log),
     invoices,
     webhooks: new WebhookService(
       app.prisma,
@@ -346,7 +349,9 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(discoverRoutes);
       await v1.register(requirementsRoutes);
       await v1.register(reviewsRoutes);
+      await v1.register(premiumRoutes);
       await v1.register(webhookRoutes);
+      if (env.PAYMENTS_PROVIDER === 'fake') await v1.register(fakeCheckoutRoutes);
     },
     { prefix: '/v1' },
   );

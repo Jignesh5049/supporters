@@ -64,34 +64,20 @@ export async function premiumOwner(ctx: TestContext, refs: ReferenceData, overri
   return { session, businessId: business.id, userId: session.user.id } satisfies PremiumOwner;
 }
 
-/**
- * A pending (unpaid) subscription for the owner's business, as the checkout endpoint leaves it,
- * created straight in the database and the fake provider.
- */
+/** Starts a checkout (web) and returns the provider subscription id. */
 export async function startCheckout(
   ctx: TestContext,
   owner: PremiumOwner,
-  body: { buyerGstin?: string } = {},
+  body: object = {},
   key: string = randomUUID(),
 ) {
-  const subscriptionId = randomUUID();
-  const { id } = await providerOf(ctx).createSubscription({
-    reference: subscriptionId,
-    businessId: owner.businessId,
+  const response = await api(ctx, 'POST', '/v1/me/business/premium/checkout', {
+    as: owner.session,
+    body,
+    headers: { 'idempotency-key': key },
   });
-  await prisma.subscription.create({
-    data: {
-      id: subscriptionId,
-      businessId: owner.businessId,
-      createdByUserId: owner.userId,
-      providerSubscriptionId: id,
-      amountPaise: BigInt(PREMIUM.pricePaise),
-      buyerGstin: body.buyerGstin ?? null,
-      idempotencyKey: key,
-      requestHash: 'test',
-    },
-  });
-  return { subscriptionId, checkout: { providerSubscriptionId: id } };
+  if (response.statusCode !== 201) throw new Error(`checkout failed: ${response.body}`);
+  return response.json<{ subscriptionId: string; checkout: { providerSubscriptionId: string } }>();
 }
 
 /** POSTs a signed delivery to the webhook route, as Razorpay would. */

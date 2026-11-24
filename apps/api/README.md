@@ -90,7 +90,7 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `GET /v1/search` (`q`, `type` = business | product | service | post, filters, `sort`, `cursor`, `limit`) → `{ data, nextCursor, estimatedTotal }`. Meilisearch pages by offset, so the cursor is an opaque offset and results stop after 1,000. `GET /v1/search/suggest?q=` → up to 8 names and titles. Search and suggest each have their own 60-per-minute-per-IP budget (`RATE_LIMITS.search`, `RATE_LIMITS.suggest`).
 - Ranking: an explicit `sort` wins; otherwise relevance, with `featured` (Premium) as a tie-breaker after the word rules. The worker's hourly `search-premium-expiry` cron queues syncs for businesses whose Premium just ended. Trending counts distinct buyers' enquiries.
 - Rating: business documents get `rating` (the shown average, only with 3+ visible reviews) when reviews land; the reviews write path must call `recordSearchSync(tx, 'business', id)`. Until then `ratingMin` matches nothing and `sort=rating` keeps index order.
-- `GET /v1/discover` → `{ trending, featured, nearYou, suggested }` from PostgreSQL. Trending: most new followers plus enquiries in 7 days. Featured: listings of Premium businesses (empty until Premium checkout exists). Near you: `?city=` or the user's city. Suggested: interest categories, not followed.
+- `GET /v1/discover` → `{ trending, featured, nearYou, suggested }` from PostgreSQL. Trending: most new followers plus enquiries in 7 days. Featured: listings of Premium businesses. Near you: `?city=` or the user's city. Suggested: interest categories, not followed.
 
 ## Buyer requirements in short
 
@@ -106,3 +106,14 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - `PATCH/DELETE /v1/reviews/:id` (author), `PUT/DELETE /v1/reviews/:id/reply` (business owner, one editable reply). `GET /v1/businesses/:id/reviews` is public, newest first, with `rating`.
 - Every change recomputes `businesses.rating_avg` (one decimal) and `rating_count` from visible reviews in the same transaction, under the business row lock. The API shows `rating.average` as null below 3 reviews ("New"). Moderation that sets `hidden_at` must call `recomputeRating(tx, businessId)` from `modules/reviews/reviews.service.ts`.
 - `review.created` notifies the owner, batched per business for 10 minutes.
+
+## Premium and payments in short
+
+Full notes, lifecycle table and the open questions for the client's accountant: [`docs/payments.md`](../../docs/payments.md).
+
+- `PAYMENTS_PROVIDER` is `none` (default: Premium endpoints answer 503 `PAYMENTS_NOT_CONFIGURED`), `fake` (an in-memory Razorpay for development and tests, refused on staging and production) or `razorpay` (the official SDK; use `rzp_test_` keys until launch).
+- `POST /v1/me/business/premium/checkout` (web only, `X-Client: mobile` is refused; needs `Idempotency-Key`), `GET /v1/me/business/premium`, `POST /v1/me/business/premium/cancel`, `GET|PUT /v1/me/business/premium/listings` (choose what to keep after expiry), `GET /v1/me/business/invoices[/:id]` (owner only; the PDF comes from the worker as a 5-minute signed link).
+- `POST /v1/webhooks/razorpay` checks the HMAC-SHA256 of the raw body (timing-safe), the event id header and the event age, stores the event once in `webhook_events` and answers 200. The `payments` queue applies it (10 attempts, then `dead-letter`). Payment status never comes from the client.
+- `GET /v1/admin/payments` and `POST /v1/admin/payments/:id/refund` (first purchase, 7 days, full amount, audit-logged).
+- `premium.activated` (once per subscription, for referrals) and `premium.refunded` go through the outbox; payloads are in `docs/payments.md` and `packages/shared`.
+- Locally: `PAYMENTS_PROVIDER=fake` and any `RAZORPAY_WEBHOOK_SECRET` of 16+ characters; `POST /v1/dev/payments/fake/complete` "pays" a pending checkout through the real webhook path.
