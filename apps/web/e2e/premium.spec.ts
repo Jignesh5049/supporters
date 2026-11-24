@@ -54,7 +54,8 @@ test('buy Premium, see it confirmed by the webhook, then turn off auto-renew', a
 test('Razorpay is allowed on the Premium page only', async ({ request }) => {
   for (const path of ['/login', '/discover', '/about']) {
     const headers = (await request.get(path, { maxRedirects: 0 })).headers();
-    const csp = headers['content-security-policy'] ?? headers['content-security-policy-report-only'];
+    const csp =
+      headers['content-security-policy'] ?? headers['content-security-policy-report-only'];
     expect(csp, path).not.toContain('razorpay');
   }
 });
