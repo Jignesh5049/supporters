@@ -33,5 +33,10 @@ auditConfig:
     # Remove when @expo/cli moves to a patched zod.
     - GHSA-mrhx-c7xc-m3w5
 
+# effect <= 3.22.0 has a high ReDoS (GHSA-7589-6fvf-x4pw). It is only reached through
+# prisma > @prisma/config (the CLI), and 3.22.1 fixes it. Remove once Prisma depends on a patched effect.
+overrides:
+  effect: 3.22.1
+
 minimumReleaseAgeExclude:
   - '@fastify/jwt@10.2.6'
