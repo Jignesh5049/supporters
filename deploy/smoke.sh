@@ -9,7 +9,7 @@
 #                                         # (docker compose -p supporters-smoke ps)
 #
 # The API runs with NODE_ENV=development because staging and production refuse to boot until MSG91
-# and a real media processor exist (see deploy/README.md). Everything else is the production wiring.
+# exists (see deploy/README.md). Everything else is the production wiring.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
