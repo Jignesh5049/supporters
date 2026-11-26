@@ -21,6 +21,8 @@ import type { PushDevicesService } from '../modules/notifications/push-devices.s
 import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
+import type { ReferralsService } from '../modules/referrals/referrals.service';
+import type { WalletService } from '../modules/wallet/wallet.service';
 import type { ReportsService } from '../modules/reports/reports.service';
 import type { RequirementsService } from '../modules/requirements/requirements.service';
 import type { ReviewsService } from '../modules/reviews/reviews.service';
@@ -80,6 +82,8 @@ declare module 'fastify' {
       discover: DiscoverService;
       requirements: RequirementsService;
       reviews: ReviewsService;
+      referrals: ReferralsService;
+      wallet: WalletService;
     };
   }
 

@@ -1,3 +1,4 @@
+import type { PremiumActivatedEvent, PremiumRefundedEvent } from '@supporters/shared';
 import type { Prisma } from '../../generated/prisma/client';
 
 /**
@@ -25,6 +26,17 @@ export interface DomainEvents {
   'requirement.created': { requirementId: string };
   'requirement.quoted': { quoteId: string };
   'review.created': { reviewId: string };
+  /** Premium module -> referrals: the business paid (starts the 7-day refund window). */
+  'premium.activated': PremiumActivatedEvent;
+  /** Premium module -> referrals: a payment was refunded (inside the window: Ineligible). */
+  'premium.refunded': PremiumRefundedEvent;
+  'referral.pending': { referralId: string };
+  'referral.credited': { referralId: string };
+  'referral.ineligible': { referralId: string };
+  'withdrawal.approved': { withdrawalId: string };
+  'withdrawal.paid': { withdrawalId: string };
+  'withdrawal.rejected': { withdrawalId: string };
+  'security.payout_details_changed': { userId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -44,6 +56,15 @@ export const DOMAIN_EVENT_TYPES = [
   'requirement.created',
   'requirement.quoted',
   'review.created',
+  'premium.activated',
+  'premium.refunded',
+  'referral.pending',
+  'referral.credited',
+  'referral.ineligible',
+  'withdrawal.approved',
+  'withdrawal.paid',
+  'withdrawal.rejected',
+  'security.payout_details_changed',
 ] as const satisfies readonly DomainEventType[];
 
 /**

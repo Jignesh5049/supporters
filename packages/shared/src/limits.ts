@@ -151,6 +151,8 @@ export const REFERRAL = {
   rewardsPaise: [300_00, 200_00],
   lifetimeCapPaise: 500_00,
   pendingDays: 7,
+  /** A referral whose business never buys Premium stops waiting after this many days (assumption). */
+  awaitingPremiumDays: 90,
 } as const;
 
 /** Reviews and ratings (product spec, Reviews and ratings). */

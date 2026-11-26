@@ -18,6 +18,7 @@ import {
 import { NotificationFanout } from '../modules/notifications/fanout';
 import type { SearchIndexer } from '../modules/search/search.indexer';
 import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
+import type { ReferralsService } from '../modules/referrals/referrals.service';
 import { expireRequirements } from '../modules/requirements/requirements.expiry';
 import { MediaJobs, type MediaJob } from '../modules/uploads/media-jobs';
 import { cleanupNotifications } from './cleanup';
@@ -63,6 +64,8 @@ export interface NotificationWorkerOptions {
   mediaJobs?: MediaJobs;
   /** Consumes `search-index`; without it, sync events are queued but wait for a worker that has one. */
   searchIndexer?: SearchIndexer;
+  /** Consumes `premium.*` events and runs the referral finalizer. */
+  referrals?: ReferralsService;
   log: FastifyBaseLogger;
   /** First retry delay; doubles on each attempt. */
   backoffMs?: number;
@@ -108,7 +111,7 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
     deadLetter: queue<DeadLetter>(QUEUE.deadLetter, { removeOnComplete: false }),
   };
 
-  const fanout = new NotificationFanout(prisma, options.now);
+  const fanout = new NotificationFanout(prisma, options.now, options.referrals);
   const scheduler = new DeliveryScheduler(
     prisma,
     options.valkey,
@@ -166,6 +169,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
           return expireRequirements(prisma, options.now?.());
         case 'search-premium-expiry':
           return recordPremiumExpirySyncs(prisma, options.now?.());
+        case 'referrals-finalize': {
+          if (!options.referrals) return null;
+          const finalized = await options.referrals.finalizeDue();
+          const failed = await options.referrals.failStale();
+          return { ...finalized, failed };
+        }
         default:
           return null;
       }
@@ -212,6 +221,14 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       { pattern: '5 * * * *', tz: 'Asia/Kolkata' },
       { name: 'expire-requirements' },
     );
+    if (options.referrals) {
+      // Credits referrals whose 7-day refund window has ended.
+      await queues.cron.upsertJobScheduler(
+        'referrals-finalize',
+        { pattern: '*/15 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'referrals-finalize' },
+      );
+    }
     if (searchIndexer) {
       // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
       await queues.cron.upsertJobScheduler(
