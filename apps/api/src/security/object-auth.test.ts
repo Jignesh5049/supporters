@@ -213,6 +213,12 @@ const CASES: Case[] = [
     url: () => `/v1/uploads/${ids.upload}/complete`,
   },
   {
+    name: "read someone else's upload",
+    method: 'GET',
+    url: () => `/v1/uploads/${ids.upload}`,
+    ownerOk: [200],
+  },
+  {
     name: "close someone else's enquiry",
     method: 'PATCH',
     url: () => `/v1/me/business/enquiries/${ids.enquiry}`,

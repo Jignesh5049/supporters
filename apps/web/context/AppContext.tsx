@@ -6,26 +6,13 @@ import type { ListingRef } from '@supporters/shared';
 import { z } from 'zod';
 import { chatApi } from '@/features/messaging/chat-api';
 import { errorMessage } from '@/lib/api/errors';
-import {
-  FeedPost,
-  Product,
-  Service,
-  Business,
-  NotificationItem,
-  PostType,
-  ReferralStat,
-  WalletSummary,
-  WalletTransaction,
-  WithdrawalRequest,
-} from '@/types';
+import { FeedPost, Product, Service, Business, NotificationItem, PostType } from '@/types';
 import {
   MOCK_POSTS,
   MOCK_PRODUCTS,
   MOCK_SERVICES,
   MOCK_BUSINESSES,
   MOCK_NOTIFICATIONS,
-  MOCK_REFERRAL_DATA,
-  MOCK_WALLET_DATA,
   CURRENT_USER,
 } from '@/lib/mock-data';
 
@@ -130,17 +117,6 @@ interface AppContextType {
   closeEnquiryModal: () => void;
 
   // Referral & Wallet
-  referralData: ReferralStat;
-  walletData: WalletSummary;
-  requestWithdrawal: (params: {
-    amount: number;
-    method: 'UPI' | 'Bank Account';
-    upiId?: string;
-    accountHolderName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    bankName?: string;
-  }) => { success: boolean; message: string };
 
   // Business Management
   userBusiness: Business | undefined;
@@ -188,8 +164,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [followedBusinessIds, setFollowedBusinessIds] = useState<string[]>(['b-2']);
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
-  const [referralData] = useState<ReferralStat>(MOCK_REFERRAL_DATA);
-  const [walletData, setWalletData] = useState<WalletSummary>(MOCK_WALLET_DATA);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -406,74 +380,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast(`Post marked as ${status}`, 'info');
   };
 
-  // Wallet & Withdrawals
-  const requestWithdrawal = (params: {
-    amount: number;
-    method: 'UPI' | 'Bank Account';
-    upiId?: string;
-    accountHolderName?: string;
-    accountNumber?: string;
-    ifscCode?: string;
-    bankName?: string;
-  }): { success: boolean; message: string } => {
-    if (params.amount <= 0) {
-      return { success: false, message: 'Withdrawal amount must be greater than ₹0' };
-    }
-    if (params.amount > walletData.availableBalance) {
-      return { success: false, message: 'Amount exceeds your available wallet balance' };
-    }
-    if (params.amount < 100) {
-      return { success: false, message: 'Minimum withdrawal amount is ₹100' };
-    }
-
-    const refId = `WDL-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const newWithdrawal: WithdrawalRequest = {
-      id: `wd-${Date.now()}`,
-      referenceId: refId,
-      amount: params.amount,
-      method: params.method,
-      upiId: params.upiId,
-      accountHolderName: params.accountHolderName,
-      accountNumber: params.accountNumber,
-      ifscCode: params.ifscCode,
-      bankName: params.bankName,
-      status: 'Pending',
-      createdAt: 'Just now',
-      estimatedDate: 'Within 24-48 business hours',
-    };
-
-    const newTx: WalletTransaction = {
-      id: `tx-${Date.now()}`,
-      referenceId: refId,
-      title: `Withdrawal Request (${params.method})`,
-      amount: -params.amount,
-      type: 'withdrawal',
-      status: 'Pending',
-      createdAt: 'Just now',
-      withdrawalMethod: params.method,
-      payoutDetails:
-        params.method === 'UPI'
-          ? `UPI: ${params.upiId}`
-          : `${params.bankName || 'Bank'} A/C: ••••${params.accountNumber?.slice(-4) || 'XXXX'}`,
-      description: 'Payout requested to linked account. Under automated verification.',
-    };
-
-    setWalletData((prev) => ({
-      ...prev,
-      availableBalance: prev.availableBalance - params.amount,
-      pendingWithdrawals: prev.pendingWithdrawals + params.amount,
-      transactions: [newTx, ...prev.transactions],
-      withdrawalRequests: [newWithdrawal, ...prev.withdrawalRequests],
-    }));
-
-    showToast(
-      `Withdrawal request for ₹${params.amount.toLocaleString('en-IN')} submitted!`,
-      'success',
-    );
-    return { success: true, message: 'Withdrawal request submitted successfully' };
-  };
-
   const openConversationWithBusiness = (businessId: string) => {
     // Prototype screens still pass mock ids; those just open the inbox.
     if (!z.uuid().safeParse(businessId).success) {
@@ -579,9 +485,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         saveDraftListing,
         clearDraftListing,
 
-        referralData,
-        walletData,
-        requestWithdrawal,
         userBusiness,
         updateBusinessProfile,
         updateBusinessPost,

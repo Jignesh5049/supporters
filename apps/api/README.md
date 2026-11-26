@@ -21,22 +21,22 @@ pnpm dev                        # http://127.0.0.1:3001
 
 If ports 5432, 6379, 9000 or 7700 are taken, start compose with `POSTGRES_PORT=55432 VALKEY_PORT=56379 MINIO_PORT=59000 MEILI_PORT=57700` and change the URLs in `.env` to match.
 
-Uploads go straight from the client to S3 (MinIO locally): `POST /v1/uploads/presign` returns a 5-minute PUT URL locked to the declared type and size, then `POST /v1/uploads/:id/complete` checks the stored file's size and magic bytes. Image re-encoding (sharp, EXIF stripping) is still a stub, `PassthroughMediaProcessor`, and the API refuses to start in production with it. On a phone, `localhost:9000` is not reachable; point `S3_ENDPOINT` and `MEDIA_PUBLIC_URL` at your machine's LAN address.
+Uploads go straight from the client to S3 (MinIO locally): `POST /v1/uploads/presign` returns a 5-minute PUT URL locked to the declared type and size, then `POST /v1/uploads/:id/complete` checks the stored file's size and magic bytes. It then returns `processing` and queues the `media` job (see Uploads and the media job below), so `pnpm dev:worker` must be running or uploads never become `ready`. On a phone, `localhost:9000` is not reachable; point `S3_ENDPOINT` and `MEDIA_PUBLIC_URL` at your machine's LAN address.
 
 OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and production.
 
 ## Scripts
 
-| Script                 | What it does                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                       |
-| `test`                 | Vitest. Starts PostgreSQL, Valkey, MinIO and Meilisearch in Testcontainers, so Docker must be running |
-| `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                           |
-| `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)        |
-| `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable |
+| Script                 | What it does                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `dev`                  | Runs `src/server.ts` with tsx in watch mode, reading `.env`                                                              |
+| `test`                 | Vitest. Starts PostgreSQL, Valkey, MinIO and Meilisearch in Testcontainers, so Docker must be running                    |
+| `lint`, `typecheck`    | ESLint (strict, type-checked) and `tsc`                                                                                  |
+| `db:migrate`           | Creates a migration from `prisma/schema.prisma` changes (development only)                                               |
+| `storage:init`         | Creates the local MinIO bucket and makes its public/ prefix readable                                                     |
 | `search:init`          | With `MEILI_MASTER_KEY` in the shell: creates the scoped Meilisearch keys and the indexes, prints the keys as .env lines |
-| `search:reindex`       | Rebuilds every index from PostgreSQL in place (after a restore, a settings change, or lost jobs) |
-| `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users |
+| `search:reindex`       | Rebuilds every index from PostgreSQL in place (after a restore, a settings change, or lost jobs)                         |
+| `db:deploy`, `db:seed` | Applies migrations; seeds reference data (prisma/reference-data.ts) and demo users                                       |
 
 ## Layout
 
@@ -76,9 +76,21 @@ OTPs print to the terminal (`[dev sms] ...`); MSG91 replaces this on staging and
 - Every other `/v1/admin/*` route is behind `auth: 'admin'`: a token that passed TOTP, for a session that is live in the database, of an active admin. Anyone else gets 404. Responses are `no-store` and `noindex`. Every admin action, and every admin read, is written to `audit_logs`, which is append-only (a trigger refuses UPDATE and DELETE).
 - Suspending a user revokes all their sessions at once (their access tokens stop working immediately) and takes their business, posts and listings out of public reads.
 
+## Uploads and the media job
+
+- Flow: `presign` → client PUT → `POST /v1/uploads/:id/complete` → job → `ready`. `complete` checks size, type and magic bytes, copies the validated bytes to a fresh key (so a still-valid presigned URL can't swap them), sets `processing` and writes a `media.process` outbox event in the same transaction; the relay puts it on the `media` queue (3 attempts, exponential backoff). It returns at once: `{ status: 'processing', url: null }`.
+- Clients poll `GET /v1/uploads/:id` (owner only, 404 for anyone else): 0.5 s, backing off 1.5x to 4 s, for up to 90 s (`MEDIA_LIMITS.poll`). Polling was chosen over a socket push because it needs nothing beyond the API and works the same on web and mobile; the worker and API share no socket today. `pending → processing → ready | failed`; a `failed` upload carries `failureReason` (a code) and `failureMessage` (a sentence). Legacy rows may say `rejected`: treat it like `failed`.
+- Only `ready` uploads attach to anything (`UploadsService.requireReady`: listings, posts, avatar and cover, requirements, chat, KYC). The error says whether the upload is still processing or failed.
+- The job (`modules/uploads/media-jobs.ts`, `media-processor.ts`) decodes and re-encodes every image with sharp, never copying bytes through: EXIF (GPS included), XMP, ICC, thumbnails and trailing bytes are gone; the orientation is applied first. It rejects, without decoding, anything over 40 megapixels or 12,000 px on a side, animated WebP and APNG, and formats other than JPEG, PNG and WebP; it decodes sequentially with a 30 s timeout. A rejected or finally failed upload has all its objects deleted.
+- Stored files (all WebP, longest side, never enlarged): **listing, post, requirement** `thumb` 320, `card` 720, `full` 1600; **cover** 480, 960, 1920 wide; **avatar** square crops 96, 320, 640 (smaller if the photo is); **chat** one `full` file at 1600; **KYC** one `full` file at 3000, quality 90, so small print stays readable. They sit side by side, `<prefix>/<random>/{thumb,card,full}.webp`; `url` is `full` and `variants` has all three (`imageVariantUrl` in `@supporters/shared` derives one from another). Public variants are `Cache-Control: immutable`. `chat/` and `kyc/` never get a public URL or variants.
+- **Not covered:** PDFs are checked by magic bytes and kept as uploaded (`document.pdf`); re-encoding PDFs is out of scope. Videos are checked by magic bytes, size and type only, and kept as uploaded (`video.mp4`): there is no `ffprobe` in the worker image, so the 60 s duration and codec checks and any transcoding are a TODO. **HEIC is refused** (`heic_unsupported`): sharp's prebuilt libheif decodes AVIF but has no HEVC decoder. Re-enabling it means a custom libvips build or a converter, which was not added silently.
+- Retries are safe: processed files have fixed names, the status only moves while it is `processing`, and the source is deleted last. After the last attempt the upload is marked `failed` (`processing_error`) rather than left `processing`.
+- The worker refuses the passthrough processor (`PassthroughMediaProcessor`, tests only) in staging and production (`assertDeployableMediaProcessor`). It decodes one image at a time (a large photo takes a few hundred MB); the worker container's 768 MB limit assumes that.
+- Residual risk: until the job has run, the validated source sits under its purpose prefix (`public/<purpose>/<random>/source`), unreachable by id but not by key, with whatever metadata the client put in it. Keys are random UUIDs and it lives for seconds; a `tmp/` prefix would need an IAM and bucket-policy change.
+
 ## Worker and delivery
 
-- `pnpm dev:worker` runs `src/worker.ts` (same image as the API, different command: `node dist/worker.js`). It relays the outbox to BullMQ on Valkey, runs the `notifications`, `push`, `email` and `cron` queues (5 attempts, exponential backoff, then the `dead-letter` queue), and cleans up nightly at 03:00 IST (notifications after 90 days, processed outbox rows after 7).
+- `pnpm dev:worker` runs `src/worker.ts` (same image as the API, different command: `node dist/worker.js`). It relays the outbox to BullMQ on Valkey, runs the `notifications`, `push`, `email`, `cron` and `media` queues (5 attempts, exponential backoff, then the `dead-letter` queue), and cleans up nightly at 03:00 IST (notifications after 90 days, processed outbox rows after 7).
 - Push goes to Expo (batches of 100; dead tokens pruned from tickets and receipts) and to Web Push (VAPID; 404/410 subscriptions pruned). Non-urgent push waits out quiet hours (22:00 to 08:00 IST); batched items push once when their 10-minute window ends; security events always go at once. Push payloads hold ids and generic copy only. Email goes only to a verified address (`EMAIL_PROVIDER=ses`, console in dev).
 - `POST/DELETE /v1/me/push-tokens`, `POST/DELETE /v1/me/web-push-subscriptions` (known push-service hosts only), `GET /v1/notifications/vapid-public-key`. The worker publishes badge counts on Valkey; the API emits `notification:new { notificationId, unreadCount }` to `user:<id>`.
 
@@ -117,3 +129,18 @@ Full notes, lifecycle table and the open questions for the client's accountant: 
 - `GET /v1/admin/payments` and `POST /v1/admin/payments/:id/refund` (first purchase, 7 days, full amount, audit-logged).
 - `premium.activated` (once per subscription, for referrals) and `premium.refunded` go through the outbox; payloads are in `docs/payments.md` and `packages/shared`.
 - Locally: `PAYMENTS_PROVIDER=fake` and any `RAZORPAY_WEBHOOK_SECRET` of 16+ characters; `POST /v1/dev/payments/fake/complete` "pays" a pending checkout through the real webhook path.
+## Referrals, wallet and payouts in short
+
+- Every user has an 8-character referral code (`GET /v1/me/referrals`, created on first use, case-insensitive). It is entered at signup only (`referralCode` on `POST /v1/auth/register`); an unknown code is a 400 before the OTP is spent.
+- A referral is Pending until the referred business buys Premium (`premium.activated`, emitted by the Premium module through the outbox) and the 7-day refund window ends. The worker's `referrals-finalize` job (every 15 min) then credits ₹300, ₹200, then ₹0 (cap ₹500). `premium.refunded` inside the window makes it Ineligible. Self-referral, a phone number or device seen before, and a failed attestation are Ineligible too. Device attestation is a hook (`referrals.signals.ts`): nothing verifies Play Integrity or App Attest yet.
+- The wallet is an append-only ledger (`wallet_ledger`; a trigger refuses UPDATE and DELETE). The balance is `SUM(amount_paise)`. Every wallet change is one transaction that takes `SELECT ... FOR UPDATE` on the user's `wallets` row, appends entries with a unique `entry_key` (so a replay posts nothing twice) and writes an audit row. Only `modules/wallet/wallet.ledger.ts` writes the ledger.
+- `PUT /v1/me/payout-account` (UPI id or bank account + IFSC + holder name) seals the destination with AES-256-GCM (`PAYOUT_ENCRYPTION_KEY`, bound to the user id) and returns only a masked form. A change starts a 24-hour withdrawal cooldown and sends the always-on security notification. The holder name is fuzzy-matched against the profile name (the bank's registered name when RazorpayX returns one); a mismatch flags withdrawals for the admin.
+- `POST /v1/me/withdrawals` needs an `Idempotency-Key`: minimum ₹100, one in progress at a time, a validated payout account that is more than 24 hours old, and enough balance. The amount is debited at request time and comes back as a `reversal` if it is rejected or fails.
+- Payouts are off until configured: without `PAYOUTS_PROVIDER` and `PAYOUT_ENCRYPTION_KEY` the app boots and the write endpoints answer 503 `PAYOUTS_NOT_CONFIGURED`. `PAYOUTS_PROVIDER=fake` (local development and tests) never moves money and is refused in staging and production; `razorpayx` also needs `RAZORPAYX_KEY_ID`, `RAZORPAYX_KEY_SECRET`, `RAZORPAYX_ACCOUNT_NUMBER` and `RAZORPAYX_WEBHOOK_SECRET`. Generate the key with `openssl rand -base64 32`.
+
+### Admin approval and payouts
+
+- `GET /v1/admin/withdrawals?status=` (pending first, oldest on top; the name-match flag, the masked destination, how long the payout details had been in place), `POST /v1/admin/withdrawals/:id/approve`, `/reject` (`{ reason }`, the amount goes back as a `reversal`), `/retry`, and `POST /v1/admin/wallet/bonus` (`Idempotency-Key`, `{ userId, amountPaise, reason }`, at most ₹10,000). All are audit-logged.
+- States: `pending` → `processing` (approved) → `completed`, or `failed` (funds returned); `pending` → `rejected` (funds returned). A paid-out transfer the bank later reverses also becomes `failed` and returns the funds. Every transition runs in `withdrawals.settlement.ts` under the wallet and withdrawal locks, and the reversal entry has a fixed key, so funds can only come back once.
+- Approving writes `payout.requested` to the outbox in the same transaction. The relay sends it to the `payouts` queue (one attempt; no automatic retries), and the worker's `PayoutProcessor` calls RazorpayX with the key `supporters-wd-<withdrawal id>`. If the call fails with an unknown outcome the withdrawal stays `processing` with `payout_attempted_at` set; an admin retries, and RazorpayX returns the first payout if one was created.
+- `POST /v1/webhooks/razorpayx` verifies `X-Razorpay-Signature` (HMAC-SHA256 over the raw body, constant-time) with `RAZORPAYX_WEBHOOK_SECRET`, de-duplicates on `X-Razorpay-Event-Id` (`razorpayx_webhook_events`), ignores deliveries older than 48 hours and answers 2xx once a signed event is handled. It handles `payout.*` and `fund_account.validation.*`. A cron poll every 10 minutes settles payouts whose webhook never arrived.

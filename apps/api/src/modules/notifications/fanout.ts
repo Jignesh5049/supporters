@@ -6,6 +6,7 @@ import {
 } from '@supporters/shared';
 import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import { matchRequirement } from '../requirements/requirements.matching';
+import type { ReferralsService } from '../referrals/referrals.service';
 import { DOMAIN_EVENT_TYPES, type DomainEventType, type DomainEvents } from './outbox';
 import { NOTIFICATION_RULES, type NotificationRule } from './rules';
 
@@ -63,6 +64,8 @@ export class NotificationFanout {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly now: () => Date = () => new Date(),
+    /** Consumes `premium.*` events; without it they are acknowledged and ignored. */
+    private readonly referrals?: ReferralsService,
   ) {}
 
   async process(eventId: string): Promise<Delivery[]> {
@@ -355,7 +358,84 @@ export class NotificationFanout {
           },
         ];
       }
-      // `premium.activated` and `premium.refunded` are for the referral module; nobody is notified.
+      case 'premium.activated':
+        await this.referrals?.handlePremiumActivated(
+          tx,
+          payload as DomainEvents['premium.activated'],
+        );
+        return [];
+      case 'premium.refunded':
+        await this.referrals?.handlePremiumRefunded(
+          tx,
+          payload as DomainEvents['premium.refunded'],
+        );
+        return [];
+      case 'referral.pending':
+      case 'referral.credited':
+      case 'referral.ineligible': {
+        const { referralId } = payload as DomainEvents['referral.pending'];
+        const referral = await tx.referral.findUnique({
+          where: { id: referralId },
+          select: { referrerUserId: true },
+        });
+        if (!referral) return [];
+        return [
+          {
+            userId: referral.referrerUserId,
+            type:
+              type === 'referral.pending'
+                ? NotificationType.ReferralPending
+                : type === 'referral.credited'
+                  ? NotificationType.ReferralCredited
+                  : NotificationType.ReferralIneligible,
+            actorUserId: null,
+            targetType: NotificationTargetType.Wallet,
+            targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
+      case 'withdrawal.approved':
+      case 'withdrawal.paid':
+      case 'withdrawal.rejected':
+      case 'withdrawal.failed': {
+        const { withdrawalId } = payload as DomainEvents['withdrawal.approved'];
+        const withdrawal = await tx.withdrawal.findUnique({
+          where: { id: withdrawalId },
+          select: { userId: true },
+        });
+        if (!withdrawal) return [];
+        return [
+          {
+            userId: withdrawal.userId,
+            type:
+              type === 'withdrawal.approved'
+                ? NotificationType.WithdrawalApproved
+                : type === 'withdrawal.paid'
+                  ? NotificationType.WithdrawalPaid
+                  : type === 'withdrawal.rejected'
+                    ? NotificationType.WithdrawalRejected
+                    : NotificationType.WithdrawalFailed,
+            actorUserId: null,
+            targetType: NotificationTargetType.Wallet,
+            targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
+      case 'security.payout_details_changed': {
+        const { userId } = payload as DomainEvents['security.payout_details_changed'];
+        return [
+          {
+            userId,
+            type: NotificationType.SecurityPayoutDetailsChanged,
+            actorUserId: null,
+            targetType: NotificationTargetType.Account,
+            targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
       default:
         return [];
     }

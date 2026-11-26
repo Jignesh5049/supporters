@@ -4,6 +4,8 @@ import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
 import type { AdminCategoriesService } from '../modules/admin/admin-categories.service';
 import type { AdminReportsService } from '../modules/admin/admin-reports.service';
+import type { AdminWithdrawalsService } from '../modules/admin/admin-withdrawals.service';
+import type { RazorpayxWebhookService } from '../modules/payouts/razorpayx-webhook.service';
 import type { AdminUsersService } from '../modules/admin/admin-users.service';
 import type { AdminVerificationsService } from '../modules/admin/admin-verifications.service';
 import type { AuditLogService } from '../modules/admin/audit.service';
@@ -26,6 +28,10 @@ import type { WebhookService } from '../modules/payments/webhook.service';
 import type { PlacesService } from '../modules/places/places.service';
 import type { PostsService } from '../modules/posts/posts.service';
 import type { ProductsService } from '../modules/products/products.service';
+import type { PayoutAccountService } from '../modules/payouts/payout-account.service';
+import type { WithdrawalsService } from '../modules/payouts/withdrawals.service';
+import type { ReferralsService } from '../modules/referrals/referrals.service';
+import type { WalletService } from '../modules/wallet/wallet.service';
 import type { ReportsService } from '../modules/reports/reports.service';
 import type { RequirementsService } from '../modules/requirements/requirements.service';
 import type { ReviewsService } from '../modules/reviews/reviews.service';
@@ -80,6 +86,7 @@ declare module 'fastify' {
         verifications: AdminVerificationsService;
         reports: AdminReportsService;
         categories: AdminCategoriesService;
+        withdrawals: AdminWithdrawalsService;
       };
       search: SearchService;
       discover: DiscoverService;
@@ -89,6 +96,11 @@ declare module 'fastify' {
       invoices: InvoicesService;
       webhooks: WebhookService;
       payments: { provider: PaymentsProvider | null; processor: PaymentsProcessor };
+      referrals: ReferralsService;
+      wallet: WalletService;
+      payoutAccounts: PayoutAccountService;
+      withdrawals: WithdrawalsService;
+      razorpayxWebhooks: RazorpayxWebhookService;
     };
   }
 

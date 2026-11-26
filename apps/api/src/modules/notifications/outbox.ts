@@ -34,6 +34,16 @@ export interface DomainEvents {
   'premium.renewed': { subscriptionId: string; paymentId: string };
   'premium.payment_failed': { subscriptionId: string };
   'premium.expired': { subscriptionId: string };
+  'referral.pending': { referralId: string };
+  'referral.credited': { referralId: string };
+  'referral.ineligible': { referralId: string };
+  'withdrawal.approved': { withdrawalId: string };
+  'withdrawal.paid': { withdrawalId: string };
+  'withdrawal.rejected': { withdrawalId: string };
+  'withdrawal.failed': { withdrawalId: string };
+  /** Approved: the worker's payouts job sends it to RazorpayX. Not a notification. */
+  'payout.requested': { withdrawalId: string };
+  'security.payout_details_changed': { userId: string };
 }
 export type DomainEventType = keyof DomainEvents;
 
@@ -59,6 +69,15 @@ export const DOMAIN_EVENT_TYPES = [
   'premium.renewed',
   'premium.payment_failed',
   'premium.expired',
+  'referral.pending',
+  'referral.credited',
+  'referral.ineligible',
+  'withdrawal.approved',
+  'withdrawal.paid',
+  'withdrawal.rejected',
+  'withdrawal.failed',
+  'payout.requested',
+  'security.payout_details_changed',
 ] as const satisfies readonly DomainEventType[];
 
 /**
