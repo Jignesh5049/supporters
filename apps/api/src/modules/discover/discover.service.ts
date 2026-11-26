@@ -79,8 +79,8 @@ export class DiscoverService {
   }
 
   /**
-   * Published listings of Premium businesses, newest first. Premium checkout
-   * is not built yet, so no business has `premium_until` set and this is empty.
+   * Published listings of Premium businesses, newest first. `premium_until`
+   * is set by the payments module, so this follows the subscription.
    */
   private async featured(exclude: string[]): Promise<ListingResult[]> {
     const where = {

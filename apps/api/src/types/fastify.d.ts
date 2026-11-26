@@ -22,6 +22,7 @@ import type { NotificationsService } from '../modules/notifications/notification
 import type { PushDevicesService } from '../modules/notifications/push-devices.service';
 import type { InvoicesService } from '../modules/payments/invoices.service';
 import type { PaymentsProcessor } from '../modules/payments/payments.processor';
+import type { PremiumService } from '../modules/payments/premium.service';
 import type { PaymentsProvider } from '../modules/payments/provider';
 import type { WebhookService } from '../modules/payments/webhook.service';
 import type { PlacesService } from '../modules/places/places.service';
@@ -91,6 +92,7 @@ declare module 'fastify' {
       discover: DiscoverService;
       requirements: RequirementsService;
       reviews: ReviewsService;
+      premium: PremiumService;
       invoices: InvoicesService;
       webhooks: WebhookService;
       payments: { provider: PaymentsProvider | null; processor: PaymentsProcessor };

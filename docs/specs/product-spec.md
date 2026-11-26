@@ -13,15 +13,15 @@ Supporters is a B2B and local-business discovery network: businesses create a Li
 
 ## Roles and accounts
 
-There is one account type, identified by an Indian mobile number. Any user can add **one** business page in v1, so a single login covers both buying and selling. Every default marked *proposed* in this spec is listed under Decisions and assumptions for the client to confirm.
+There is one account type, identified by an Indian mobile number. Any user can add **one** business page in v1, so a single login covers both buying and selling. Every default marked _proposed_ in this spec is listed under Decisions and assumptions for the client to confirm.
 
-| Role | Can do | How they get it |
-| --- | --- | --- |
-| Guest | Browse the feed, Discover, search, and business, product and service pages. Any action (like, follow, message, enquiry) prompts sign-up | No login |
-| User | Follow businesses, like, comment, share, save, DM and send enquiries to businesses, post buyer requirements, review businesses, refer, use the wallet | Sign up with a mobile number verified by SMS OTP |
-| Business owner | Everything a User can do, plus one business page with products, services, posts, an enquiry inbox, quotes on buyer requirements (once verified) and analytics | A User completes business onboarding |
-| Premium business | Owner features plus the Premium perks (see Monetization) | The owner buys Premium for that business on the web |
-| Admin | Verify businesses, moderate reports, approve withdrawals, manage categories, suspend accounts | Created by us through a seed script, with no self-signup. Two-factor login is required |
+| Role             | Can do                                                                                                                                                        | How they get it                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Guest            | Browse the feed, Discover, search, and business, product and service pages. Any action (like, follow, message, enquiry) prompts sign-up                       | No login                                                                               |
+| User             | Follow businesses, like, comment, share, save, DM and send enquiries to businesses, post buyer requirements, review businesses, refer, use the wallet         | Sign up with a mobile number verified by SMS OTP                                       |
+| Business owner   | Everything a User can do, plus one business page with products, services, posts, an enquiry inbox, quotes on buyer requirements (once verified) and analytics | A User completes business onboarding                                                   |
+| Premium business | Owner features plus the Premium perks (see Monetization)                                                                                                      | The owner buys Premium for that business on the web                                    |
+| Admin            | Verify businesses, moderate reports, approve withdrawals, manage categories, suspend accounts                                                                 | Created by us through a seed script, with no self-signup. Two-factor login is required |
 
 **Signup and onboarding**
 
@@ -36,23 +36,23 @@ There is one account type, identified by an Indian mobile number. Any user can a
 
 **Business page (LinkedIn-style):** cover, logo, verified badge, about, established year, tags, rating and reviews, follower count, response rate, contact (phone hidden or shown), socials, address with map, opening hours, and tabs for Products, Services and Posts.
 
-**Verification (free, separate from Premium):** the owner requests the badge from the Business Hub and uploads a GSTIN certificate *or* a Udyam registration certificate, plus an owner photo ID. Documents go to private storage, which only admins can open through short-lived links. An admin checks the number on the government portal, then approves or rejects with a reason within 2 working days. Only verified businesses can quote on buyer requirements. Changing the business name or GSTIN removes the badge until the business is verified again.
+**Verification (free, separate from Premium):** the owner requests the badge from the Business Hub and uploads a GSTIN certificate _or_ a Udyam registration certificate, plus an owner photo ID. Documents go to private storage, which only admins can open through short-lived links. An admin checks the number on the government portal, then approves or rejects with a reason within 2 working days. Only verified businesses can quote on buyer requirements. Changing the business name or GSTIN removes the badge until the business is verified again.
 
 ## Listings: products and services
 
 Listings are catalog entries, not a checkout: a buyer acts on one by sending an enquiry or a DM. There is no cart or online order in v1.
 
-| Field | Product | Service |
-| --- | --- | --- |
-| Core (required) | Title (max 120 chars), category, description (max 5,000 chars), 1 to 10 images | Title, category, description, 1 to 10 images |
-| Price | Optional price per unit, plus an optional original price (strike-through). With no price, the listing shows "Ask for price" | Optional starting price plus price unit (per hour, per job, per month) |
-| Order terms | Minimum order quantity (MOQ) and unit (piece, kg, metre, box, and so on) | Turnaround time |
-| Availability | In Stock, Made to Order, Available for Bulk | Immediate, Within 24 Hours, By Appointment |
-| Reach | Delivery time, plus shipping areas (All India, or a list of states) | Service area (city, state or All India) |
-| Details | Technical specifications: up to 30 key and value pairs | Feature list: up to 15 items |
-| Status | Draft, Published, Archived. Only published listings are public and indexed | Same |
+| Field           | Product                                                                                                                     | Service                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Core (required) | Title (max 120 chars), category, description (max 5,000 chars), 1 to 10 images                                              | Title, category, description, 1 to 10 images                           |
+| Price           | Optional price per unit, plus an optional original price (strike-through). With no price, the listing shows "Ask for price" | Optional starting price plus price unit (per hour, per job, per month) |
+| Order terms     | Minimum order quantity (MOQ) and unit (piece, kg, metre, box, and so on)                                                    | Turnaround time                                                        |
+| Availability    | In Stock, Made to Order, Available for Bulk                                                                                 | Immediate, Within 24 Hours, By Appointment                             |
+| Reach           | Delivery time, plus shipping areas (All India, or a list of states)                                                         | Service area (city, state or All India)                                |
+| Details         | Technical specifications: up to 30 key and value pairs                                                                      | Feature list: up to 15 items                                           |
+| Status          | Draft, Published, Archived. Only published listings are public and indexed                                                  | Same                                                                   |
 
-- Owners manage listings from the Business Hub: create, edit, archive and delete. Free businesses can have up to 25 published listings (products and services combined); Premium has no limit (*proposed*).
+- Owners manage listings from the Business Hub: create, edit, archive and delete. Free businesses can have up to 25 published listings (products and services combined); Premium has no limit (_proposed_).
 - The detail page shows a gallery, specs, the seller card (with the business rating), Contact Supplier (enquiry), Message, Share and Save, plus up to 8 related listings from the same category.
 - Categories are a two-level taxonomy (category, then subcategory) that admins edit. The client supplies the starting list.
 - "Featured" is not set by owners. It is a Premium perk that boosts the listing in Discover and search.
@@ -60,7 +60,7 @@ Listings are catalog entries, not a checkout: a buyer acts on one by sending an 
 
 ## Reviews and ratings
 
-Reviews are on **businesses only**, not on individual listings. That keeps ratings meaningful while volumes are low (*proposed*).
+Reviews are on **businesses only**, not on individual listings. That keeps ratings meaningful while volumes are low (_proposed_).
 
 - **Who can review:** a user who has had a chat or enquiry thread with that business, opened at least 24 hours earlier. One review per user per business. Owners cannot review their own business.
 - **Content:** 1 to 5 stars plus text of 20 to 1,000 characters. The author can edit or delete it at any time.
@@ -74,9 +74,9 @@ Only business pages post. Users follow, react and share, the way Instagram and L
 
 - **Post types:** product, service, update, offer (with an offer tag such as "20% off" and an optional end date), and testimonial.
 - **Post content:** text up to 2,200 characters, plus either 1 to 10 images or one video (MP4, up to 60 s and 100 MB, 16:9 or 9:16). A product or service from the same business can be attached as a card linking to its listing.
-- **Post states:** Draft, Published, Archived. Only the owner can edit or delete. Free businesses can publish up to 10 posts per 7 days; Premium has no limit (*proposed*).
+- **Post states:** Draft, Published, Archived. Only the owner can edit or delete. Free businesses can publish up to 10 posts per 7 days; Premium has no limit (_proposed_).
 - **Interactions:** like, comment, share (copy link, WhatsApp, native share sheet), save. Comments are text only (up to 1,000 characters) with one level of replies. Authors can delete their own comments, and post owners can delete any comment on their post.
-- **Follow graph:** users follow **businesses only** in v1. Business pages show a follower count and list. User profiles show what they follow, but have no followers (*proposed*; the prototype's user follower count is hidden).
+- **Follow graph:** users follow **businesses only** in v1. Business pages show a follower count and list. User profiles show what they follow, but have no followers (_proposed_; the prototype's user follower count is hidden).
 - **Home feed (signed in):** the newest posts from followed businesses first. When those run out, newest posts from the user's city, then state, in their interest categories. Posts the user has already seen are skipped. Cursor-paginated, 20 per page.
 - **Home feed (guest):** the newest posts in the chosen city (default: All India), with sign-up prompts every 10 posts.
 - **Moderation:** anyone can report a post, comment, review, message or business with a reason (spam, fraud, offensive, wrong category, other). Admins can dismiss the report, hide the content, warn, or suspend the account. Posts hidden automatically after 5 distinct reports wait for admin review.
@@ -129,21 +129,21 @@ DMs and enquiries share one inbox. An enquiry is a structured first message that
 
 Every notification is stored in-app. Push and email go out only for the events marked below, and users can switch each category off in Settings.
 
-| Event | Who gets it | In-app tab | Push | Email |
-| --- | --- | --- | --- | --- |
-| New DM | Recipient | Messages | Yes (unless muted) | No |
-| New enquiry | Business owner | Enquiries | Yes | Yes |
-| First reply to an enquiry | Buyer | Enquiries | Yes | No |
-| Buyer requirement matches my business | Matched business owner (top 50) | Enquiries | Yes | No |
-| Quote on my requirement | Buyer | Enquiries | Yes | Yes |
-| New follower, like, comment, review | Business owner | Business | Batched | No |
-| Reply to my comment | Comment author | Business | Batched | No |
-| Business verified or rejected | Owner | Business | Yes | Yes |
-| Referral pending, credited or ineligible | Referrer | Referrals | Yes | No |
-| Withdrawal approved, paid or rejected | User | Referrals | Yes | Yes |
-| Premium renewing in 7 days, renewed, payment failed, expired | Owner | Subscription | Yes | Yes |
-| New login, password changed, payout details changed | User | Account | Always | Always |
-| Content hidden or account warned by an admin | Author | Account | Yes | Yes |
+| Event                                                        | Who gets it                     | In-app tab   | Push               | Email  |
+| ------------------------------------------------------------ | ------------------------------- | ------------ | ------------------ | ------ |
+| New DM                                                       | Recipient                       | Messages     | Yes (unless muted) | No     |
+| New enquiry                                                  | Business owner                  | Enquiries    | Yes                | Yes    |
+| First reply to an enquiry                                    | Buyer                           | Enquiries    | Yes                | No     |
+| Buyer requirement matches my business                        | Matched business owner (top 50) | Enquiries    | Yes                | No     |
+| Quote on my requirement                                      | Buyer                           | Enquiries    | Yes                | Yes    |
+| New follower, like, comment, review                          | Business owner                  | Business     | Batched            | No     |
+| Reply to my comment                                          | Comment author                  | Business     | Batched            | No     |
+| Business verified or rejected                                | Owner                           | Business     | Yes                | Yes    |
+| Referral pending, credited or ineligible                     | Referrer                        | Referrals    | Yes                | No     |
+| Withdrawal approved, paid or rejected                        | User                            | Referrals    | Yes                | Yes    |
+| Premium renewing in 7 days, renewed, payment failed, expired | Owner                           | Subscription | Yes                | Yes    |
+| New login, password changed, payout details changed          | User                            | Account      | Always             | Always |
+| Content hidden or account warned by an admin                 | Author                          | Account      | Yes                | Yes    |
 
 - The in-app list is grouped Today, Yesterday and Earlier, with mark-as-read, mark-all-read and a deep link to the item. Notifications older than 90 days are deleted.
 - Push goes through Expo Push (FCM and APNs) on mobile and Web Push in supported browsers. Web Push is opt-in from Settings, never on first visit. Email goes through Amazon SES, and only to a verified email.
@@ -152,21 +152,21 @@ Every notification is stored in-app. Push and email go out only for the events m
 
 ## Monetization, wallet and Business Hub
 
-Revenue comes from one plan, Supporters Premium, at ₹999/year **per business**, GST-inclusive (*proposed*), auto-renewing through Razorpay. Referral rewards are paid from that revenue.
+Revenue comes from one plan, Supporters Premium, at ₹999/year **per business**, GST-inclusive (_proposed_), auto-renewing through Razorpay. Referral rewards are paid from that revenue.
 
 **Premium subscription**
 
-- **Perks (*proposed*):** Premium badge, featured placement in Discover and a boost in search, unlimited listings and posts, full analytics history (free plans see the last 7 days), and priority in buyer-requirement matching.
-- **Where to buy:** on the **web only** in v1. Google Play and the App Store require their own billing for digital subscriptions sold in-app, so the mobile apps show Premium status and perks but have no buy button or purchase link (*proposed*; revisit Play's alternative billing later).
+- **Perks (_proposed_):** Premium badge, featured placement in Discover and a boost in search, unlimited listings and posts, full analytics history (free plans see the last 7 days), and priority in buyer-requirement matching.
+- **Where to buy:** on the **web only** in v1. Google Play and the App Store require their own billing for digital subscriptions sold in-app, so the mobile apps show Premium status and perks but have no buy button or purchase link (_proposed_; revisit Play's alternative billing later).
 - **Billing:** Razorpay Subscriptions with UPI AutoPay, cards and netbanking. A GST invoice (PDF, with the client's GSTIN, and the buyer's GSTIN if given) is emailed and kept in the Hub.
 - **Renewal and failure:** reminder 7 days before renewal. If a payment fails, Razorpay retries, and the business keeps Premium for a 7-day grace period. After that, perks switch off but no content is deleted. Listings over the free limit become unpublished, and the owner chooses which ones to keep.
 - **Cancel:** turns off auto-renew, and Premium stays active until the end of the paid year.
-- **Refunds:** full refund within 7 days of the first purchase, and renewals are non-refundable (*proposed*; must match the Refund Policy page).
+- **Refunds:** full refund within 7 days of the first purchase, and renewals are non-refundable (_proposed_; must match the Refund Policy page).
 
 **Referral and earn** (rules already coded in the prototype)
 
 - Every user gets a referral code and a share link. The code is entered at signup and can't be added later.
-- **Successful referral (*proposed*):** the referred user verifies their phone, creates a business and buys Premium. The referral stays Pending for 7 days (the refund window), then turns Successful, and the reward is credited to the referrer's wallet.
+- **Successful referral (_proposed_):** the referred user verifies their phone, creates a business and buys Premium. The referral stays Pending for 7 days (the refund window), then turns Successful, and the reward is credited to the referrer's wallet.
 - **Rewards:** ₹300 for the 1st successful referral, ₹200 for the 2nd, and ₹0 after that, for a lifetime cap of ₹500 per user (already coded in `lib/referral.ts`).
 - **Ineligible when:** it is a self-referral, the phone number or device was used by an earlier account, the payment is refunded, or the referred account is suspended. Status moves through Pending, Successful, Ineligible and Failed, and each status shows its reason.
 
@@ -194,22 +194,22 @@ Revenue comes from one plan, Supporters Premium, at ₹999/year **per business**
 
 The screens are about 80% done on both platforms. The backend is at 0%: there is no API, database, real auth, file upload, realtime or payments. Every screen reads from `lib/mock-data` (web) or `mock.ts` (mobile).
 
-| Area | Web UI | Mobile UI | Backend | Main gap |
-| --- | --- | --- | --- | --- |
-| Auth, OTP, onboarding | Done | Done | None | Real auth, OTP provider, sessions |
-| Business page and Hub | Done | Done | None | CRUD API, image upload, verification flow, reviews (new) |
-| Products and services | Done | Product detail only | None | Service detail on mobile, CRUD API |
-| Feed, posts, likes, saves | Done | Done | None | Comments UI, feed ranking, video upload |
-| Follow graph | Done | Done | None | API |
-| Search and Discover | Basic | Basic | None | Search index, filters |
-| Buyer requirements | Modal + card | Partial | None | Matching, quote flow |
-| DMs | Done (static) | Done (static) | None | WebSocket server, attachments |
-| Enquiries | Done | Modal only | None | Business enquiry inbox on mobile |
-| Notifications | List UI | List UI | None | Event pipeline, push, email |
-| Wallet, referral, withdraw | Done | Done | None | Ledger, RazorpayX payouts |
-| Subscription | Done | Done | None | Razorpay subscriptions and invoices on web; the mobile screen becomes status-only |
-| Analytics | Mock charts | None | None | Event tracking, aggregation |
-| Admin panel | None | None | None | Everything; built as an /admin area in the web app |
+| Area                       | Web UI        | Mobile UI           | Backend | Main gap                                                                          |
+| -------------------------- | ------------- | ------------------- | ------- | --------------------------------------------------------------------------------- |
+| Auth, OTP, onboarding      | Done          | Done                | None    | Real auth, OTP provider, sessions                                                 |
+| Business page and Hub      | Done          | Done                | None    | CRUD API, image upload, verification flow, reviews (new)                          |
+| Products and services      | Done          | Product detail only | None    | Service detail on mobile, CRUD API                                                |
+| Feed, posts, likes, saves  | Done          | Done                | None    | Comments UI, feed ranking, video upload                                           |
+| Follow graph               | Done          | Done                | None    | API                                                                               |
+| Search and Discover        | Basic         | Basic               | None    | Search index, filters                                                             |
+| Buyer requirements         | Modal + card  | Partial             | None    | Matching, quote flow                                                              |
+| DMs                        | Done (static) | Done (static)       | None    | WebSocket server, attachments                                                     |
+| Enquiries                  | Done          | Modal only          | None    | Business enquiry inbox on mobile                                                  |
+| Notifications              | List UI       | List UI             | None    | Event pipeline, push, email                                                       |
+| Wallet, referral, withdraw | Done          | Done                | None    | Ledger, RazorpayX payouts                                                         |
+| Subscription               | Done          | Done                | None    | Razorpay subscriptions and invoices on web; the mobile screen becomes status-only |
+| Analytics                  | Mock charts   | None                | None    | Event tracking, aggregation                                                       |
+| Admin panel                | None          | None                | None    | Everything; built as an /admin area in the web app                                |
 
 **Stack:** Fastify 5 API on Node.js 24 LTS with PostgreSQL 18 and Prisma, Valkey (Redis-compatible) for cache and queues, Socket.IO for chat, Meilisearch for search, Razorpay and RazorpayX, Expo Push, Amazon SES for email and MSG91 for SMS OTP. Shared TypeScript types and Zod schemas live in one package used by the API, web and mobile. Everything is hosted on AWS (Mumbai region) on a low-to-medium budget; see Hosting on AWS.
 
@@ -237,14 +237,14 @@ flowchart TB
 
 Web and mobile reach everything through one CloudFront domain: `/v1` goes to the API and every other path to the Next.js app. The EC2 server runs the web app, API, chat, workers, Valkey and Meilisearch as Docker containers, and media uploads go straight to S3 through presigned URLs. Amplify was dropped because the web app renders every page on the server (for its CSP) and runs well as a container on the same server at no extra cost.
 
-| Component | Launch tier | Growth tier | Approx. USD/month (launch → growth) |
-| --- | --- | --- | --- |
-| App compute | 1 × EC2 t4g.large (8 GB) running Next.js, the API, Socket.IO, workers, Valkey and Meilisearch in Docker | 2 × t4g.large behind an ALB, with Meilisearch on its own t4g.small | 40 → 110 |
-| Database | RDS PostgreSQL 18, db.t4g.micro, single-AZ, 20 GB | db.t4g.small Multi-AZ | 15 → 60 |
-| Cache and queues | Valkey on the app server | ElastiCache (Valkey) cache.t4g.micro | 0 → 13 |
-| Media | S3 + CloudFront | Same, more traffic | 5 → 25 |
-| Other | Route 53, WAF, public IPv4, SES, CloudWatch, backups | Same | 10 → 25 |
-| **Total** |  |  | **\~70 → \~235** |
+| Component        | Launch tier                                                                                             | Growth tier                                                        | Approx. USD/month (launch → growth) |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------- |
+| App compute      | 1 × EC2 t4g.large (8 GB) running Next.js, the API, Socket.IO, workers, Valkey and Meilisearch in Docker | 2 × t4g.large behind an ALB, with Meilisearch on its own t4g.small | 40 → 110                            |
+| Database         | RDS PostgreSQL 18, db.t4g.micro, single-AZ, 20 GB                                                       | db.t4g.small Multi-AZ                                              | 15 → 60                             |
+| Cache and queues | Valkey on the app server                                                                                | ElastiCache (Valkey) cache.t4g.micro                               | 0 → 13                              |
+| Media            | S3 + CloudFront                                                                                         | Same, more traffic                                                 | 5 → 25                              |
+| Other            | Route 53, WAF, public IPv4, SES, CloudWatch, backups                                                    | Same                                                               | 10 → 25                             |
+| **Total**        |                                                                                                         |                                                                    | **\~70 → \~235**                    |
 
 Figures are approximate on-demand Mumbai prices from memory, not a quote; we'll confirm them in the AWS Pricing Calculator before signing off. SMS OTP (MSG91) and Razorpay fees are billed per use, separately.
 
@@ -298,25 +298,25 @@ Phase 1 is the critical path, because every later phase depends on its auth, dat
 
 These are the defaults the engineering specs build on. Development can start on all of them now. Anything the client changes is updated here first, then in the affected spec.
 
-| # | Topic | Default we build | Status |
-| --- | --- | --- | --- |
-| 1 | Who posts | Only business pages post. Users follow, like, comment, share and save | Proposed |
-| 2 | Follows | Users follow businesses only. No user-to-user follows in v1 | Proposed |
-| 3 | Businesses per account | One business per account, with no team members in v1 | Proposed |
-| 4 | Signup identity | Indian mobile number, SMS-verified, is required. Email is optional and verified separately | Proposed |
-| 5 | Market and language | India only, English UI, ready for Hindi later | Proposed |
-| 6 | Premium perks | Badge, featured placement and search boost, unlimited listings and posts, full analytics, priority matching | Proposed |
-| 7 | Free limits | 25 published listings, 10 posts per 7 days, 7 days of analytics | Proposed |
-| 8 | Verified badge | Free and separate from Premium. GSTIN or Udyam certificate plus owner ID | Proposed |
-| 9 | Premium price | ₹999/year per business, GST-inclusive | Proposed |
-| 10 | Premium on mobile | Bought on the web only. The apps show status, with no purchase link | Proposed |
-| 11 | Refunds | Full refund within 7 days of the first purchase. Renewals are not refunded | Needs client input |
-| 12 | Referral success | Referred user creates a business and pays for Premium. Credited after 7 days | Proposed |
-| 13 | Reviews | On businesses only, by users with a chat or enquiry thread at least 24 h old | Proposed |
-| 14 | Price display | Price is optional, and listings without one show "Ask for price" | Proposed |
-| 15 | Admin operators | Client staff run the admin area. We create their accounts | Needs client input |
-| 16 | Launch scope and date | Android and web at launch, iOS after. Date to be set by the client | Needs client input |
-| 17 | Domain | Product domain to be chosen by the client; `<domain>` is the placeholder in all specs | Needs client input |
+| #   | Topic                  | Default we build                                                                                            | Status             |
+| --- | ---------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------ |
+| 1   | Who posts              | Only business pages post. Users follow, like, comment, share and save                                       | Proposed           |
+| 2   | Follows                | Users follow businesses only. No user-to-user follows in v1                                                 | Proposed           |
+| 3   | Businesses per account | One business per account, with no team members in v1                                                        | Proposed           |
+| 4   | Signup identity        | Indian mobile number, SMS-verified, is required. Email is optional and verified separately                  | Proposed           |
+| 5   | Market and language    | India only, English UI, ready for Hindi later                                                               | Proposed           |
+| 6   | Premium perks          | Badge, featured placement and search boost, unlimited listings and posts, full analytics, priority matching | Proposed           |
+| 7   | Free limits            | 25 published listings, 10 posts per 7 days, 7 days of analytics                                             | Proposed           |
+| 8   | Verified badge         | Free and separate from Premium. GSTIN or Udyam certificate plus owner ID                                    | Proposed           |
+| 9   | Premium price          | ₹999/year per business, GST-inclusive                                                                       | Proposed           |
+| 10  | Premium on mobile      | Bought on the web only. The apps show status, with no purchase link                                         | Proposed           |
+| 11  | Refunds                | Full refund within 7 days of the first purchase. Renewals are not refunded                                  | Needs client input |
+| 12  | Referral success       | Referred user creates a business and pays for Premium. Credited after 7 days                                | Proposed           |
+| 13  | Reviews                | On businesses only, by users with a chat or enquiry thread at least 24 h old                                | Proposed           |
+| 14  | Price display          | Price is optional, and listings without one show "Ask for price"                                            | Proposed           |
+| 15  | Admin operators        | Client staff run the admin area. We create their accounts                                                   | Needs client input |
+| 16  | Launch scope and date  | Android and web at launch, iOS after. Date to be set by the client                                          | Needs client input |
+| 17  | Domain                 | Product domain to be chosen by the client; `<domain>` is the placeholder in all specs                       | Needs client input |
 
 ## Client prerequisites
 

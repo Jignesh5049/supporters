@@ -129,8 +129,9 @@ describe('mass assignment', () => {
       'POST /v1/admin/verifications/:id/approve',
       'POST /v1/admin/withdrawals/:id/approve',
       'POST /v1/admin/withdrawals/:id/retry',
+      // Cancels the caller's own subscription; the webhook body is raw bytes, verified by signature.
+      'POST /v1/me/business/premium/cancel',
       'POST /v1/uploads/:id/complete',
-      // The webhook body is raw bytes, verified by signature and parsed by hand.
       'POST /v1/webhooks/razorpay',
       'PUT /v1/blocks/:userId',
       'PUT /v1/follows/:businessId',

@@ -8,20 +8,20 @@ The web app moves the existing Next.js 16 prototype in `frontend/` from mock dat
 
 The web app runs on Next.js 16.4 (App Router) with React 19.3 on Node.js 24 LTS. The repo is on 16.4.2 today; we bump it to 16.4.3, the latest patch as of 28 Oct 2026.
 
-| Layer | Choice | Version | Notes |
-| --- | --- | --- | --- |
-| Framework | Next.js, App Router, Turbopack | 16.4.3 | Proxy (`proxy.ts`, formerly Middleware), nonce CSP |
-| UI runtime | React / React DOM | 19.3.1 | Server Components by default |
-| Runtime | Node.js | 24.22.x LTS | Same as the API |
-| Language | TypeScript, strict | 7.0.x (6.0 fallback) |  |
-| Styling | Tailwind CSS + shadcn/ui (CLI 4.23, Radix UI primitives) | 4.3.x | Components come from packages/ui-web, and tokens from packages/design-tokens (see UI system) |
-| Icons | lucide-react (already in use) | latest |  |
-| Client data | TanStack Query | 5.105.x | Chat, notifications, infinite feeds, optimistic likes |
-| Forms | react-hook-form + Zod from `packages/shared` | 7.91 / 4.6 | Same rules as the API |
-| Realtime | socket.io-client | 4.8.x |  |
-| Errors | @sentry/nextjs | latest | Source maps uploaded, not served |
-| Lint | ESLint + eslint-config-next | 10.13 / 16.4.x |  |
-| Tests | Vitest + Testing Library, Playwright | 5.0 / 1.64 |  |
+| Layer       | Choice                                                   | Version              | Notes                                                                                        |
+| ----------- | -------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| Framework   | Next.js, App Router, Turbopack                           | 16.4.3               | Proxy (`proxy.ts`, formerly Middleware), nonce CSP                                           |
+| UI runtime  | React / React DOM                                        | 19.3.1               | Server Components by default                                                                 |
+| Runtime     | Node.js                                                  | 24.22.x LTS          | Same as the API                                                                              |
+| Language    | TypeScript, strict                                       | 7.0.x (6.0 fallback) |                                                                                              |
+| Styling     | Tailwind CSS + shadcn/ui (CLI 4.23, Radix UI primitives) | 4.3.x                | Components come from packages/ui-web, and tokens from packages/design-tokens (see UI system) |
+| Icons       | lucide-react (already in use)                            | latest               |                                                                                              |
+| Client data | TanStack Query                                           | 5.105.x              | Chat, notifications, infinite feeds, optimistic likes                                        |
+| Forms       | react-hook-form + Zod from `packages/shared`             | 7.91 / 4.6           | Same rules as the API                                                                        |
+| Realtime    | socket.io-client                                         | 4.8.x                |                                                                                              |
+| Errors      | @sentry/nextjs                                           | latest               | Source maps uploaded, not served                                                             |
+| Lint        | ESLint + eslint-config-next                              | 10.13 / 16.4.x       |                                                                                              |
+| Tests       | Vitest + Testing Library, Playwright                     | 5.0 / 1.64           |                                                                                              |
 
 The app lives in the pnpm workspace as `apps/web`. Before any code change, read the matching guide in `node_modules/next/dist/docs/`, as `AGENTS.md` requires.
 
@@ -142,21 +142,21 @@ Reporting-Endpoints: csp-endpoint="<sentry-security-endpoint>"
 `<s3-upload-host>` is the bucket's regional S3 endpoint that presigned PUT URLs point to. The Razorpay hosts are taken from Razorpay's current CSP guidance and re-checked before launch.
 
 - The policy ships in `Content-Security-Policy-Report-Only` on staging for a week first, then is enforced. Violations are reported to Sentry.
-- No `'unsafe-eval'` in production, and `'unsafe-inline'` only for style *attributes* (`style-src-attr`): `next/image` and Radix write `style="..."` into server HTML, which a nonce cannot cover. Scripts and `<style>` elements are nonce-only. `<s3-upload-host>` is also in `img-src`/`media-src` because private chat attachments redirect to a presigned S3 URL.
+- No `'unsafe-eval'` in production, and `'unsafe-inline'` only for style _attributes_ (`style-src-attr`): `next/image` and Radix write `style="..."` into server HTML, which a nonce cannot cover. Scripts and `<style>` elements are nonce-only. `<s3-upload-host>` is also in `img-src`/`media-src` because private chat attachments redirect to a presigned S3 URL.
 - Runtime config: `CSP_MODE` (`enforce` by default, `report-only` for a staged rollout), `CSP_REPORT_URL` (Sentry security endpoint; default is the built-in `/csp-report` log sink), `CSP_UPLOAD_ORIGINS`, `MEDIA_PUBLIC_URL`, `APP_ORIGIN`.
 - No Cache Components or Partial Prefetching (a prerendered shell cannot carry the nonce); the root layout is `force-dynamic`.
 - No Third-party scripts are limited to Razorpay Checkout and Sentry, and each new one needs a security review.
 
 **Other headers** (set in `proxy.ts` and on CloudFront)
 
-| Header | Value |
-| --- | --- |
-| Strict-Transport-Security | `max-age=63072000; includeSubDomains; preload` |
-| X-Content-Type-Options | `nosniff` |
-| Referrer-Policy | `strict-origin-when-cross-origin` |
-| Permissions-Policy | `camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.razorpay.com")` |
-| Cross-Origin-Opener-Policy | `same-origin-allow-popups` (Razorpay opens a popup) |
-| X-Powered-By | Removed (`poweredByHeader: false`) |
+| Header                     | Value                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| Strict-Transport-Security  | `max-age=63072000; includeSubDomains; preload`                                             |
+| X-Content-Type-Options     | `nosniff`                                                                                  |
+| Referrer-Policy            | `strict-origin-when-cross-origin`                                                          |
+| Permissions-Policy         | `camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.razorpay.com")` |
+| Cross-Origin-Opener-Policy | `same-origin-allow-popups` (Razorpay opens a popup)                                        |
+| X-Powered-By               | Removed (`poweredByHeader: false`)                                                         |
 
 **XSS and injection**
 

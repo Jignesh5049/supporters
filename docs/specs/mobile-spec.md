@@ -8,26 +8,26 @@ The app migrates the existing Expo prototype in `mobile/` from mock data to the 
 
 We upgrade the prototype from Expo SDK 57 / React Native 0.86 to **Expo SDK 58 / React Native 0.88**, the latest stable pair as of 28 Oct 2026. Library versions follow Expo's bundled list, so `npx expo install --check` stays green.
 
-| Layer | Choice | Version | Notes |
-| --- | --- | --- | --- |
-| SDK | Expo (managed workflow, Continuous Native Generation) | 58.0.x | No ejected native folders in git |
-| Runtime | React Native (New Architecture, Hermes) / React | 0.88.1 / 19.3.0 | Pinned by SDK 58 |
-| Language | TypeScript, strict | 6.0.x | Expo's tested version. Moves to TS 7 when Expo supports it |
-| Navigation | Expo Router (file-based, typed routes) | \~58.0.27 | Replaces today's hand-rolled screen switching in `App.tsx` |
-| Server state | TanStack Query | 5.105.x | Caching, retries, infinite lists, optimistic likes |
-| Client state | Zustand | 5.0.x | Session and UI state only. Replaces the single large `AppContext` |
-| Forms | react-hook-form + Zod (from `packages/shared`) | 7.91 / 4.6 | Same validation as the API |
-| Lists | @shopify/flash-list | 2.3.x | Feed, chat, search results |
-| Images | expo-image | \~58.0.17 | Disk cache, blurhash placeholders |
-| Animation and gestures | Reanimated + Gesture Handler | 4.7.1 / \~3.3 |  |
-| Secure storage | expo-secure-store | \~58.0.2 | Android Keystore and iOS Keychain |
-| Biometrics | expo-local-authentication | \~58.0.2 | Optional app lock, and confirming withdrawals |
-| Push | expo-notifications | \~58.1.6 | Expo Push through FCM and APNs |
-| Media | expo-image-picker + expo-image-manipulator | \~58.0.x | Compress before upload |
-| Realtime | socket.io-client | 4.8.x | Matches the server |
-| Updates | expo-updates (EAS Update) | \~58.0.18 | Signed OTA updates for JS-only fixes |
-| Errors | @sentry/react-native | \~8.28.0 (SDK 58 bundled) | Crash and performance monitoring |
-| Tests | jest-expo + @testing-library/react-native, Maestro for E2E | 58.0.x / 14.1 / 2.1 |  |
+| Layer                  | Choice                                                     | Version                   | Notes                                                             |
+| ---------------------- | ---------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| SDK                    | Expo (managed workflow, Continuous Native Generation)      | 58.0.x                    | No ejected native folders in git                                  |
+| Runtime                | React Native (New Architecture, Hermes) / React            | 0.88.1 / 19.3.0           | Pinned by SDK 58                                                  |
+| Language               | TypeScript, strict                                         | 6.0.x                     | Expo's tested version. Moves to TS 7 when Expo supports it        |
+| Navigation             | Expo Router (file-based, typed routes)                     | \~58.0.27                 | Replaces today's hand-rolled screen switching in `App.tsx`        |
+| Server state           | TanStack Query                                             | 5.105.x                   | Caching, retries, infinite lists, optimistic likes                |
+| Client state           | Zustand                                                    | 5.0.x                     | Session and UI state only. Replaces the single large `AppContext` |
+| Forms                  | react-hook-form + Zod (from `packages/shared`)             | 7.91 / 4.6                | Same validation as the API                                        |
+| Lists                  | @shopify/flash-list                                        | 2.3.x                     | Feed, chat, search results                                        |
+| Images                 | expo-image                                                 | \~58.0.17                 | Disk cache, blurhash placeholders                                 |
+| Animation and gestures | Reanimated + Gesture Handler                               | 4.7.1 / \~3.3             |                                                                   |
+| Secure storage         | expo-secure-store                                          | \~58.0.2                  | Android Keystore and iOS Keychain                                 |
+| Biometrics             | expo-local-authentication                                  | \~58.0.2                  | Optional app lock, and confirming withdrawals                     |
+| Push                   | expo-notifications                                         | \~58.1.6                  | Expo Push through FCM and APNs                                    |
+| Media                  | expo-image-picker + expo-image-manipulator                 | \~58.0.x                  | Compress before upload                                            |
+| Realtime               | socket.io-client                                           | 4.8.x                     | Matches the server                                                |
+| Updates                | expo-updates (EAS Update)                                  | \~58.0.18                 | Signed OTA updates for JS-only fixes                              |
+| Errors                 | @sentry/react-native                                       | \~8.28.0 (SDK 58 bundled) | Crash and performance monitoring                                  |
+| Tests                  | jest-expo + @testing-library/react-native, Maestro for E2E | 58.0.x / 14.1 / 2.1       |                                                                   |
 
 Also in use: react-native-mmkv 4.3.x (encrypted query cache), expo-screen-capture \~58.0.6, expo-image-manipulator \~58.0.15, and expo-image-picker \~58.0.10. The app lives in the pnpm workspace as `apps/mobile` and imports types, Zod schemas and limits from `packages/shared`. Always add native libraries with `npx expo install` so versions match SDK 58.
 
@@ -62,18 +62,18 @@ apps/mobile/
 - **Premium:** `hub/premium` shows status, expiry and perks only. There is no buy button, price or link to the web checkout, to comply with Google Play and App Store billing rules (main spec, decision 10).
 - **Layout:** phone and portrait only (`supportsTablet: false`), light theme only, English strings in message files.
 
-| Screen area | Prototype today | Work left |
-| --- | --- | --- |
-| Sign in, sign up, forgot password | Done (mock auth) | OTP verify screen, reset password, wire to API |
-| Home feed, create post | Done | Infinite feed, comments sheet, video upload |
-| Discover, search | Done (local filter) | Server search, filters, buyer requirements list and form |
-| Business page, product detail | Done | Service detail screen, reviews, follow and save on the API |
-| Messages | Static list and thread | Socket.IO realtime, attachments, read receipts |
-| Notifications | Done (mock) | API list, push, deep-link taps |
-| Business Hub, edit, posts, settings | Done | Products and services CRUD screens, enquiry inbox |
-| Wallet, withdraw, history, referral | Done | API wiring, biometric confirm on withdraw |
-| Subscription | Done | Status-only Premium screen; remove the prototype's subscribe button (no purchases in the app) |
-| Settings, saved, profile | Done | Session list, notification preferences, account delete |
+| Screen area                         | Prototype today        | Work left                                                                                     |
+| ----------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
+| Sign in, sign up, forgot password   | Done (mock auth)       | OTP verify screen, reset password, wire to API                                                |
+| Home feed, create post              | Done                   | Infinite feed, comments sheet, video upload                                                   |
+| Discover, search                    | Done (local filter)    | Server search, filters, buyer requirements list and form                                      |
+| Business page, product detail       | Done                   | Service detail screen, reviews, follow and save on the API                                    |
+| Messages                            | Static list and thread | Socket.IO realtime, attachments, read receipts                                                |
+| Notifications                       | Done (mock)            | API list, push, deep-link taps                                                                |
+| Business Hub, edit, posts, settings | Done                   | Products and services CRUD screens, enquiry inbox                                             |
+| Wallet, withdraw, history, referral | Done                   | API wiring, biometric confirm on withdraw                                                     |
+| Subscription                        | Done                   | Status-only Premium screen; remove the prototype's subscribe button (no purchases in the app) |
+| Settings, saved, profile            | Done                   | Session list, notification preferences, account delete                                        |
 
 ## UI system
 
@@ -142,22 +142,22 @@ All server data goes through TanStack Query hooks built on one typed API client.
 
 The mobile standard is OWASP MASVS 2.x (L1, plus L2 controls for auth and money). The app holds no secrets: every rule that matters is enforced by the API, and the app only adds defence in depth.
 
-| Area | Rule |
-| --- | --- |
-| Token storage | Access and refresh tokens go in expo-secure-store with `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`. Never in AsyncStorage, MMKV, logs or Redux-style dev tools |
-| Cached data | The MMKV cache is encrypted with a random key kept in SecureStore, and wiped on sign out |
-| Secrets in the bundle | None. `EXPO_PUBLIC_*` variables hold public values only (API URL, Sentry DSN, Razorpay key id). Keys and secrets stay on the server |
-| Transport | HTTPS only. Android `usesCleartextTraffic=false` with a network security config, and iOS ATS left on. Certificate pinning is skipped in v1 because rotation would break old installs; revisit after launch |
-| Auth UX | The OTP field uses one-time-code autofill. Biometric confirmation before a withdrawal or a payout-details change. Optional app lock |
-| Deep links | Verified App Links and Universal Links. Every route param is validated with Zod, and links never perform an action without a user tap |
-| WebViews | Only for Razorpay checkout and legal pages. The origin is allow-listed, `javascriptEnabled` is on only where needed, and there is no `injectedJavaScript` that touches tokens |
-| Screenshots | `FLAG_SECURE` (expo-screen-capture) on the wallet, withdraw and OTP screens |
-| Logging | No `console.log` in release builds (Babel transform). Sentry scrubs tokens, phone numbers and payout fields before sending |
-| Clipboard | The referral code may be copied. OTPs and tokens are never written to the clipboard |
-| Release hardening | Hermes bytecode, Android R8 minification, `debuggable=false`, no dev menu, and Google Play Integrity / App Attest checks on sign-up and withdrawal (verified server-side) |
-| Permissions | Ask only for camera, photos and notifications, each when it is first needed. No contacts or location access in v1 |
-| Updates | EAS Update code signing is on, so the app rejects any unsigned OTA bundle |
-| Dependencies | Lockfile committed, `expo install --check` in CI, Renovate updates, and `pnpm audit` gating merges |
+| Area                  | Rule                                                                                                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Token storage         | Access and refresh tokens go in expo-secure-store with `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`. Never in AsyncStorage, MMKV, logs or Redux-style dev tools                                    |
+| Cached data           | The MMKV cache is encrypted with a random key kept in SecureStore, and wiped on sign out                                                                                                                   |
+| Secrets in the bundle | None. `EXPO_PUBLIC_*` variables hold public values only (API URL, Sentry DSN, Razorpay key id). Keys and secrets stay on the server                                                                        |
+| Transport             | HTTPS only. Android `usesCleartextTraffic=false` with a network security config, and iOS ATS left on. Certificate pinning is skipped in v1 because rotation would break old installs; revisit after launch |
+| Auth UX               | The OTP field uses one-time-code autofill. Biometric confirmation before a withdrawal or a payout-details change. Optional app lock                                                                        |
+| Deep links            | Verified App Links and Universal Links. Every route param is validated with Zod, and links never perform an action without a user tap                                                                      |
+| WebViews              | Only for Razorpay checkout and legal pages. The origin is allow-listed, `javascriptEnabled` is on only where needed, and there is no `injectedJavaScript` that touches tokens                              |
+| Screenshots           | `FLAG_SECURE` (expo-screen-capture) on the wallet, withdraw and OTP screens                                                                                                                                |
+| Logging               | No `console.log` in release builds (Babel transform). Sentry scrubs tokens, phone numbers and payout fields before sending                                                                                 |
+| Clipboard             | The referral code may be copied. OTPs and tokens are never written to the clipboard                                                                                                                        |
+| Release hardening     | Hermes bytecode, Android R8 minification, `debuggable=false`, no dev menu, and Google Play Integrity / App Attest checks on sign-up and withdrawal (verified server-side)                                  |
+| Permissions           | Ask only for camera, photos and notifications, each when it is first needed. No contacts or location access in v1                                                                                          |
+| Updates               | EAS Update code signing is on, so the app rejects any unsigned OTA bundle                                                                                                                                  |
+| Dependencies          | Lockfile committed, `expo install --check` in CI, Renovate updates, and `pnpm audit` gating merges                                                                                                         |
 
 ## Performance, accessibility and testing
 
@@ -186,11 +186,11 @@ The app supports Android 7.0+ (API 24, the Expo SDK 58 minimum, targeting API 36
 
 EAS Build produces every binary and EAS Update ships signed JavaScript-only fixes. Android goes to the Play Store first; iOS follows once the client confirms it.
 
-| Profile | Build | API | Distribution |
-| --- | --- | --- | --- |
-| `development` | Dev client | Local or staging | Team devices |
-| `preview` | Release APK | Staging | Internal testers through EAS internal distribution |
-| `production` | AAB (Android), IPA (iOS) | Production | Play Store (internal → closed → production tracks), TestFlight → App Store |
+| Profile       | Build                    | API              | Distribution                                                               |
+| ------------- | ------------------------ | ---------------- | -------------------------------------------------------------------------- |
+| `development` | Dev client               | Local or staging | Team devices                                                               |
+| `preview`     | Release APK              | Staging          | Internal testers through EAS internal distribution                         |
+| `production`  | AAB (Android), IPA (iOS) | Production       | Play Store (internal → closed → production tracks), TestFlight → App Store |
 
 - App identity: Android package `com.supporters.app` (already set) and iOS bundle id `com.supporters.app`. Signing credentials are managed by EAS and never stored in git.
 - Versioning: semver `version` for users, with `runtimeVersion` from the fingerprint policy so OTA updates only reach compatible binaries.

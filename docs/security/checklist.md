@@ -32,24 +32,24 @@ Status: **Done** (enforced and tested), **Partial** (enforced, test or scope inc
 
 ## MASVS (mobile)
 
-| Group | Control | Enforced in | Tested in | Status |
-| --- | --- | --- | --- | --- |
-| STORAGE | Tokens in Keystore/Keychain via SecureStore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY` | `apps/mobile/src/lib/auth/token-storage.ts` | `token-storage.test.ts` | Done |
-| STORAGE | Cached private data (chat outbox) in MMKV with AES-256, random key in SecureStore, wiped on sign-out; no AsyncStorage dependency | `src/lib/storage/encrypted-storage.ts` | `src/security/config.test.js` | Done |
-| STORAGE | Cloud backup disabled (`allowBackup: false`); no tokens, passwords or OTPs in logs | `app.json`, code review | `src/security/config.test.js` | Done |
-| STORAGE | Private chat images use memory-only cache | `MessageBubble.tsx` | review | Done |
-| CRYPTO | No custom crypto; no secrets in the bundle | review, bundle grep (below) | PR 3 bundle check | Done |
-| AUTH | Refresh rotation and reuse detection (server); biometric gate for payouts | API, `expo-local-authentication` | API tests | Partial: biometric flow not covered by an automated test |
-| NETWORK | HTTPS only in release (`resolveApiUrl`), `usesCleartextTraffic: false`, EAS release profiles https | `src/lib/api/config.ts`, `app.json` | `config.test.js`, `session.test.ts` (`resolveApiUrl`) | Done |
-| NETWORK | Certificate pinning | none | none | Gap 3 (accepted risk, see below) |
-| PLATFORM | Permissions minimised (`CAMERA`, biometric); storage permissions blocked | `app.json` | `config.test.js` | Done |
-| PLATFORM | Deep links: route params validated with Zod; push `data.url` checked against an in-app allow-list, ids path-encoded | `src/lib/push/safe-route.ts`, screens' `paramsSchema` | `safe-route.test.ts` | Done |
-| PLATFORM | External links: `https` only via `safeWebUrl`; `tel:` built from digits; no WebView in the app | `src/features/business/labels.ts` | `config.test.js`, `labels.test.ts` | Done |
-| PLATFORM | `FLAG_SECURE` (via `expo-screen-capture`) on OTP, wallet, withdrawal, **and verification (KYC)** screens | `src/hooks/useScreenSecurity.ts` | `config.test.js` | Done |
-| CODE | Release minify and resource shrinking; Hermes bytecode; EAS secrets stay out of the repo | `app.json` (`expo-build-properties`) | `config.test.js` | Done |
-| CODE | Dependencies audited and pinned | `security.yml` | CI | Done |
-| RESILIENCE | Root/jailbreak detection, anti-tamper, obfuscation beyond minify | none | none | Gap 3 (not required at L1; revisit with payments) |
-| PRIVACY | Private screens excluded from screenshots; DPDP data export/delete flows | see spec | n/a | Partial: DPDP flows not built yet |
+| Group      | Control                                                                                                                          | Enforced in                                           | Tested in                                             | Status                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| STORAGE    | Tokens in Keystore/Keychain via SecureStore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`                                                    | `apps/mobile/src/lib/auth/token-storage.ts`           | `token-storage.test.ts`                               | Done                                                     |
+| STORAGE    | Cached private data (chat outbox) in MMKV with AES-256, random key in SecureStore, wiped on sign-out; no AsyncStorage dependency | `src/lib/storage/encrypted-storage.ts`                | `src/security/config.test.js`                         | Done                                                     |
+| STORAGE    | Cloud backup disabled (`allowBackup: false`); no tokens, passwords or OTPs in logs                                               | `app.json`, code review                               | `src/security/config.test.js`                         | Done                                                     |
+| STORAGE    | Private chat images use memory-only cache                                                                                        | `MessageBubble.tsx`                                   | review                                                | Done                                                     |
+| CRYPTO     | No custom crypto; no secrets in the bundle                                                                                       | review, bundle grep (below)                           | PR 3 bundle check                                     | Done                                                     |
+| AUTH       | Refresh rotation and reuse detection (server); biometric gate for payouts                                                        | API, `expo-local-authentication`                      | API tests                                             | Partial: biometric flow not covered by an automated test |
+| NETWORK    | HTTPS only in release (`resolveApiUrl`), `usesCleartextTraffic: false`, EAS release profiles https                               | `src/lib/api/config.ts`, `app.json`                   | `config.test.js`, `session.test.ts` (`resolveApiUrl`) | Done                                                     |
+| NETWORK    | Certificate pinning                                                                                                              | none                                                  | none                                                  | Gap 3 (accepted risk, see below)                         |
+| PLATFORM   | Permissions minimised (`CAMERA`, biometric); storage permissions blocked                                                         | `app.json`                                            | `config.test.js`                                      | Done                                                     |
+| PLATFORM   | Deep links: route params validated with Zod; push `data.url` checked against an in-app allow-list, ids path-encoded              | `src/lib/push/safe-route.ts`, screens' `paramsSchema` | `safe-route.test.ts`                                  | Done                                                     |
+| PLATFORM   | External links: `https` only via `safeWebUrl`; `tel:` built from digits; no WebView in the app                                   | `src/features/business/labels.ts`                     | `config.test.js`, `labels.test.ts`                    | Done                                                     |
+| PLATFORM   | `FLAG_SECURE` (via `expo-screen-capture`) on OTP, wallet, withdrawal, **and verification (KYC)** screens                         | `src/hooks/useScreenSecurity.ts`                      | `config.test.js`                                      | Done                                                     |
+| CODE       | Release minify and resource shrinking; Hermes bytecode; EAS secrets stay out of the repo                                         | `app.json` (`expo-build-properties`)                  | `config.test.js`                                      | Done                                                     |
+| CODE       | Dependencies audited and pinned                                                                                                  | `security.yml`                                        | CI                                                    | Done                                                     |
+| RESILIENCE | Root/jailbreak detection, anti-tamper, obfuscation beyond minify                                                                 | none                                                  | none                                                  | Gap 3 (not required at L1; revisit with payments)        |
+| PRIVACY    | Private screens excluded from screenshots; DPDP data export/delete flows                                                         | see spec                                              | n/a                                                   | Partial: DPDP flows not built yet                        |
 
 ## Gaps and accepted risks
 
