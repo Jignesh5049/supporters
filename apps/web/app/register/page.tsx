@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -20,14 +20,20 @@ export default function RegisterPage() {
   const form = useForm({ resolver: zodResolver(registerFormSchema) });
   const { errors } = form.formState;
 
-  const handleSubmit = form.handleSubmit(async ({ name, phone, password }) => {
+  // An invite link (/register?ref=CODE) prefills the code. Read after hydration, not during it.
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) form.setValue('referralCode', ref.slice(0, 16));
+  }, [form]);
+
+  const handleSubmit = form.handleSubmit(async ({ name, phone, password, referralCode }) => {
     // A failure is shown from `sendOtp.error`.
     const isSent = await sendOtp.mutateAsync({ purpose: OtpPurpose.Signup, phone }).then(
       () => true,
       () => false,
     );
     if (!isSent) return;
-    pendingFlow.setSignup({ name, phone, password });
+    pendingFlow.setSignup({ name, phone, password, ...(referralCode ? { referralCode } : {}) });
     router.push('/verify');
   });
 
@@ -85,6 +91,20 @@ export default function RegisterPage() {
                 {...form.register('confirmPassword')}
               />
             </div>
+
+            <FormField
+              label="Referral code (optional)"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              placeholder="From a friend's invite"
+              error={
+                errors.referralCode?.message
+                  ? 'Enter the 8-character code, or leave it empty'
+                  : undefined
+              }
+              {...form.register('referralCode')}
+            />
 
             <p className="text-xs text-muted-foreground">
               By continuing you agree to our{' '}

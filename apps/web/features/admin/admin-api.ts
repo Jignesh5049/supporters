@@ -7,6 +7,7 @@ import type {
   AdminUser,
   AdminUserState,
   AdminVerification,
+  AdminWithdrawal,
   AuditLog,
   CreateCategoryInput,
   DocumentLink,
@@ -15,6 +16,7 @@ import type {
   ReportActionResult,
   UpdateCategoryInput,
   VerificationRequestStatus,
+  WithdrawalStatus,
 } from '@supporters/shared';
 import { api } from '@/lib/api/client';
 
@@ -72,6 +74,18 @@ export const adminApi = {
     api.request<AdminCategory>(`/v1/admin/categories/${id}`, { method: 'PATCH', body }),
   deleteCategory: (id: string) => api.request(`/v1/admin/categories/${id}`, { method: 'DELETE' }),
 
+  withdrawals: (status: WithdrawalStatus, cursor?: string) =>
+    api.request<Page<AdminWithdrawal>>(`/v1/admin/withdrawals${queryString({ status, cursor })}`),
+  approveWithdrawal: (id: string) =>
+    api.request<AdminWithdrawal>(`/v1/admin/withdrawals/${id}/approve`, { method: 'POST' }),
+  rejectWithdrawal: (id: string, reason: string) =>
+    api.request<AdminWithdrawal>(`/v1/admin/withdrawals/${id}/reject`, {
+      method: 'POST',
+      body: { reason },
+    }),
+  retryWithdrawal: (id: string) =>
+    api.request<AdminWithdrawal>(`/v1/admin/withdrawals/${id}/retry`, { method: 'POST' }),
+
   auditLogs: (filters: { action?: string; targetId?: string }, cursor?: string) =>
     api.request<Page<AuditLog>>(`/v1/admin/audit-logs${queryString({ ...filters, cursor })}`),
 };
@@ -79,6 +93,7 @@ export const adminApi = {
 export const adminKeys = {
   all: ['admin'] as const,
   verifications: (status: string) => ['admin', 'verifications', status] as const,
+  withdrawals: (status: string) => ['admin', 'withdrawals', status] as const,
   reports: (status: string, targetType: string) =>
     ['admin', 'reports', status, targetType] as const,
   users: (q: string) => ['admin', 'users', q] as const,

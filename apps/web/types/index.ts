@@ -160,63 +160,6 @@ export interface UserProfile {
   businessId?: string;
 }
 
-export interface ReferralStat {
-  code: string;
-  totalReferrals: number;
-  successful: number;
-  pending: number;
-  failedOrIneligible: number;
-  rewardsEarned: number;
-  maxRewardLimit: number;
-  history: {
-    id: string;
-    name: string;
-    businessName: string;
-    city: string;
-    date: string;
-    status: 'Successful' | 'Pending' | 'Ineligible' | 'Failed';
-    rewardAmount: number;
-    notes?: string;
-  }[];
-}
-
-export interface WalletTransaction {
-  id: string;
-  referenceId: string;
-  title: string;
-  amount: number;
-  type: 'referral_reward' | 'withdrawal' | 'bonus' | 'refund';
-  status: 'Completed' | 'Pending' | 'Failed' | 'Reversed';
-  createdAt: string;
-  description?: string;
-  withdrawalMethod?: 'UPI' | 'Bank Account';
-  payoutDetails?: string;
-}
-
-export interface WithdrawalRequest {
-  id: string;
-  referenceId: string;
-  amount: number;
-  method: 'UPI' | 'Bank Account';
-  upiId?: string;
-  accountHolderName?: string;
-  accountNumber?: string;
-  ifscCode?: string;
-  bankName?: string;
-  status: 'Pending' | 'Processing' | 'Completed' | 'Rejected';
-  createdAt: string;
-  estimatedDate?: string;
-}
-
-export interface WalletSummary {
-  availableBalance: number;
-  totalReferralEarnings: number;
-  totalWithdrawn: number;
-  pendingWithdrawals: number;
-  transactions: WalletTransaction[];
-  withdrawalRequests: WithdrawalRequest[];
-}
-
 export interface Review {
   id: string;
   authorName: string;
