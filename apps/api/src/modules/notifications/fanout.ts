@@ -366,6 +366,31 @@ export class NotificationFanout {
           },
         ];
       }
+      case 'withdrawal.approved':
+      case 'withdrawal.paid':
+      case 'withdrawal.rejected': {
+        const { withdrawalId } = payload as DomainEvents['withdrawal.approved'];
+        const withdrawal = await tx.withdrawal.findUnique({
+          where: { id: withdrawalId },
+          select: { userId: true },
+        });
+        if (!withdrawal) return [];
+        return [
+          {
+            userId: withdrawal.userId,
+            type:
+              type === 'withdrawal.approved'
+                ? NotificationType.WithdrawalApproved
+                : type === 'withdrawal.paid'
+                  ? NotificationType.WithdrawalPaid
+                  : NotificationType.WithdrawalRejected,
+            actorUserId: null,
+            targetType: NotificationTargetType.Wallet,
+            targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
       case 'security.payout_details_changed': {
         const { userId } = payload as DomainEvents['security.payout_details_changed'];
         return [

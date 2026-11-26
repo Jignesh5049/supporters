@@ -56,6 +56,11 @@ import { postsRoutes } from './modules/posts/posts.routes';
 import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ReportTargets } from './modules/reports/report-targets';
+import { PayoutAccountService } from './modules/payouts/payout-account.service';
+import { createPayoutsRuntime } from './modules/payouts/payouts.config';
+import type { PayoutsProvider } from './modules/payouts/payouts.provider';
+import { payoutsRoutes } from './modules/payouts/payouts.routes';
+import { WithdrawalsService } from './modules/payouts/withdrawals.service';
 import { ReferralsService } from './modules/referrals/referrals.service';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { ReportsService } from './modules/reports/reports.service';
@@ -97,6 +102,8 @@ export interface BuildAppOptions {
   sms?: SmsSender;
   breachChecker?: BreachedPasswordChecker;
   storage?: ObjectStorage;
+  /** Tests: stands in for the provider the env selects (FakePayouts). */
+  payouts?: PayoutsProvider;
   logger?: FastifyServerOptions['logger'];
   /** Tests only: sees every route as it is registered (the route-matrix test). */
   onRoute?: (route: RouteOptions) => void;
@@ -231,6 +238,7 @@ export async function buildApp(options: BuildAppOptions) {
   const reportTargets = new ReportTargets(app.prisma);
   const adminUsers = new AdminUsersService(app.prisma, sessions);
   const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
+  const payoutsRuntime = createPayoutsRuntime(env, options.payouts);
   const referrals = new ReferralsService(app.prisma, env.OTP_HMAC_KEY);
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
@@ -285,6 +293,8 @@ export async function buildApp(options: BuildAppOptions) {
     reviews: new ReviewsService(app.prisma, businesses, blocks),
     referrals,
     wallet: new WalletService(app.prisma),
+    payoutAccounts: new PayoutAccountService(app.prisma, payoutsRuntime, app.limiter),
+    withdrawals: new WithdrawalsService(app.prisma, payoutsRuntime),
   });
 
   await app.register(realtimePlugin);
@@ -317,6 +327,7 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(requirementsRoutes);
       await v1.register(reviewsRoutes);
       await v1.register(walletRoutes);
+      await v1.register(payoutsRoutes);
     },
     { prefix: '/v1' },
   );

@@ -31,6 +31,7 @@ export interface LedgerPosting {
   entryKey: string;
   description: string;
   referralId?: string;
+  withdrawalId?: string;
 }
 
 /** Appends one entry. Returns false when `entryKey` was already posted (idempotent replay). */
@@ -39,9 +40,11 @@ export async function appendEntry(
   posting: LedgerPosting,
 ): Promise<boolean> {
   const rows = await tx.$executeRaw`
-    INSERT INTO wallet_ledger (user_id, type, amount_paise, entry_key, description, referral_id)
+    INSERT INTO wallet_ledger (user_id, type, amount_paise, entry_key, description, referral_id,
+                               withdrawal_id)
     VALUES (${posting.userId}::uuid, ${posting.type}::ledger_entry_type, ${posting.amountPaise},
-            ${posting.entryKey}, ${posting.description}, ${posting.referralId ?? null}::uuid)
+            ${posting.entryKey}, ${posting.description}, ${posting.referralId ?? null}::uuid,
+            ${posting.withdrawalId ?? null}::uuid)
     ON CONFLICT (entry_key) DO NOTHING`;
   return rows === 1;
 }

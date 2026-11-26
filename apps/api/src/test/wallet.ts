@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { CURRENT_POLICY_VERSION } from '@supporters/shared';
 import { recordEvent } from '../modules/notifications/outbox';
 import { ReferralsService } from '../modules/referrals/referrals.service';
@@ -93,4 +93,82 @@ export async function referrerWithReferred(ctx: TestContext, count: number) {
     referred.push(userId);
   }
   return { referrer, code, referred };
+}
+
+/** Env for an app with payouts on and the fake provider. */
+export const PAYOUT_TEST_KEY = randomBytes(32);
+export const payoutEnv = {
+  PAYOUTS_PROVIDER: 'fake',
+  PAYOUT_ENCRYPTION_KEY: PAYOUT_TEST_KEY.toString('base64'),
+};
+
+export const BANK = { method: 'bank', accountNumber: '123456789012', ifsc: 'HDFC0001234' } as const;
+export const UPI = { method: 'upi', upiId: 'ravi.kumar@okaxis' } as const;
+
+type Method = 'GET' | 'POST' | 'PUT';
+export function api(
+  ctx: TestContext,
+  method: Method,
+  url: string,
+  user?: MobileSession,
+  options: { body?: object; key?: string | null } = {},
+) {
+  return ctx.app.inject({
+    method,
+    url,
+    headers: {
+      ...(user ? { authorization: `Bearer ${user.accessToken}` } : {}),
+      ...(options.key === null ? {} : options.key ? { 'idempotency-key': options.key } : {}),
+    },
+    remoteAddress: nextIp(),
+    ...(options.body ? { payload: options.body } : {}),
+  });
+}
+
+/** Sets a payout account through the endpoint; the holder name defaults to the profile name. */
+export function putAccount(
+  ctx: TestContext,
+  user: MobileSession,
+  details: object = BANK,
+  holderName = 'Ravi Kumar',
+) {
+  return api(ctx, 'PUT', '/v1/me/payout-account', user, { body: { ...details, holderName } });
+}
+
+/** Moves the live payout account's creation back, past the 24-hour withdrawal cooldown. */
+export const ageAccount = (userId: string, hours = 25) =>
+  prisma.$executeRaw`UPDATE payout_accounts SET created_at = created_at - make_interval(hours => ${hours}) WHERE user_id = ${userId}::uuid`;
+
+/** Credits the wallet the way an admin bonus will (a ledger entry, nothing else). */
+export const fund = (userId: string, paise: number) =>
+  prisma.walletLedger.create({
+    data: {
+      userId,
+      type: 'bonus',
+      amountPaise: BigInt(paise),
+      entryKey: `fund:${randomUUID()}`,
+      description: 'test funds',
+    },
+  });
+
+export const balanceOfUser = async (userId: string) =>
+  (await prisma.walletLedger.aggregate({ where: { userId }, _sum: { amountPaise: true } }))._sum
+    .amountPaise ?? 0n;
+
+/** A user named "Ravi Kumar" who is ready to withdraw: account set and aged, wallet funded. */
+export async function readyUser(ctx: TestContext, paise = 50_000) {
+  const { response, phone } = await registerWithCode(ctx, undefined);
+  const body = response.json<{ accessToken: string; refreshToken: string; user: { id: string } }>();
+  const user: MobileSession = {
+    phone,
+    user: body.user,
+    accessToken: body.accessToken,
+    refreshToken: body.refreshToken,
+    expiresIn: 900,
+  };
+  const set = await putAccount(ctx, user);
+  if (set.statusCode !== 200) throw new Error(set.body);
+  await ageAccount(user.user.id);
+  if (paise > 0) await fund(user.user.id, paise);
+  return user;
 }
