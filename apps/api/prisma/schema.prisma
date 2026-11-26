@@ -1506,6 +1506,8 @@ model PremiumListingHold {
   @@unique([kind, listingId], map: "uq_premium_listing_holds_kind_listing_id")
   @@index([businessId], map: "idx_premium_listing_holds_business_id")
   @@map("premium_listing_holds")
+}
+
 // Referrals and the wallet (product spec, Referral and earn, Wallet; backend spec, Security:
 // Payments and money). Money is integer paise (BIGINT).
 
