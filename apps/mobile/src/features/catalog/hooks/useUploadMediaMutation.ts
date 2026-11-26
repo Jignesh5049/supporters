@@ -22,8 +22,8 @@ export function useUploadMediaMutation() {
       // Step 2: Direct HTTP PUT upload to S3/storage
       await uploadsApi.uploadToStorage(presigned, fileUri, contentType);
 
-      // Step 3: Complete upload record
-      return await uploadsApi.complete(presigned.id);
+      // Step 3: Complete the upload, then wait for the media job to make it usable
+      return await uploadsApi.waitUntilReady(await uploadsApi.complete(presigned.id));
     },
   });
 }

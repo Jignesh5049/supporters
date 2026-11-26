@@ -12,6 +12,7 @@ import type { Env } from './config/env';
 import type { PrismaClient } from './generated/prisma/client';
 import { AdminCategoriesService } from './modules/admin/admin-categories.service';
 import { AdminReportsService } from './modules/admin/admin-reports.service';
+import { AdminWithdrawalsService } from './modules/admin/admin-withdrawals.service';
 import { AdminUsersService } from './modules/admin/admin-users.service';
 import { AdminVerificationsService } from './modules/admin/admin-verifications.service';
 import { adminRoutes } from './modules/admin/admin.routes';
@@ -56,6 +57,14 @@ import { postsRoutes } from './modules/posts/posts.routes';
 import { PostsService } from './modules/posts/posts.service';
 import { productsRoutes } from './modules/products/products.routes';
 import { ReportTargets } from './modules/reports/report-targets';
+import { PayoutAccountService } from './modules/payouts/payout-account.service';
+import { createPayoutsRuntime } from './modules/payouts/payouts.config';
+import type { PayoutsProvider } from './modules/payouts/payouts.provider';
+import { payoutsRoutes } from './modules/payouts/payouts.routes';
+import { RazorpayxWebhookService } from './modules/payouts/razorpayx-webhook.service';
+import { razorpayxWebhookRoutes } from './modules/payouts/webhooks.routes';
+import { WithdrawalsService } from './modules/payouts/withdrawals.service';
+import { ReferralsService } from './modules/referrals/referrals.service';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { ReportsService } from './modules/reports/reports.service';
 import { requirementsRoutes } from './modules/requirements/requirements.routes';
@@ -70,11 +79,12 @@ import { searchRoutes } from './modules/search/search.routes';
 import { SearchService } from './modules/search/search.service';
 import { SaveLookup, SavesService } from './modules/saves/saves.service';
 import { servicesRoutes } from './modules/services/services.routes';
-import { type MediaProcessor, PassthroughMediaProcessor } from './modules/uploads/media-processor';
 import { type ObjectStorage, S3Storage, createS3Client } from './modules/uploads/storage';
 import { uploadsRoutes } from './modules/uploads/uploads.routes';
 import { UploadsService } from './modules/uploads/uploads.service';
 import { ServicesService } from './modules/services/services.service';
+import { WalletService } from './modules/wallet/wallet.service';
+import { walletRoutes } from './modules/wallet/wallet.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { verificationRoutes } from './modules/verification/verification.routes';
 import { VerificationService } from './modules/verification/verification.service';
@@ -95,7 +105,8 @@ export interface BuildAppOptions {
   sms?: SmsSender;
   breachChecker?: BreachedPasswordChecker;
   storage?: ObjectStorage;
-  mediaProcessor?: MediaProcessor;
+  /** Tests: stands in for the provider the env selects (FakePayouts). */
+  payouts?: PayoutsProvider;
   logger?: FastifyServerOptions['logger'];
   /** Tests only: sees every route as it is registered (the route-matrix test). */
   onRoute?: (route: RouteOptions) => void;
@@ -131,6 +142,15 @@ const SENSITIVE_FIELDS = [
   'expoPushToken',
   'refresh_token',
   'access_token',
+  // Referrals and payouts: payout destinations are encrypted at rest and never logged.
+  'accountNumber',
+  'accountHolderName',
+  'holderName',
+  'beneficiaryName',
+  'destination',
+  'fundAccountId',
+  'referralCode',
+  'payoutDetails',
 ];
 
 /** Backend spec, Data protection: logs never carry credentials, tokens, OTPs, contact or payout details. */
@@ -144,11 +164,6 @@ export const REDACT_PATHS = [
 
 export async function buildApp(options: BuildAppOptions) {
   const { env } = options;
-  const mediaProcessor = options.mediaProcessor ?? new PassthroughMediaProcessor();
-  if (env.NODE_ENV === 'production' && mediaProcessor instanceof PassthroughMediaProcessor) {
-    // Images would be served with their EXIF and GPS metadata.
-    throw new Error('Refusing to start in production without a real media processor');
-  }
   const app = Fastify({
     logger: options.logger ?? {
       level: env.LOG_LEVEL,
@@ -214,7 +229,6 @@ export async function buildApp(options: BuildAppOptions) {
     app.prisma,
     app.limiter,
     storage,
-    mediaProcessor,
     env.MEDIA_PUBLIC_URL,
     app.log,
   );
@@ -227,6 +241,8 @@ export async function buildApp(options: BuildAppOptions) {
   const reportTargets = new ReportTargets(app.prisma);
   const adminUsers = new AdminUsersService(app.prisma, sessions);
   const searchCards = new SearchCards(app.prisma, (key) => uploads.publicUrl(key));
+  const payoutsRuntime = createPayoutsRuntime(env, options.payouts);
+  const referrals = new ReferralsService(app.prisma, env.OTP_HMAC_KEY);
   const chat = new ChatService(app.prisma, businesses, blocks, uploads, storage, app.limiter);
   app.decorate('services', {
     sessions,
@@ -238,6 +254,7 @@ export async function buildApp(options: BuildAppOptions) {
       sessions,
       breachChecker,
       env.TOTP_ENCRYPTION_KEY,
+      referrals,
     ),
     users: new UsersService(app.prisma),
     categories,
@@ -264,6 +281,7 @@ export async function buildApp(options: BuildAppOptions) {
       verifications: new AdminVerificationsService(app.prisma, storage),
       reports: new AdminReportsService(app.prisma, reportTargets, adminUsers),
       categories: new AdminCategoriesService(app.prisma),
+      withdrawals: new AdminWithdrawalsService(app.prisma),
     },
     search: new SearchService(createMeili(env.MEILI_URL, env.MEILI_SEARCH_KEY), searchCards),
     discover: new DiscoverService(app.prisma, searchCards),
@@ -277,6 +295,15 @@ export async function buildApp(options: BuildAppOptions) {
       blocks,
     ),
     reviews: new ReviewsService(app.prisma, businesses, blocks),
+    referrals,
+    wallet: new WalletService(app.prisma),
+    payoutAccounts: new PayoutAccountService(app.prisma, payoutsRuntime, app.limiter),
+    withdrawals: new WithdrawalsService(app.prisma, payoutsRuntime),
+    razorpayxWebhooks: new RazorpayxWebhookService(
+      app.prisma,
+      env.RAZORPAYX_WEBHOOK_SECRET ?? null,
+      app.log,
+    ),
   });
 
   await app.register(realtimePlugin);
@@ -308,6 +335,9 @@ export async function buildApp(options: BuildAppOptions) {
       await v1.register(discoverRoutes);
       await v1.register(requirementsRoutes);
       await v1.register(reviewsRoutes);
+      await v1.register(walletRoutes);
+      await v1.register(payoutsRoutes);
+      await v1.register(razorpayxWebhookRoutes);
     },
     { prefix: '/v1' },
   );

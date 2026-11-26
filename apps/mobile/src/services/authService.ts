@@ -23,6 +23,8 @@ export interface SignUpData {
   phone: string;
   password: string;
   otp: string;
+  /** A friend's referral code. Signup only: it cannot be added to an account later. */
+  referralCode?: string | undefined;
 }
 
 export interface ResetPasswordData {
@@ -82,6 +84,7 @@ export const authService = {
           password: data.password,
           otp: data.otp,
           policyVersion: CURRENT_POLICY_VERSION,
+          ...(data.referralCode ? { referralCode: data.referralCode } : {}),
         }),
       ),
     ),

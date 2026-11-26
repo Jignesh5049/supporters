@@ -92,6 +92,14 @@ model User {
   auditLogs            AuditLog[]
   reviews              Review[]
   subscriptions        Subscription[]
+  referralCode         ReferralCode?
+  referralsMade        Referral[]             @relation("ReferralReferrer")
+  referralsReceived    Referral[]             @relation("ReferralReferred")
+  wallet               Wallet?
+  walletLedger         WalletLedger[]
+  payoutAccounts       PayoutAccount[]
+  withdrawals          Withdrawal[]           @relation("WithdrawalOwner")
+  withdrawalsReviewed  Withdrawal[]           @relation("WithdrawalReviewer")
 
   @@map("users")
 }
@@ -452,9 +460,12 @@ enum UploadPurpose {
   @@map("upload_purpose")
 }
 
+/// pending -> processing -> ready | failed. rejected is legacy: nothing writes it any more.
 enum UploadStatus {
   pending
+  processing
   ready
+  failed
   rejected
 
   @@map("upload_status")
@@ -463,17 +474,19 @@ enum UploadStatus {
 /// A file uploaded straight to S3 through a presigned PUT (backend spec, Security: Uploads).
 /// Unreferenced uploads older than 24 h are orphans for the nightly cleanup job.
 model Upload {
-  id          String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId      String        @map("user_id") @db.Uuid
-  purpose     UploadPurpose
+  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String        @map("user_id") @db.Uuid
+  purpose       UploadPurpose
   /// Object key: public/<purpose>/<random> for public media, chat/ or kyc/ otherwise.
-  key         String        @unique(map: "uq_uploads_key")
-  contentType String        @map("content_type")
-  sizeBytes   Int           @map("size_bytes")
-  status      UploadStatus  @default(pending)
-  completedAt DateTime?     @map("completed_at") @db.Timestamptz(6)
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  key           String        @unique(map: "uq_uploads_key")
+  contentType   String        @map("content_type")
+  sizeBytes     Int           @map("size_bytes")
+  status        UploadStatus  @default(pending)
+  /// Why the upload is failed (a code from UPLOAD_FAILURE_MESSAGES in packages/shared).
+  failureReason String?       @map("failure_reason")
+  completedAt   DateTime?     @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   listingMedia         ListingMedia?
@@ -1493,4 +1506,231 @@ model PremiumListingHold {
   @@unique([kind, listingId], map: "uq_premium_listing_holds_kind_listing_id")
   @@index([businessId], map: "idx_premium_listing_holds_business_id")
   @@map("premium_listing_holds")
+// Referrals and the wallet (product spec, Referral and earn, Wallet; backend spec, Security:
+// Payments and money). Money is integer paise (BIGINT).
+
+enum ReferralStatus {
+  pending
+  successful
+  ineligible
+  failed
+
+  @@map("referral_status")
+}
+
+enum LedgerEntryType {
+  referral_reward
+  bonus
+  reversal
+  withdrawal
+
+  @@map("ledger_entry_type")
+}
+
+/// One unguessable code per user: 8 characters, stored upper-case so lookups are case-insensitive.
+model ReferralCode {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @unique(map: "uq_referral_codes_user_id") @map("user_id") @db.Uuid
+  code      String   @unique(map: "uq_referral_codes_code")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("referral_codes")
+}
+
+/// A referral is created at signup. It stays pending until the referred business buys Premium and
+/// the refund window passes (`eligible_at`), then a finalizer job credits the ledger.
+model Referral {
+  id                 String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  referrerUserId     String         @map("referrer_user_id") @db.Uuid
+  /// One referral per referred account.
+  referredUserId     String         @unique(map: "uq_referrals_referred_user_id") @map("referred_user_id") @db.Uuid
+  status             ReferralStatus @default(pending)
+  /// ReferralReason in packages/shared; always set, so every status shows why.
+  reason             String
+  /// HMAC of the referred phone, to spot a number that signed up before (deleted account).
+  phoneHash          String         @map("phone_hash")
+  /// HMAC of the signup IP. Recorded for review; not an automatic rule (shared office networks).
+  signupIpHash       String?        @map("signup_ip_hash")
+  /// Device key from attestation. HOOK: nothing sets it yet (see referrals.signals.ts).
+  deviceKeyHash      String?        @map("device_key_hash")
+  /// Play Integrity / App Attest result at signup; false blocks the reward. Null: not attested.
+  attestationPassed  Boolean?       @map("attestation_passed")
+  /// Set by premium.activated. Plain ids: the payments tables belong to the Premium module.
+  businessId         String?        @map("business_id") @db.Uuid
+  paymentId          String?        @map("payment_id") @db.Uuid
+  premiumActivatedAt DateTime?      @map("premium_activated_at") @db.Timestamptz(6)
+  /// premium_activated_at plus the 7-day refund window.
+  eligibleAt         DateTime?      @map("eligible_at") @db.Timestamptz(6)
+  rewardPaise        BigInt?        @map("reward_paise")
+  resolvedAt         DateTime?      @map("resolved_at") @db.Timestamptz(6)
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  referrer User           @relation("ReferralReferrer", fields: [referrerUserId], references: [id], onDelete: Restrict)
+  referred User           @relation("ReferralReferred", fields: [referredUserId], references: [id], onDelete: Restrict)
+  ledger   WalletLedger[]
+
+  @@index([referrerUserId, id], map: "idx_referrals_referrer_user_id_id")
+  @@index([phoneHash], map: "idx_referrals_phone_hash")
+  @@index([deviceKeyHash], map: "idx_referrals_device_key_hash")
+  /// The finalizer's scan.
+  @@index([eligibleAt], map: "idx_referrals_pending_eligible_at", where: raw("status = 'pending' AND eligible_at IS NOT NULL"))
+  @@map("referrals")
+}
+
+/// One row per user, locked with SELECT ... FOR UPDATE by every wallet change. Holds no balance:
+/// the balance is SUM(wallet_ledger.amount_paise).
+model Wallet {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId    String   @unique(map: "uq_wallets_user_id") @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("wallets")
+}
+
+/// Append-only (a trigger refuses UPDATE and DELETE). Positive amounts credit, negative debit.
+/// `entry_key` makes every posting idempotent: referral:<id>, withdrawal:<id>, ...
+model WalletLedger {
+  id           String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId       String          @map("user_id") @db.Uuid
+  type         LedgerEntryType
+  amountPaise  BigInt          @map("amount_paise")
+  entryKey     String          @unique(map: "uq_wallet_ledger_entry_key") @map("entry_key")
+  referralId   String?         @map("referral_id") @db.Uuid
+  withdrawalId String?         @map("withdrawal_id") @db.Uuid
+  /// Shown to the user (an admin's bonus reason, for example).
+  description  String
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  referral   Referral?   @relation(fields: [referralId], references: [id], onDelete: Restrict)
+  withdrawal Withdrawal? @relation(fields: [withdrawalId], references: [id], onDelete: Restrict)
+
+  @@index([withdrawalId], map: "idx_wallet_ledger_withdrawal_id")
+  @@index([userId, id], map: "idx_wallet_ledger_user_id_id")
+  @@map("wallet_ledger")
+}
+
+// Payout accounts and withdrawals (product spec, Wallet: Withdrawals; backend spec, Security:
+// Payments and money).
+
+enum PayoutMethod {
+  upi
+  bank
+
+  @@map("payout_method")
+}
+
+enum PayoutValidationStatus {
+  pending
+  validated
+  failed
+
+  @@map("payout_validation_status")
+}
+
+enum WithdrawalStatus {
+  pending
+  processing
+  completed
+  rejected
+  failed
+
+  @@map("withdrawal_status")
+}
+
+/// One immutable row per version of a user's payout details: a change supersedes the row and adds
+/// another, so a withdrawal always points at the exact details it was requested against. The UPI id
+/// or the account number and IFSC live only in `destination_enc` (AES-256-GCM).
+model PayoutAccount {
+  id                    String                 @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId                String                 @map("user_id") @db.Uuid
+  method                PayoutMethod
+  /// As the user typed it.
+  holderName            String                 @map("holder_name")
+  /// What the bank returned for the account, once RazorpayX has validated it.
+  registeredName        String?                @map("registered_name")
+  /// Encrypted JSON of the destination; layout nonce | tag | ciphertext, bound to the user id.
+  destinationEnc        Bytes                  @map("destination_enc")
+  /// HMAC of the normalized destination: tells "same details again" apart from a change.
+  destinationHash       String                 @map("destination_hash")
+  /// What screens may show, e.g. "••••4321" or "ra••@okaxis".
+  maskedDestination     String                 @map("masked_destination")
+  validationStatus      PayoutValidationStatus @default(pending) @map("validation_status")
+  /// The holder name matched the profile name. A mismatch flags withdrawals for admin review.
+  isNameMatch           Boolean                @map("is_name_match")
+  providerFundAccountId String?                @map("provider_fund_account_id")
+  providerValidationId  String?                @map("provider_validation_id")
+  supersededAt          DateTime?              @map("superseded_at") @db.Timestamptz(6)
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  withdrawals Withdrawal[]
+
+  /// One live version per user.
+  @@unique([userId], map: "uq_payout_accounts_one_live_per_user", where: raw("superseded_at IS NULL"))
+  @@index([userId, id], map: "idx_payout_accounts_user_id_id")
+  @@index([providerValidationId], map: "idx_payout_accounts_provider_validation_id")
+  @@map("payout_accounts")
+}
+
+/// The amount is reserved (debited from the ledger) when the request is made, and returned by a
+/// `reversal` entry if it is rejected or the payout fails.
+model Withdrawal {
+  id                   String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId               String           @map("user_id") @db.Uuid
+  payoutAccountId      String           @map("payout_account_id") @db.Uuid
+  amountPaise          BigInt           @map("amount_paise")
+  status               WithdrawalStatus @default(pending)
+  /// The client's Idempotency-Key: a retry returns this row.
+  idempotencyKey       String           @map("idempotency_key")
+  /// The holder name did not match the profile name when this was requested: look closer.
+  isNameMismatch       Boolean          @default(false) @map("is_name_mismatch")
+  rejectionReason      String?          @map("rejection_reason")
+  failureReason        String?          @map("failure_reason")
+  reviewedByUserId     String?          @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt           DateTime?        @map("reviewed_at") @db.Timestamptz(6)
+  /// The RazorpayX idempotency key, fixed at approval so every attempt for this withdrawal is one payout.
+  payoutIdempotencyKey String?          @map("payout_idempotency_key")
+  providerPayoutId     String?          @map("provider_payout_id")
+  /// Set before the provider is called. After this, only an admin may retry: the outcome is unknown.
+  payoutAttemptedAt    DateTime?        @map("payout_attempted_at") @db.Timestamptz(6)
+  completedAt          DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User           @relation("WithdrawalOwner", fields: [userId], references: [id], onDelete: Restrict)
+  reviewer      User?          @relation("WithdrawalReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  payoutAccount PayoutAccount  @relation(fields: [payoutAccountId], references: [id], onDelete: Restrict)
+  ledger        WalletLedger[]
+
+  @@unique([userId, idempotencyKey], map: "uq_withdrawals_user_id_idempotency_key")
+  /// At most one payout request in flight per user.
+  @@unique([userId], map: "uq_withdrawals_one_open_per_user", where: raw("status IN ('pending', 'processing')"))
+  @@index([userId, id], map: "idx_withdrawals_user_id_id")
+  @@index([status, id], map: "idx_withdrawals_status_id")
+  @@index([providerPayoutId], map: "idx_withdrawals_provider_payout_id")
+  @@map("withdrawals")
+}
+
+/// RazorpayX webhook deliveries, one row per event id: a replayed or retried delivery finds its row
+/// and does nothing. Kept apart from the Premium module's webhook table on purpose.
+model RazorpayxWebhookEvent {
+  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// The X-Razorpay-Event-Id header.
+  eventId     String    @unique(map: "uq_razorpayx_webhook_events_event_id") @map("event_id")
+  eventType   String    @map("event_type")
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([createdAt], map: "idx_razorpayx_webhook_events_created_at")
+  @@map("razorpayx_webhook_events")
 }
