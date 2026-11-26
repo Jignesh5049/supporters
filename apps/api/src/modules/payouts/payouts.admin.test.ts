@@ -402,9 +402,16 @@ describe('the payout job', () => {
     const added: unknown[] = [];
     const sink = { addBulk: async (jobs: unknown[]) => void added.push(...jobs) };
     const none = { addBulk: async () => undefined };
-    expect(await relayOutbox(prisma, { notifications: none, searchIndex: none })).toBe(0);
+    expect(await relayOutbox(prisma, { notifications: none, searchIndex: none, media: none })).toBe(
+      0,
+    );
     expect(
-      await relayOutbox(prisma, { notifications: none, searchIndex: none, payouts: sink }),
+      await relayOutbox(prisma, {
+        notifications: none,
+        searchIndex: none,
+        media: none,
+        payouts: sink,
+      }),
     ).toBe(1);
     expect(added).toHaveLength(1);
     expect(added[0]).toMatchObject({
