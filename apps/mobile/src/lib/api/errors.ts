@@ -26,6 +26,10 @@ export const ApiErrorCode = {
   NetworkError: 'NETWORK_ERROR',
   InvalidResponse: 'INVALID_RESPONSE',
   UpgradeRequired: 'UPGRADE_REQUIRED',
+  /** The media job refused the file; `fieldErrors[0]` holds the reason's text. */
+  UploadRejected: 'UPLOAD_REJECTED',
+  /** The client stopped waiting for the media job; the upload may still finish. */
+  UploadProcessingTimeout: 'UPLOAD_PROCESSING_TIMEOUT',
 } as const;
 
 /** RFC 9457 problem details as the API sends them (backend spec, Errors). */
@@ -114,6 +118,9 @@ const MESSAGES: Record<string, string> = {
   [ApiErrorCode.ServiceUnavailable]: 'Supporters is busy right now. Try again shortly.',
   [ApiErrorCode.NetworkError]: 'No connection. Check your internet and try again.',
   [ApiErrorCode.UpgradeRequired]: 'Update the app to keep using Supporters.',
+  [ApiErrorCode.UploadRejected]: 'That file could not be used. Try a different photo.',
+  [ApiErrorCode.UploadProcessingTimeout]:
+    'The photo is taking too long to process. Check your connection and try again.',
 };
 
 /** The free plan allows 25 published listings (products and services together). */
@@ -126,5 +133,9 @@ const GENERIC_MESSAGE = 'Something went wrong. Try again.';
 /** A user-facing message for any thrown value, keyed by the problem `code`. */
 export function messageForError(error: unknown): string {
   if (!(error instanceof ApiError)) return GENERIC_MESSAGE;
+  // The reason text comes from the shared constants, not from the response body.
+  if (error.code === ApiErrorCode.UploadRejected && error.fieldErrors[0]) {
+    return error.fieldErrors[0].message;
+  }
   return MESSAGES[error.code] ?? GENERIC_MESSAGE;
 }

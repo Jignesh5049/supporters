@@ -285,6 +285,7 @@ describe('search indexing', () => {
       searchIndex: {
         addBulk: async (jobs) => searchJobs.push(...jobs.map((job) => job.opts.jobId)),
       },
+      media: { addBulk: async () => 0 },
     });
     const syncs = await prisma.outboxEvent.findMany({
       where: { type: 'search.sync' },
