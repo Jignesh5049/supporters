@@ -46,6 +46,12 @@ export const NOTIFICATION_RULES: Record<NotificationType, NotificationRule> = {
   // Moderation notices sit in Account, which cannot be switched off.
   [NotificationType.ContentHidden]: rule(NotificationCategory.Account, { email: true }),
   [NotificationType.AccountWarned]: rule(NotificationCategory.Account, { email: true }),
+  [NotificationType.PremiumRenewing]: rule(NotificationCategory.Subscription, { email: true }),
+  [NotificationType.PremiumRenewed]: rule(NotificationCategory.Subscription, { email: true }),
+  [NotificationType.PremiumPaymentFailed]: rule(NotificationCategory.Subscription, {
+    email: true,
+  }),
+  [NotificationType.PremiumExpired]: rule(NotificationCategory.Subscription, { email: true }),
   [NotificationType.ReferralPending]: rule(NotificationCategory.Referrals),
   [NotificationType.ReferralCredited]: rule(NotificationCategory.Referrals, { email: true }),
   [NotificationType.ReferralIneligible]: rule(NotificationCategory.Referrals),

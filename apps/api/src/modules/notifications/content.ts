@@ -74,6 +74,24 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'Account warning',
     body: () => 'Content you posted was reported and reviewed. Please follow our guidelines.',
   },
+  [NotificationType.PremiumRenewing]: {
+    title: 'Premium renews soon',
+    body: () => 'Your Supporters Premium renews in 7 days',
+  },
+  [NotificationType.PremiumRenewed]: {
+    title: 'Premium renewed',
+    body: () => 'Your Supporters Premium was renewed. Your invoice is in the Business Hub.',
+  },
+  [NotificationType.PremiumPaymentFailed]: {
+    title: 'Premium payment failed',
+    body: () =>
+      'We could not renew Premium. It stays on for 7 days while we retry. Update your payment method on the web.',
+  },
+  [NotificationType.PremiumExpired]: {
+    title: 'Premium ended',
+    body: () =>
+      'Your Premium has ended. Your content is safe. Renew on the web to get the perks back.',
+  },
   [NotificationType.ReferralPending]: {
     title: 'Referral pending',
     body: () =>

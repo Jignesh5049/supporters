@@ -91,6 +91,7 @@ model User {
   reportsResolved      Report[]               @relation("ReportResolver")
   auditLogs            AuditLog[]
   reviews              Review[]
+  subscriptions        Subscription[]
   referralCode         ReferralCode?
   referralsMade        Referral[]             @relation("ReferralReferrer")
   referralsReceived    Referral[]             @relation("ReferralReferred")
@@ -363,6 +364,10 @@ model Business {
   requirementQuotes  RequirementQuote[]
   verifications      BusinessVerification[]
   reviews            Review[]
+  subscriptions      Subscription[]
+  payments           Payment[]
+  invoices           Invoice[]
+  premiumHolds       PremiumListingHold[]
 
   @@index([categoryId], map: "idx_businesses_category_id")
   @@index([subcategoryId], map: "idx_businesses_subcategory_id")
@@ -1319,6 +1324,188 @@ model Review {
   /// A business's Reviews tab, newest first.
   @@index([businessId, id], map: "idx_reviews_business_id_id")
   @@map("reviews")
+}
+
+// Premium subscriptions and payments (backend spec, Data model: Money; product spec, Monetization).
+// Money is integer paise (BIGINT), always INR. The perk gate stays `businesses.premium_until`, which
+// the payments module sets from these rows.
+
+enum SubscriptionStatus {
+  /// Checkout started, nothing paid yet.
+  created
+  /// Paid; the period runs to current_period_end.
+  active
+  /// A renewal payment failed: perks continue until grace_ends_at (7 days).
+  past_due
+  /// Over. `ended_reason` says why (expired, refunded, abandoned).
+  ended
+
+  @@map("subscription_status")
+}
+
+/// One Razorpay Subscription of one business. A business can have many over time but only one live
+/// (created, active or past_due) at once.
+model Subscription {
+  id                     String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId             String             @map("business_id") @db.Uuid
+  /// Who started the checkout (the owner).
+  createdByUserId        String             @map("created_by_user_id") @db.Uuid
+  providerSubscriptionId String             @unique(map: "uq_subscriptions_provider_subscription_id") @map("provider_subscription_id")
+  status                 SubscriptionStatus @default(created)
+  endedReason            String?            @map("ended_reason")
+  /// Auto-renew switched off: Premium stays active to the end of the paid period.
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  cancelledAt            DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  currentPeriodStart     DateTime?          @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd       DateTime?          @map("current_period_end") @db.Timestamptz(6)
+  graceEndsAt            DateTime?          @map("grace_ends_at") @db.Timestamptz(6)
+  /// Timestamp of the newest charge event applied: older failure or halt events are ignored.
+  lastChargeEventAt      DateTime?          @map("last_charge_event_at") @db.Timestamptz(6)
+  /// The period end a renewal reminder was already sent for.
+  reminderSentForEnd     DateTime?          @map("reminder_sent_for_end") @db.Timestamptz(6)
+  amountPaise            BigInt             @map("amount_paise")
+  currency               String             @default("INR")
+  /// Optional GSTIN to print on the invoice as the buyer GSTIN.
+  buyerGstin             String?            @map("buyer_gstin")
+  /// Idempotency-Key of the checkout request and a hash of its body.
+  idempotencyKey         String             @map("idempotency_key")
+  requestHash            String             @map("request_hash")
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business  Business  @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  createdBy User      @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  payments  Payment[]
+
+  @@unique([createdByUserId, idempotencyKey], map: "uq_subscriptions_user_id_idempotency_key")
+  /// At most one live subscription per business.
+  @@unique([businessId], map: "uq_subscriptions_business_id_live", where: raw("status IN ('created', 'active', 'past_due')"))
+  @@index([businessId, id], map: "idx_subscriptions_business_id_id")
+  @@index([currentPeriodEnd], map: "idx_subscriptions_current_period_end", where: raw("status IN ('active', 'past_due')"))
+  @@map("subscriptions")
+}
+
+enum PaymentStatus {
+  captured
+  failed
+  /// A refund was requested and the provider has not confirmed it yet.
+  refund_pending
+  refunded
+
+  @@map("payment_status")
+}
+
+model Payment {
+  id                String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  subscriptionId    String        @map("subscription_id") @db.Uuid
+  businessId        String        @map("business_id") @db.Uuid
+  providerPaymentId String        @unique(map: "uq_payments_provider_payment_id") @map("provider_payment_id")
+  status            PaymentStatus
+  amountPaise       BigInt        @map("amount_paise")
+  currency          String        @default("INR")
+  /// The first charge of the subscription (the only one with a refund window).
+  isFirst           Boolean       @default(false) @map("is_first")
+  failureCode       String?       @map("failure_code")
+  capturedAt        DateTime?     @map("captured_at") @db.Timestamptz(6)
+  refundRequestedAt DateTime?     @map("refund_requested_at") @db.Timestamptz(6)
+  providerRefundId  String?       @unique(map: "uq_payments_provider_refund_id") @map("provider_refund_id")
+  refundedAt        DateTime?     @map("refunded_at") @db.Timestamptz(6)
+  refundedByAdminId String?       @map("refunded_by_admin_id") @db.Uuid
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  business     Business     @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  invoice      Invoice?
+
+  @@index([subscriptionId, id], map: "idx_payments_subscription_id_id")
+  @@index([businessId, id], map: "idx_payments_business_id_id")
+  @@map("payments")
+}
+
+/// A GST tax invoice for one captured payment. The number is gapless per financial year
+/// (`SUP/2026-27/000123`) and every amount is a snapshot, so later profile edits never change it.
+model Invoice {
+  id             String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  paymentId      String    @unique(map: "uq_invoices_payment_id") @map("payment_id") @db.Uuid
+  businessId     String    @map("business_id") @db.Uuid
+  number         String    @unique(map: "uq_invoices_number")
+  /// e.g. 2026-27.
+  financialYear  String    @map("financial_year")
+  sequence       Int
+  issuedAt       DateTime  @map("issued_at") @db.Timestamptz(6)
+  /// Everything printed on the PDF: seller, buyer, SAC, tax breakup. Paise as integers.
+  details        Json
+  totalPaise     BigInt    @map("total_paise")
+  taxablePaise   BigInt    @map("taxable_paise")
+  taxPaise       BigInt    @map("tax_paise")
+  /// Private key of the PDF, set by the worker.
+  pdfKey         String?   @map("pdf_key")
+  pdfGeneratedAt DateTime? @map("pdf_generated_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payment  Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  @@unique([financialYear, sequence], map: "uq_invoices_financial_year_sequence")
+  @@index([businessId, id], map: "idx_invoices_business_id_id")
+  @@map("invoices")
+}
+
+/// The last number issued per financial year. Bumped inside the invoice's own transaction, under the
+/// row lock, so a rollback gives the number back: no gaps.
+model InvoiceSequence {
+  financialYear String @id @map("financial_year")
+  lastValue     Int    @default(0) @map("last_value")
+
+  @@map("invoice_sequences")
+}
+
+enum WebhookEventStatus {
+  received
+  processed
+  /// Verified and acknowledged with no side effect (unknown event type, foreign subscription).
+  ignored
+  failed
+
+  @@map("webhook_event_status")
+}
+
+/// Every verified Razorpay delivery, unique by the provider event id (replay protection). Only the
+/// ids and amounts the handlers need are kept, not the customer's contact details.
+model WebhookEvent {
+  id              String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  providerEventId String             @unique(map: "uq_webhook_events_provider_event_id") @map("provider_event_id")
+  type            String
+  /// The provider's own timestamp of the event.
+  occurredAt      DateTime           @map("occurred_at") @db.Timestamptz(6)
+  data            Json
+  status          WebhookEventStatus @default(received)
+  attempts        Int                @default(0)
+  lastError       String?            @map("last_error")
+  processedAt     DateTime?          @map("processed_at") @db.Timestamptz(6)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([createdAt], map: "idx_webhook_events_created_at")
+  @@map("webhook_events")
+}
+
+/// A published listing that was unpublished when Premium ended, so the owner can choose which to keep.
+model PremiumListingHold {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  /// product or service.
+  kind       String
+  listingId  String   @map("listing_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, listingId], map: "uq_premium_listing_holds_kind_listing_id")
+  @@index([businessId], map: "idx_premium_listing_holds_business_id")
+  @@map("premium_listing_holds")
 }
 
 // Referrals and the wallet (product spec, Referral and earn, Wallet; backend spec, Security:

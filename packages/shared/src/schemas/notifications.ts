@@ -52,6 +52,12 @@ export const NotificationType = {
   ContentHidden: 'content.hidden',
   /** An admin warned the account about reported content. */
   AccountWarned: 'account.warned',
+  /** Premium renews in 7 days (only while auto-renew is on). */
+  PremiumRenewing: 'premium.renewing',
+  PremiumRenewed: 'premium.renewed',
+  /** A renewal payment failed; Premium continues for the 7-day grace period. */
+  PremiumPaymentFailed: 'premium.payment_failed',
+  PremiumExpired: 'premium.expired',
   /** The referred business bought Premium; the reward is held for the refund window. */
   ReferralPending: 'referral.pending',
   ReferralCredited: 'referral.credited',

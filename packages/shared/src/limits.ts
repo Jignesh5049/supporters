@@ -103,6 +103,21 @@ export const PLAN_LIMITS = {
   premium: { publishedListings: Infinity, postsPer7Days: Infinity, analyticsDays: 90 },
 } as const;
 
+/** Supporters Premium (product spec, Monetization). Decisions 9 and 11 are proposed; the client confirms them. */
+export const PREMIUM = {
+  /** Per business per year, GST-inclusive, in paise. */
+  pricePaise: 99_900,
+  periodDays: 365,
+  /** Perks stay on this long after a failed renewal payment. */
+  graceDays: 7,
+  /** A first purchase can be refunded in full within this many days. Renewals are not refunded. */
+  refundWindowDays: 7,
+  /** The renewal reminder goes out this many days before the renewal charge. */
+  reminderDays: 7,
+  /** GST rate included in the price, in percent. Confirm with the client's accountant. */
+  gstRatePercent: 18,
+} as const;
+
 export const PAGINATION = {
   defaultLimit: 20,
   maxLimit: 50,

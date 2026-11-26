@@ -70,11 +70,12 @@ export async function emitPremium(
     userId,
     paymentId,
     amountPaise: 99_900,
+    currency: 'INR' as const,
     occurredAt: occurredAt.toISOString(),
   };
   await prisma.$transaction(async (tx) => {
     if (type === 'premium.activated') await recordEvent(tx, type, base);
-    else await recordEvent(tx, type, { ...base, refundId: randomUUID() });
+    else await recordEvent(tx, type, base);
   });
   return paymentId;
 }
