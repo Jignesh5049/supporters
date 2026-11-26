@@ -14,6 +14,12 @@ import { ReferralsService } from './modules/referrals/referrals.service';
 import { createMeili } from './modules/search/meili';
 import { SearchIndexer } from './modules/search/search.indexer';
 import { createPrisma, createValkey } from './plugins/data';
+import { MediaJobs } from './modules/uploads/media-jobs';
+import {
+  SharpMediaProcessor,
+  assertDeployableMediaProcessor,
+} from './modules/uploads/media-processor';
+import { S3Storage, createS3Client } from './modules/uploads/storage';
 
 // The BullMQ worker: same image as the API, started with `node dist/worker.js` (backend spec,
 // Architecture). Scale it separately from the API.
@@ -41,6 +47,15 @@ if (!env.MEILI_INDEX_KEY) {
 }
 const searchIndexer = new SearchIndexer(prisma, createMeili(env.MEILI_URL, env.MEILI_INDEX_KEY));
 
+const mediaProcessor = new SharpMediaProcessor();
+assertDeployableMediaProcessor(env, mediaProcessor);
+const mediaJobs = new MediaJobs(
+  prisma,
+  new S3Storage(createS3Client(env), env.S3_BUCKET),
+  mediaProcessor,
+  log,
+);
+
 const worker = await startNotificationWorker({
   env,
   prisma,
@@ -50,6 +65,7 @@ const worker = await startNotificationWorker({
   email,
   searchIndexer,
   referrals: new ReferralsService(prisma, env.OTP_HMAC_KEY),
+  mediaJobs,
   log,
 });
 log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');

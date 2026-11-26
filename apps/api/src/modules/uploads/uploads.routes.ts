@@ -26,4 +26,14 @@ export const uploadsRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => uploads.complete(signedIn(request.auth).userId, request.params.id),
   );
+
+  // Clients poll this while an upload is `processing`.
+  app.get(
+    '/uploads/:id',
+    {
+      config: { auth: 'user' },
+      schema: { params: z.strictObject({ id: z.uuid() }), response: { 200: uploadSchema } },
+    },
+    async (request) => uploads.get(signedIn(request.auth).userId, request.params.id),
+  );
 };

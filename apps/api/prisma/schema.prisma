@@ -452,9 +452,12 @@ enum UploadPurpose {
   @@map("upload_purpose")
 }
 
+/// pending -> processing -> ready | failed. rejected is legacy: nothing writes it any more.
 enum UploadStatus {
   pending
+  processing
   ready
+  failed
   rejected
 
   @@map("upload_status")
@@ -463,17 +466,19 @@ enum UploadStatus {
 /// A file uploaded straight to S3 through a presigned PUT (backend spec, Security: Uploads).
 /// Unreferenced uploads older than 24 h are orphans for the nightly cleanup job.
 model Upload {
-  id          String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId      String        @map("user_id") @db.Uuid
-  purpose     UploadPurpose
+  id            String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String        @map("user_id") @db.Uuid
+  purpose       UploadPurpose
   /// Object key: public/<purpose>/<random> for public media, chat/ or kyc/ otherwise.
-  key         String        @unique(map: "uq_uploads_key")
-  contentType String        @map("content_type")
-  sizeBytes   Int           @map("size_bytes")
-  status      UploadStatus  @default(pending)
-  completedAt DateTime?     @map("completed_at") @db.Timestamptz(6)
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  key           String        @unique(map: "uq_uploads_key")
+  contentType   String        @map("content_type")
+  sizeBytes     Int           @map("size_bytes")
+  status        UploadStatus  @default(pending)
+  /// Why the upload is failed (a code from UPLOAD_FAILURE_MESSAGES in packages/shared).
+  failureReason String?       @map("failure_reason")
+  completedAt   DateTime?     @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   listingMedia         ListingMedia?
