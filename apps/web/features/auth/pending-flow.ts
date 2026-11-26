@@ -9,6 +9,8 @@ export interface PendingSignup {
   name: string;
   phone: string;
   password: string;
+  /** A friend's referral code, entered (or prefilled from an invite link) at signup only. */
+  referralCode?: string;
 }
 
 let pendingSignup: PendingSignup | null = null;

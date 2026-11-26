@@ -129,6 +129,8 @@ describe('mass assignment', () => {
       'POST /v1/admin/verifications/:id/approve',
       // Cancels the caller's own subscription; the webhook body is raw bytes, verified by signature.
       'POST /v1/me/business/premium/cancel',
+      'POST /v1/admin/withdrawals/:id/approve',
+      'POST /v1/admin/withdrawals/:id/retry',
       'POST /v1/uploads/:id/complete',
       'POST /v1/webhooks/razorpay',
       'PUT /v1/blocks/:userId',
@@ -153,8 +155,8 @@ describe('guests', () => {
     }
   });
 
-  it('never crash a public or sign-in route with empty input', async () => {
-    for (const route of withPolicy('public', 'signin')) {
+  it('never crash a public, sign-in or webhook route with empty input', async () => {
+    for (const route of withPolicy('public', 'signin', 'webhook')) {
       if (route.url === '/ready') continue;
       const response = await send(route);
       expect(response.statusCode, key(route)).toBeLessThan(500);

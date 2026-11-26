@@ -15,6 +15,15 @@ export const passwordSchema = z
   .min(ACCOUNT_LIMITS.password.min)
   .max(ACCOUNT_LIMITS.password.max);
 
+/** Referral codes: 8 characters from an unambiguous alphabet, matched case-insensitively. */
+export const REFERRAL_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+export const REFERRAL_CODE_LENGTH = 8;
+export const referralCodeSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.toUpperCase())
+  .pipe(z.string().regex(new RegExp(`^[${REFERRAL_CODE_ALPHABET}]{${REFERRAL_CODE_LENGTH}}$`)));
+
 export const otpCodeSchema = z.string().regex(new RegExp(`^\\d{${OTP.digits}}$`), 'Enter the code');
 
 export const personNameSchema = z
@@ -41,6 +50,8 @@ export const registerSchema = z.strictObject({
   otp: otpCodeSchema,
   /** Version of the terms and privacy policy shown at signup. */
   policyVersion: z.string().min(1).max(32),
+  /** A friend's referral code. Signup only: it can't be added later (product spec, Referral). */
+  referralCode: referralCodeSchema.optional(),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

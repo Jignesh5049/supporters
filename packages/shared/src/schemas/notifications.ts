@@ -58,6 +58,17 @@ export const NotificationType = {
   /** A renewal payment failed; Premium continues for the 7-day grace period. */
   PremiumPaymentFailed: 'premium.payment_failed',
   PremiumExpired: 'premium.expired',
+  /** The referred business bought Premium; the reward is held for the refund window. */
+  ReferralPending: 'referral.pending',
+  ReferralCredited: 'referral.credited',
+  ReferralIneligible: 'referral.ineligible',
+  WithdrawalApproved: 'withdrawal.approved',
+  WithdrawalPaid: 'withdrawal.paid',
+  WithdrawalRejected: 'withdrawal.rejected',
+  /** The bank could not complete the payout; the amount is back in the wallet. */
+  WithdrawalFailed: 'withdrawal.failed',
+  /** Payout details were set or changed. Security event: always pushed and emailed. */
+  SecurityPayoutDetailsChanged: 'security.payout_details_changed',
 } as const;
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 export const notificationTypeSchema = z.enum(NotificationType);
@@ -70,6 +81,8 @@ export const NotificationTargetType = {
   Business: 'business',
   Account: 'account',
   Requirement: 'requirement',
+  /** The wallet screen (referral rewards and withdrawals). */
+  Wallet: 'wallet',
 } as const;
 export type NotificationTargetType =
   (typeof NotificationTargetType)[keyof typeof NotificationTargetType];

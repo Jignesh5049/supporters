@@ -180,7 +180,7 @@ deploy/smoke.sh                      # builds the four images, ~5 minutes cold
 SMOKE_SKIP_BUILD=1 deploy/smoke.sh   # reuse them
 ```
 
-Uses fake secrets, PostgreSQL and MinIO, Caddy's internal CA, and checks the origin-secret rejection, `/health`, `/ready`, a signup through Caddy, and the web home page. Needs Docker and `openssl`. Because the API refuses to boot in staging or production until MSG91 and a real media processor exist, the smoke test runs it with `NODE_ENV=development`.
+Uses fake secrets, PostgreSQL and MinIO, Caddy's internal CA, and checks the origin-secret rejection, `/health`, `/ready`, a signup through Caddy, and the web home page. Needs Docker and `openssl`. Because the API refuses to boot in staging or production until MSG91 exists, the smoke test runs it with `NODE_ENV=development`.
 
 ## Common failures
 
@@ -188,7 +188,7 @@ Uses fake secrets, PostgreSQL and MinIO, Caddy's internal CA, and checks the ori
 | --- | --- |
 | `missing required parameters: ...` | The SSM parameter is empty or absent. Names only are logged. |
 | `MIGRATION FAILED` | Read the migrate output above it. The old release is untouched. Fix forward (a new migration) and redeploy; a failed migration is never retried by itself. |
-| API unhealthy, log says `Invalid environment: ...` | A variable is wrong; the message names the variable, never its value. API in `staging`/`production` also refuses `SMS_PROVIDER=console` and the passthrough media processor today. |
+| API unhealthy, log says `Invalid environment: ...` | A variable is wrong; the message names the variable, never its value. API in `staging`/`production` also refuses `SMS_PROVIDER=console`. The worker refuses the passthrough media processor there, and uploads stay `processing` while no worker is running, so check that the `worker` container is up. |
 | API cannot reach RDS (`self-signed certificate in certificate chain`) | `/etc/supporters/rds-global-bundle.pem` missing or stale: delete it and redeploy (it is re-downloaded). |
 | Caddy restarts, log says `acme` or `route53` errors | The instance role lacks the Route 53 permission, IMDS hop limit is not 2, or `ACME_DNS_ZONE_ID`/`ORIGIN_DOMAIN` is wrong. Caddy keeps its certificate in `caddy-data`. |
 | CloudFront returns 502 | Caddy is not up, the certificate for `origin.<domain>` is missing, or the security group is not allowing CloudFront. |

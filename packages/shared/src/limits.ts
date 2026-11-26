@@ -50,7 +50,23 @@ export const MEDIA_LIMITS = {
   presignTtlSec: 300,
   /** Signed GET links for private chat files (backend spec, Security: Uploads). */
   signedGetTtlSec: 300,
+  /** Decompression-bomb guard: the media job rejects images with more pixels than this... */
+  imageMaxPixels: 40_000_000,
+  /** ... or a longer side than this. */
+  imageMaxSidePx: 12_000,
+  /** The media job gives up on one image after this long. */
+  imageProcessingTimeoutSec: 30,
+  /** The `media` queue tries a job this often, with exponential backoff (backend spec, Queues). */
+  processingAttempts: 3,
+  /**
+   * Clients poll `GET /uploads/:id` while an upload is `processing`: first after `initialMs`,
+   * then 1.5x longer each time up to `maxMs`, and stop waiting (not failing) after `timeoutMs`.
+   */
+  poll: { initialMs: 500, maxMs: 4_000, timeoutMs: 90_000 },
 } as const;
+
+/** Longest side, in pixels, of each stored size of a listing or post image (product spec, Listings). */
+export const IMAGE_VARIANT_PX = { thumb: 320, card: 720, full: 1600 } as const;
 
 export const LISTING_LIMITS = {
   specsMaxKeys: 30,
@@ -144,12 +160,16 @@ export const OTP = {
 export const WALLET = {
   minWithdrawalPaise: 100_00,
   payoutDetailsCooldownHours: 24,
+  /** One admin bonus is at most this much (assumption; the client sets the real cap). */
+  maxBonusPaise: 10_000_00,
 } as const;
 
 export const REFERRAL = {
   rewardsPaise: [300_00, 200_00],
   lifetimeCapPaise: 500_00,
   pendingDays: 7,
+  /** A referral whose business never buys Premium stops waiting after this many days (assumption). */
+  awaitingPremiumDays: 90,
 } as const;
 
 /** Reviews and ratings (product spec, Reviews and ratings). */

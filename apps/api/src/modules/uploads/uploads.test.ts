@@ -19,6 +19,7 @@ import {
   registerMobile,
   resetState,
 } from '../../test/helpers';
+import { PDF, jpeg, runMediaJobs } from '../../test/media';
 import { MINIO_CREDENTIALS, TEST_BUCKET } from '../../test/minio';
 
 let ctx: TestContext;
@@ -28,6 +29,7 @@ let s3: S3Client;
 beforeAll(async () => {
   ctx = await createTestApp();
   refs = await referenceData();
+  JPEG = await jpeg();
   s3 = new S3Client({
     region: ctx.env.S3_REGION,
     endpoint: ctx.env.S3_ENDPOINT ?? '',
@@ -41,8 +43,7 @@ afterAll(async () => {
 });
 beforeEach(resetState);
 
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60, 1)]);
-const PDF = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.alloc(40, 2)]);
+let JPEG: Buffer;
 
 const presign = (as: MobileSession | undefined, body: object) =>
   call(ctx, 'POST', '/v1/uploads/presign', { ...(as ? { as } : {}), body });
@@ -182,18 +183,17 @@ describe('presigned PUT', () => {
 });
 
 describe('POST /v1/uploads/:id/complete', () => {
-  it('marks a genuine upload ready, with a public URL for public media', async () => {
+  it('hands a genuine upload to the media job, which makes it ready with a public URL', async () => {
     const session = await registerMobile(ctx);
     const { id } = await putFile(session, 'listing', 'image/jpeg', JPEG);
     const response = await complete(session, id);
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({
-      id,
-      status: 'ready',
-      contentType: 'image/jpeg',
-      size: JPEG.length,
-    });
-    expect(response.json().url).toMatch(/^https:\/\/media\.supporters\.test\/public\/listing\//);
+    expect(response.json()).toMatchObject({ id, status: 'processing', url: null });
+
+    await runMediaJobs(ctx);
+    const ready = (await call(ctx, 'GET', `/v1/uploads/${id}`, { as: session })).json();
+    expect(ready).toMatchObject({ id, status: 'ready', contentType: 'image/webp' });
+    expect(ready.url).toMatch(/^https:\/\/media\.supporters\.test\/public\/listing\//);
 
     // Idempotent.
     expect((await complete(session, id)).json().status).toBe('ready');
@@ -204,6 +204,7 @@ describe('POST /v1/uploads/:id/complete', () => {
     const presigned = await putFile(session, 'listing', 'image/jpeg', JPEG);
     const done = await complete(session, presigned.id);
     expect(done.statusCode).toBe(200);
+    await runMediaJobs(ctx);
 
     // Within its 5 minutes the URL still works. It must not change the validated file.
     const html = Buffer.concat([
@@ -218,8 +219,9 @@ describe('POST /v1/uploads/:id/complete', () => {
 
     const { key } = await prisma.upload.findUniqueOrThrow({ where: { id: presigned.id } });
     const served = await s3.send(new GetObjectCommand({ Bucket: TEST_BUCKET, Key: key }));
-    expect(Buffer.from((await served.Body?.transformToByteArray()) ?? []).subarray(0, 4)).toEqual(
-      JPEG.subarray(0, 4),
+    // Re-encoded from the validated bytes: a WebP, not the script.
+    expect(Buffer.from((await served.Body?.transformToByteArray()) ?? []).subarray(8, 12)).toEqual(
+      Buffer.from('WEBP'),
     );
     // Served from a fresh key that was never presigned, not the one the client can still write to.
     expect(new URL(presigned.url).pathname).not.toContain(key);
@@ -228,6 +230,8 @@ describe('POST /v1/uploads/:id/complete', () => {
   it('never gives private media a public URL', async () => {
     const session = await registerMobile(ctx);
     const { id } = await putFile(session, 'chat', 'application/pdf', PDF);
+    expect((await complete(session, id)).json()).toMatchObject({ status: 'processing', url: null });
+    await runMediaJobs(ctx);
     expect((await complete(session, id)).json()).toMatchObject({ status: 'ready', url: null });
   });
 
@@ -242,7 +246,10 @@ describe('POST /v1/uploads/:id/complete', () => {
     await expect(
       s3.send(new HeadObjectCommand({ Bucket: TEST_BUCKET, Key: key })),
     ).rejects.toThrow();
-    expect((await complete(session, id)).json().status).toBe('rejected');
+    expect((await complete(session, id)).json()).toMatchObject({
+      status: 'failed',
+      failureReason: 'content_mismatch',
+    });
   });
 
   it('waits for the file before completing', async () => {
@@ -272,6 +279,7 @@ describe('listing images', () => {
     const { session } = await signUpOwner(ctx, refs);
     const first = await putFile(session, 'listing', 'image/jpeg', JPEG);
     await complete(session, first.id);
+    await runMediaJobs(ctx);
     const second = await readyUpload(session.user.id);
 
     const created = await call(ctx, 'POST', '/v1/me/business/products', {

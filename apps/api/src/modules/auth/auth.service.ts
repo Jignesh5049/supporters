@@ -11,7 +11,13 @@ import {
   phoneSchema,
 } from '@supporters/shared';
 import type { PrismaClient, User } from '../../generated/prisma/client';
-import { AppError, ErrorCode, isUniqueViolation, rateLimited } from '../../lib/errors';
+import {
+  AppError,
+  ErrorCode,
+  invalidField,
+  isUniqueViolation,
+  rateLimited,
+} from '../../lib/errors';
 import type { SlidingWindowLimiter } from '../../lib/sliding-window';
 import type { Redis } from 'ioredis';
 import { openSecret } from '../../lib/secret-box';
@@ -20,6 +26,8 @@ import { writeAudit } from '../admin/audit.service';
 import { usedTotpKey } from './auth.constants';
 import { toMe } from '../users/users.service';
 import { recordEvent } from '../notifications/outbox';
+import type { ReferralsService } from '../referrals/referrals.service';
+import { NO_SIGNALS, type SignupSignals } from '../referrals/referrals.signals';
 import type { OtpService } from './otp.service';
 import {
   type BreachedPasswordChecker,
@@ -50,6 +58,8 @@ export class AuthService {
     private readonly breachChecker: BreachedPasswordChecker,
     /** Opens admin TOTP secrets; admin sign-in is off without it. */
     private readonly totpKey?: Buffer,
+    /** Records the referral at signup; without it a referral code is ignored. */
+    private readonly referrals?: ReferralsService,
   ) {}
 
   /**
@@ -69,7 +79,11 @@ export class AuthService {
     }
   }
 
-  async register(input: RegisterInput, meta: ClientMeta): Promise<SignedIn> {
+  async register(
+    input: RegisterInput,
+    meta: ClientMeta,
+    signals: SignupSignals = NO_SIGNALS,
+  ): Promise<SignedIn> {
     if (input.policyVersion !== CURRENT_POLICY_VERSION) {
       throw new AppError(400, ErrorCode.PolicyVersionOutdated, 'Accept the latest terms', {
         detail: 'The terms and privacy policy have changed. Reload and accept them again.',
@@ -77,18 +91,38 @@ export class AuthService {
     }
     // Before the OTP is consumed, so a rejected password doesn't burn the code.
     await assertNotBreached(this.breachChecker, input.password);
+    // Also before the OTP: a mistyped code is fixed without asking for a new one.
+    const referrer =
+      input.referralCode && this.referrals
+        ? await this.referrals.resolveCode(input.referralCode)
+        : null;
+    if (input.referralCode && this.referrals && !referrer) {
+      throw invalidField('referralCode', 'This referral code is not valid');
+    }
     await this.otp.verify('signup', input.phone, input.otp);
 
     const passwordHash = await hashPassword(input.password);
     let user: User;
     try {
-      user = await this.prisma.user.create({
-        data: {
-          name: input.name,
-          phone: input.phone,
-          passwordHash,
-          consents: { create: { policyVersion: input.policyVersion, ip: meta.ip } },
-        },
+      user = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            name: input.name,
+            phone: input.phone,
+            passwordHash,
+            consents: { create: { policyVersion: input.policyVersion, ip: meta.ip } },
+          },
+        });
+        if (referrer && this.referrals) {
+          await this.referrals.recordSignup(tx, {
+            referrerUserId: referrer.userId,
+            referredUserId: created.id,
+            phone: input.phone,
+            ip: meta.ip,
+            signals,
+          });
+        }
+        return created;
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
