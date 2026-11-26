@@ -17,6 +17,7 @@ import { createModerationApi } from './moderation';
 import { createRequirementsApi } from './requirements';
 import { createReviewsApi } from './reviews';
 import { createSearchApi } from './search';
+import { createWalletApi } from './wallet';
 import { createApiClient } from './client';
 import { API_URL, APP_VERSION } from './config';
 
@@ -35,6 +36,7 @@ export type { ModerationApi } from './moderation';
 export type { RequirementsApi } from './requirements';
 export type { ReviewsApi } from './reviews';
 export type { SearchApi } from './search';
+export type { WalletApi } from './wallet';
 
 /** The one API client for the app. Screens use Query hooks or specific domain APIs, never raw fetch. */
 export const apiClient = createApiClient({
@@ -64,3 +66,4 @@ export const moderationApi = createModerationApi(apiClient);
 export const requirementsApi = createRequirementsApi(apiClient);
 export const reviewsApi = createReviewsApi(apiClient);
 export const searchApi = createSearchApi(apiClient);
+export const walletApi = createWalletApi(apiClient);
