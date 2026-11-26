@@ -26,10 +26,14 @@ export interface DomainEvents {
   'requirement.created': { requirementId: string };
   'requirement.quoted': { quoteId: string };
   'review.created': { reviewId: string };
-  /** Premium module -> referrals: the business paid (starts the 7-day refund window). */
+  /** A business bought Premium (first payment captured). Referrals consume it; it notifies nobody. */
   'premium.activated': PremiumActivatedEvent;
-  /** Premium module -> referrals: a payment was refunded (inside the window: Ineligible). */
+  /** The first payment was refunded and Premium ended. Referrals consume it; it notifies nobody. */
   'premium.refunded': PremiumRefundedEvent;
+  'premium.renewing': { subscriptionId: string };
+  'premium.renewed': { subscriptionId: string; paymentId: string };
+  'premium.payment_failed': { subscriptionId: string };
+  'premium.expired': { subscriptionId: string };
   'referral.pending': { referralId: string };
   'referral.credited': { referralId: string };
   'referral.ineligible': { referralId: string };
@@ -61,6 +65,10 @@ export const DOMAIN_EVENT_TYPES = [
   'review.created',
   'premium.activated',
   'premium.refunded',
+  'premium.renewing',
+  'premium.renewed',
+  'premium.payment_failed',
+  'premium.expired',
   'referral.pending',
   'referral.credited',
   'referral.ineligible',

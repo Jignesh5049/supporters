@@ -594,6 +594,7 @@ describe('the media queue', () => {
     await relayOutbox(prisma, {
       notifications: { addBulk: async () => 0 },
       searchIndex: { addBulk: async () => 0 },
+      payments: { addBulk: async () => 0 },
       media: {
         addBulk: async (added) =>
           jobs.push(...added.map((job) => ({ id: job.opts.jobId, data: job.data }))),

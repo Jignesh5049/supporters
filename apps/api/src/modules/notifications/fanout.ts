@@ -10,6 +10,14 @@ import type { ReferralsService } from '../referrals/referrals.service';
 import { DOMAIN_EVENT_TYPES, type DomainEventType, type DomainEvents } from './outbox';
 import { NOTIFICATION_RULES, type NotificationRule } from './rules';
 
+/** Notification type of each `premium.*` event that notifies the owner. */
+const PREMIUM_NOTIFICATION: Readonly<Record<string, NotificationType>> = {
+  'premium.renewing': NotificationType.PremiumRenewing,
+  'premium.renewed': NotificationType.PremiumRenewed,
+  'premium.payment_failed': NotificationType.PremiumPaymentFailed,
+  'premium.expired': NotificationType.PremiumExpired,
+};
+
 /** One recipient's notification, before preferences and batching. */
 interface Intent {
   userId: string;
@@ -325,6 +333,27 @@ export class NotificationFanout {
             actorUserId: null,
             targetType: NotificationTargetType.Account,
             targetId: null,
+            groupKey: null,
+          },
+        ];
+      }
+      case 'premium.renewing':
+      case 'premium.renewed':
+      case 'premium.payment_failed':
+      case 'premium.expired': {
+        const { subscriptionId } = payload as DomainEvents['premium.renewing'];
+        const subscription = await tx.subscription.findUnique({
+          where: { id: subscriptionId },
+          select: { businessId: true, business: { select: { ownerUserId: true } } },
+        });
+        if (!subscription) return [];
+        return [
+          {
+            userId: subscription.business.ownerUserId,
+            type: PREMIUM_NOTIFICATION[type] ?? NotificationType.PremiumRenewing,
+            actorUserId: null,
+            targetType: NotificationTargetType.Business,
+            targetId: subscription.businessId,
             groupKey: null,
           },
         ];

@@ -6,7 +6,8 @@
  * - `user`: a valid access token; guests get 401.
  * - `admin`: an admin token that passed TOTP; everyone else gets 404 so the surface stays hidden.
  * - `public`: no token needed. Each public route is listed on purpose.
- * - `signin`: public by nature (credentials or a refresh token are the proof).
+ * - `signin`: public by nature (credentials, a refresh token or, for the Razorpay webhook, an
+ *   HMAC signature over the raw body are the proof).
  *
  * Object-level cases (another user's product, thread, upload...) are in object-auth.test.ts.
  */
@@ -45,6 +46,7 @@ export const POLICY = {
     'POST /v1/auth/refresh',
     'POST /v1/auth/register',
     'POST /v1/admin/auth/login',
+    'POST /v1/webhooks/razorpay',
   ],
   admin: [
     'DELETE /v1/admin/categories/:id',
