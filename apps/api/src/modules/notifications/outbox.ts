@@ -36,6 +36,9 @@ export interface DomainEvents {
   'withdrawal.approved': { withdrawalId: string };
   'withdrawal.paid': { withdrawalId: string };
   'withdrawal.rejected': { withdrawalId: string };
+  'withdrawal.failed': { withdrawalId: string };
+  /** Approved: the worker's payouts job sends it to RazorpayX. Not a notification. */
+  'payout.requested': { withdrawalId: string };
   'security.payout_details_changed': { userId: string };
 }
 export type DomainEventType = keyof DomainEvents;
@@ -64,6 +67,8 @@ export const DOMAIN_EVENT_TYPES = [
   'withdrawal.approved',
   'withdrawal.paid',
   'withdrawal.rejected',
+  'withdrawal.failed',
+  'payout.requested',
   'security.payout_details_changed',
 ] as const satisfies readonly DomainEventType[];
 

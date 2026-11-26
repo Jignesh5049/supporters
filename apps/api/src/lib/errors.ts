@@ -51,6 +51,7 @@ export const ErrorCode = {
   WithdrawalBelowMinimum: 'WITHDRAWAL_BELOW_MINIMUM',
   InsufficientBalance: 'INSUFFICIENT_BALANCE',
   InvalidState: 'INVALID_STATE',
+  WebhookSignatureInvalid: 'WEBHOOK_SIGNATURE_INVALID',
   InternalError: 'INTERNAL_ERROR',
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

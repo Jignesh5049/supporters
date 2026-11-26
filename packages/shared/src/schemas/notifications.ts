@@ -59,6 +59,8 @@ export const NotificationType = {
   WithdrawalApproved: 'withdrawal.approved',
   WithdrawalPaid: 'withdrawal.paid',
   WithdrawalRejected: 'withdrawal.rejected',
+  /** The bank could not complete the payout; the amount is back in the wallet. */
+  WithdrawalFailed: 'withdrawal.failed',
   /** Payout details were set or changed. Security event: always pushed and emailed. */
   SecurityPayoutDetailsChanged: 'security.payout_details_changed',
 } as const;

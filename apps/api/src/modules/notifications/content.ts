@@ -99,6 +99,10 @@ const COPY: Record<NotificationType, Copy> = {
     title: 'Withdrawal not approved',
     body: () => 'Your withdrawal was not approved and the amount is back in your wallet',
   },
+  [NotificationType.WithdrawalFailed]: {
+    title: 'Withdrawal failed',
+    body: () => 'The payout could not be completed. The amount is back in your wallet.',
+  },
   [NotificationType.SecurityPayoutDetailsChanged]: {
     title: 'Payout details changed',
     body: () =>
@@ -137,6 +141,7 @@ export function emailCopy(type: NotificationType, appOrigin: string) {
     [NotificationType.WithdrawalApproved]: '/wallet',
     [NotificationType.WithdrawalPaid]: '/wallet',
     [NotificationType.WithdrawalRejected]: '/wallet',
+    [NotificationType.WithdrawalFailed]: '/wallet',
     [NotificationType.SecurityPayoutDetailsChanged]: '/wallet/withdraw',
   };
   const link = `${appOrigin}${path[type] ?? '/settings'}`;

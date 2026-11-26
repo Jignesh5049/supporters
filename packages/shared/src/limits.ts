@@ -145,6 +145,8 @@ export const OTP = {
 export const WALLET = {
   minWithdrawalPaise: 100_00,
   payoutDetailsCooldownHours: 24,
+  /** One admin bonus is at most this much (assumption; the client sets the real cap). */
+  maxBonusPaise: 10_000_00,
 } as const;
 
 export const REFERRAL = {

@@ -4,6 +4,8 @@ import type { PrismaClient } from '../generated/prisma/client';
 import type { SlidingWindowLimiter } from '../lib/sliding-window';
 import type { AdminCategoriesService } from '../modules/admin/admin-categories.service';
 import type { AdminReportsService } from '../modules/admin/admin-reports.service';
+import type { AdminWithdrawalsService } from '../modules/admin/admin-withdrawals.service';
+import type { RazorpayxWebhookService } from '../modules/payouts/razorpayx-webhook.service';
 import type { AdminUsersService } from '../modules/admin/admin-users.service';
 import type { AdminVerificationsService } from '../modules/admin/admin-verifications.service';
 import type { AuditLogService } from '../modules/admin/audit.service';
@@ -79,6 +81,7 @@ declare module 'fastify' {
         verifications: AdminVerificationsService;
         reports: AdminReportsService;
         categories: AdminCategoriesService;
+        withdrawals: AdminWithdrawalsService;
       };
       search: SearchService;
       discover: DiscoverService;
@@ -88,6 +91,7 @@ declare module 'fastify' {
       wallet: WalletService;
       payoutAccounts: PayoutAccountService;
       withdrawals: WithdrawalsService;
+      razorpayxWebhooks: RazorpayxWebhookService;
     };
   }
 

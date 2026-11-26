@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { WALLET } from '../limits';
 import { paginationQuerySchema } from './common';
 
 // Referrals and the wallet (product spec, Monetization, wallet and Business Hub; backend spec,
@@ -176,3 +177,51 @@ export const withdrawalSchema = z.object({
   completedAt: z.iso.datetime().nullable(),
 });
 export type Withdrawal = z.infer<typeof withdrawalSchema>;
+
+// Admin: withdrawals and bonuses (backend spec, Endpoint map: Admin).
+
+export const adminWithdrawalsQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(WithdrawalStatus).default('pending'),
+});
+export type AdminWithdrawalsQuery = z.infer<typeof adminWithdrawalsQuerySchema>;
+
+export const adminWithdrawalSchema = z.object({
+  id: z.uuid(),
+  user: z.object({ id: z.uuid(), name: z.string() }),
+  amount: moneyOutSchema,
+  status: z.enum(WithdrawalStatus),
+  method: z.enum(PayoutMethod),
+  /** Masked only: admins approve and RazorpayX pays; nobody reads the full number. */
+  maskedDestination: z.string(),
+  holderName: z.string(),
+  /** The name the bank holds for the account, when RazorpayX returned one. */
+  registeredName: z.string().nullable(),
+  validationStatus: z.enum(PayoutValidationStatus),
+  /** The holder name did not match the profile name: look closer before approving. */
+  isNameMismatch: z.boolean(),
+  /** Hours the payout details had been in place when the withdrawal was requested. */
+  payoutAccountAgeHours: z.number().int(),
+  rejectionReason: z.string().nullable(),
+  failureReason: z.string().nullable(),
+  reviewer: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+  reviewedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  completedAt: z.iso.datetime().nullable(),
+});
+export type AdminWithdrawal = z.infer<typeof adminWithdrawalSchema>;
+
+export const rejectWithdrawalSchema = z.strictObject({
+  reason: z.string().trim().min(5).max(300),
+});
+export type RejectWithdrawalInput = z.infer<typeof rejectWithdrawalSchema>;
+
+/** The most one bonus can credit, in paise (assumption: ₹10,000; the client sets the real cap). */
+export const MAX_BONUS_PAISE = WALLET.maxBonusPaise;
+
+export const adminBonusSchema = z.strictObject({
+  userId: z.uuid(),
+  amountPaise: z.number().int().min(1).max(MAX_BONUS_PAISE),
+  /** Shown to the user in their ledger, and kept in the audit log. */
+  reason: z.string().trim().min(5).max(200),
+});
+export type AdminBonusInput = z.infer<typeof adminBonusSchema>;
