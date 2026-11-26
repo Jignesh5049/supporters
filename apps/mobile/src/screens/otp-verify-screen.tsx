@@ -15,6 +15,7 @@ export interface OtpVerifyParams {
   phone: string;
   name?: string;
   password?: string;
+  referralCode?: string;
 }
 
 const formatPhone = (phone: string) =>
@@ -65,6 +66,7 @@ export function OtpVerifyScreen() {
       phone,
       password: params.password ?? '',
       otp: code,
+      referralCode: params.referralCode,
     });
     setIsSubmitting(false);
     if (result.success) {

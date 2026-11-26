@@ -52,4 +52,15 @@ export const NOTIFICATION_RULES: Record<NotificationType, NotificationRule> = {
     email: true,
   }),
   [NotificationType.PremiumExpired]: rule(NotificationCategory.Subscription, { email: true }),
+  [NotificationType.ReferralPending]: rule(NotificationCategory.Referrals),
+  [NotificationType.ReferralCredited]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.ReferralIneligible]: rule(NotificationCategory.Referrals),
+  [NotificationType.WithdrawalApproved]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.WithdrawalPaid]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.WithdrawalRejected]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.WithdrawalFailed]: rule(NotificationCategory.Referrals, { email: true }),
+  [NotificationType.SecurityPayoutDetailsChanged]: rule(NotificationCategory.Account, {
+    email: true,
+    isUrgent: true,
+  }),
 };

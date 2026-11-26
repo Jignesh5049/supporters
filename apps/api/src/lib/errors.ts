@@ -47,6 +47,16 @@ export const ErrorCode = {
   PremiumWebOnly: 'PREMIUM_WEB_ONLY',
   PremiumExists: 'PREMIUM_EXISTS',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  PayoutsNotConfigured: 'PAYOUTS_NOT_CONFIGURED',
+  PayoutAccountRequired: 'PAYOUT_ACCOUNT_REQUIRED',
+  PayoutAccountNotValidated: 'PAYOUT_ACCOUNT_NOT_VALIDATED',
+  PayoutAccountInvalid: 'PAYOUT_ACCOUNT_INVALID',
+  PayoutDetailsRecentlyChanged: 'PAYOUT_DETAILS_RECENTLY_CHANGED',
+  WithdrawalPending: 'WITHDRAWAL_PENDING',
+  WithdrawalBelowMinimum: 'WITHDRAWAL_BELOW_MINIMUM',
+  InsufficientBalance: 'INSUFFICIENT_BALANCE',
+  InvalidState: 'INVALID_STATE',
+  WebhookSignatureInvalid: 'WEBHOOK_SIGNATURE_INVALID',
   InternalError: 'INTERNAL_ERROR',
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

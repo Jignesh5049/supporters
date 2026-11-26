@@ -13,10 +13,18 @@ import { VapidWebPushSender } from './modules/notifications/channels/web-push';
 import { S3InvoiceStore } from './modules/payments/invoice-store';
 import { InvoicesService } from './modules/payments/invoices.service';
 import { createPaymentsProvider, invoiceSellerFromEnv } from './modules/payments/payments.factory';
-import { createS3Client } from './modules/uploads/storage';
+import { PayoutProcessor } from './modules/payouts/payout-processor';
+import { createPayoutsRuntime } from './modules/payouts/payouts.config';
+import { ReferralsService } from './modules/referrals/referrals.service';
 import { createMeili } from './modules/search/meili';
 import { SearchIndexer } from './modules/search/search.indexer';
 import { createPrisma, createValkey } from './plugins/data';
+import { MediaJobs } from './modules/uploads/media-jobs';
+import {
+  SharpMediaProcessor,
+  assertDeployableMediaProcessor,
+} from './modules/uploads/media-processor';
+import { S3Storage, createS3Client } from './modules/uploads/storage';
 
 // The BullMQ worker: same image as the API, started with `node dist/worker.js` (backend spec,
 // Architecture). Scale it separately from the API.
@@ -51,6 +59,17 @@ const invoices = new InvoicesService(
   log,
 );
 
+const payoutsRuntime = createPayoutsRuntime(env);
+
+const mediaProcessor = new SharpMediaProcessor();
+assertDeployableMediaProcessor(env, mediaProcessor);
+const mediaJobs = new MediaJobs(
+  prisma,
+  new S3Storage(createS3Client(env), env.S3_BUCKET),
+  mediaProcessor,
+  log,
+);
+
 const worker = await startNotificationWorker({
   env,
   prisma,
@@ -60,9 +79,19 @@ const worker = await startNotificationWorker({
   email,
   searchIndexer,
   payments: { provider: createPaymentsProvider(env), invoices },
+  referrals: new ReferralsService(prisma, env.OTP_HMAC_KEY),
+  mediaJobs,
+  ...(payoutsRuntime ? { payoutProcessor: new PayoutProcessor(prisma, payoutsRuntime) } : {}),
   log,
 });
-log.info({ webPush: Boolean(webPush), email: env.EMAIL_PROVIDER }, 'worker started');
+log.info(
+  {
+    webPush: Boolean(webPush),
+    email: env.EMAIL_PROVIDER,
+    payouts: payoutsRuntime?.provider.name ?? 'off',
+  },
+  'worker started',
+);
 
 const shutdown = async (signal: string) => {
   log.info({ signal }, 'worker shutting down');

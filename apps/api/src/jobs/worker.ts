@@ -1,6 +1,7 @@
 import { type Job, type JobsOptions, Queue, Worker } from 'bullmq';
 import type { FastifyBaseLogger } from 'fastify';
 import { Redis } from 'ioredis';
+import { MEDIA_LIMITS } from '@supporters/shared';
 import type { Env } from '../config/env';
 import type { PrismaClient } from '../generated/prisma/client';
 import { ExpoPushBatcher, type ExpoPushClient } from '../modules/notifications/channels/expo';
@@ -21,7 +22,10 @@ import { PaymentsProcessor } from '../modules/payments/payments.processor';
 import type { PaymentsProvider } from '../modules/payments/provider';
 import type { SearchIndexer } from '../modules/search/search.indexer';
 import { recordPremiumExpirySyncs } from '../modules/search/search.sync';
+import type { PayoutJob, PayoutProcessor } from '../modules/payouts/payout-processor';
+import type { ReferralsService } from '../modules/referrals/referrals.service';
 import { expireRequirements } from '../modules/requirements/requirements.expiry';
+import { MediaJobs, type MediaJob } from '../modules/uploads/media-jobs';
 import { cleanupNotifications } from './cleanup';
 import {
   type FanoutJob,
@@ -40,6 +44,10 @@ export const QUEUE = {
   searchIndex: 'search-index',
   /** Razorpay webhooks, then invoice PDFs. */
   payments: 'payments',
+  /** Runs approved withdrawals through RazorpayX. One try: retries are manual (backend spec, Queues). */
+  payouts: 'payouts',
+  /** Re-encodes uploaded images and makes uploads usable (backend spec, Uploads). */
+  media: 'media',
   /** Jobs that used up their retries, kept for inspection and manual replay. */
   deadLetter: 'dead-letter',
 } as const;
@@ -68,10 +76,16 @@ export interface NotificationWorkerOptions {
   expo: ExpoPushClient;
   webPush: WebPushSender | null;
   email: EmailSender;
+  /** Consumes `media`; without it uploads wait in `processing` for a worker that has one. */
+  mediaJobs?: MediaJobs;
   /** Consumes `search-index`; without it, sync events are queued but wait for a worker that has one. */
   searchIndexer?: SearchIndexer;
   /** Consumes `payments` and runs the Premium cron jobs; without it, payments jobs wait for a worker that has it. */
   payments?: { provider: PaymentsProvider | null; invoices: InvoicesService };
+  /** Consumes `premium.*` events and runs the referral finalizer. */
+  referrals?: ReferralsService;
+  /** Without it (payouts not configured) approved withdrawals wait in the outbox. */
+  payoutProcessor?: PayoutProcessor;
   log: FastifyBaseLogger;
   /** First retry delay; doubles on each attempt. */
   backoffMs?: number;
@@ -114,10 +128,19 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       ...defaultJobOptions,
       attempts: PAYMENTS_JOB_ATTEMPTS,
     }),
+    payouts: queue<PayoutJob>(QUEUE.payouts, {
+      attempts: 1,
+      removeOnComplete: defaultJobOptions.removeOnComplete ?? true,
+      removeOnFail: defaultJobOptions.removeOnFail ?? false,
+    }),
+    media: queue<MediaJob>(QUEUE.media, {
+      ...defaultJobOptions,
+      attempts: MEDIA_LIMITS.processingAttempts,
+    }),
     deadLetter: queue<DeadLetter>(QUEUE.deadLetter, { removeOnComplete: false }),
   };
 
-  const fanout = new NotificationFanout(prisma, options.now);
+  const fanout = new NotificationFanout(prisma, options.now, options.referrals);
   const scheduler = new DeliveryScheduler(
     prisma,
     options.valkey,
@@ -180,12 +203,20 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
           return lifecycle.expireDue(options.now?.());
         case 'premium-reminders':
           return lifecycle.sendRenewalReminders(options.now?.());
+        case 'payouts-reconcile':
+          return options.payoutProcessor ? options.payoutProcessor.reconcileStale() : null;
+        case 'referrals-finalize': {
+          if (!options.referrals) return null;
+          const finalized = await options.referrals.finalizeDue();
+          const failed = await options.referrals.failStale();
+          return { ...finalized, failed };
+        }
         default:
           return null;
       }
     }),
   ];
-  const { searchIndexer, payments } = options;
+  const { searchIndexer, payments, payoutProcessor } = options;
   if (payments) {
     const processor = new PaymentsProcessor(prisma, payments.provider, payments.invoices, log);
     // Two jobs for one subscription are serialised by its row lock, so several run at once.
@@ -199,6 +230,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       }),
     );
   }
+  if (payoutProcessor) {
+    // One at a time: a payout is slow, and nothing here is urgent enough to risk a pile-up.
+    workers.push(
+      worker<PayoutJob>(QUEUE.payouts, 1, async (job) => payoutProcessor.process(job.data.eventId)),
+    );
+  }
   if (searchIndexer) {
     // One at a time: each job re-reads its row and writes it, so two jobs for the same row
     // can never interleave and leave the older state in the index.
@@ -206,6 +243,23 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
       worker<SearchIndexJob>(QUEUE.searchIndex, 1, async (job) =>
         searchIndexer.processEvent(job.data.eventId),
       ),
+    );
+  }
+
+  const { mediaJobs } = options;
+  if (mediaJobs) {
+    // One image at a time: decoding a large photo needs a few hundred MB, and the worker
+    // container is small. Scale by running more workers, not by raising this.
+    workers.push(
+      worker<MediaJob>(QUEUE.media, 1, async (job) => {
+        const isFinalAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+        const result = await mediaJobs.run(job.data.uploadId, { isFinalAttempt });
+        await prisma.outboxEvent.updateMany({
+          where: { id: job.data.eventId, processedAt: null },
+          data: { processedAt: new Date() },
+        });
+        return result;
+      }),
     );
   }
 
@@ -236,6 +290,22 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
         { name: 'premium-reminders' },
       );
     }
+    if (payoutProcessor) {
+      // Catches up on payouts whose webhook never arrived.
+      await queues.cron.upsertJobScheduler(
+        'payouts-reconcile',
+        { pattern: '*/10 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'payouts-reconcile' },
+      );
+    }
+    if (options.referrals) {
+      // Credits referrals whose 7-day refund window has ended.
+      await queues.cron.upsertJobScheduler(
+        'referrals-finalize',
+        { pattern: '*/15 * * * *', tz: 'Asia/Kolkata' },
+        { name: 'referrals-finalize' },
+      );
+    }
     if (searchIndexer) {
       // Hourly: Premium's search boost ends with Premium (see recordPremiumExpirySyncs).
       await queues.cron.upsertJobScheduler(
@@ -248,7 +318,12 @@ export async function startNotificationWorker(options: NotificationWorkerOptions
 
   let isStopped = false;
   let relaying: Promise<unknown> = Promise.resolve();
-  const relayOnce = () => relayOutbox(prisma, queues);
+  const { payouts: payoutsQueue, ...queuesWithoutPayouts } = queues;
+  const relayOnce = () =>
+    relayOutbox(
+      prisma,
+      payoutProcessor ? { ...queuesWithoutPayouts, payouts: payoutsQueue } : queuesWithoutPayouts,
+    );
   const loop = async () => {
     while (!isStopped) {
       try {
