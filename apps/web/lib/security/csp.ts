@@ -22,7 +22,10 @@ export interface CspConfig {
   uploadOrigins: readonly string[];
   /** Absolute or root-relative URL the browser POSTs violation reports to. */
   reportUrl: string;
-  /** Razorpay Checkout hosts. Reserved for the payments work; the spec lists them. */
+  /**
+   * Razorpay Checkout hosts (script, frame and connect). On only for the Premium page: no other
+   * page can load Razorpay's script or frame it.
+   */
   razorpay: boolean;
 }
 
@@ -30,6 +33,12 @@ const RAZORPAY_SCRIPT = ['https://checkout.razorpay.com'];
 const RAZORPAY_CONNECT = ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'];
 const RAZORPAY_FRAME = ['https://api.razorpay.com', 'https://checkout.razorpay.com'];
 const SENTRY_INGEST = ['https://*.ingest.sentry.io'];
+
+/** The one page that opens Razorpay Checkout (web spec, Mutations: Premium checkout). */
+export const RAZORPAY_PATH = '/business/premium';
+
+export const needsRazorpay = (pathname: string) =>
+  pathname === RAZORPAY_PATH || pathname === `${RAZORPAY_PATH}/`;
 
 export const CSP_REPORT_GROUP = 'csp-endpoint';
 export const DEFAULT_CSP_REPORT_PATH = '/csp-report';
@@ -139,7 +148,11 @@ function toOrigin(raw: string | undefined, name: string): string | undefined {
  * - `CSP_UPLOAD_ORIGINS`: comma-separated S3 endpoints presigned PUTs go to.
  * - `CSP_REPORT_URL`: where reports go (the Sentry security endpoint); defaults to `/csp-report`.
  */
-export function readCspConfig(env: Record<string, string | undefined>, nonce: string): CspConfig {
+export function readCspConfig(
+  env: Record<string, string | undefined>,
+  nonce: string,
+  pathname = '/',
+): CspConfig {
   const uploads = (env.CSP_UPLOAD_ORIGINS ?? '')
     .split(',')
     .map((value) => toOrigin(value.trim() || undefined, 'CSP_UPLOAD_ORIGINS'))
@@ -153,6 +166,6 @@ export function readCspConfig(env: Record<string, string | undefined>, nonce: st
     mediaOrigin: toOrigin(env.MEDIA_PUBLIC_URL, 'MEDIA_PUBLIC_URL'),
     uploadOrigins: uploads,
     reportUrl: env.CSP_REPORT_URL?.trim() || DEFAULT_CSP_REPORT_PATH,
-    razorpay: true,
+    razorpay: needsRazorpay(pathname),
   };
 }

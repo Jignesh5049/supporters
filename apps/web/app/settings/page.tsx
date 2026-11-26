@@ -431,7 +431,7 @@ export default function SettingsPage() {
                 Your plan is currently active. Access invoice receipts and renewal settings.
               </p>
               <Link
-                href="/subscription"
+                href="/business/premium"
                 className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#00AEEF] hover:bg-[#0098d4] rounded-xl transition-colors shadow-2xs"
               >
                 <span>View Full Subscription Portal</span>

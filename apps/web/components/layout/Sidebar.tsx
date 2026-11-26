@@ -66,7 +66,12 @@ function SidebarInner() {
   const growthLinks = [
     { label: 'App Wallet', href: '/wallet', icon: Wallet, highlight: 'text-emerald-600 font-bold' },
     { label: 'Refer & Earn', href: '/referral', icon: Gift, highlight: 'text-[#A3238E]' },
-    { label: 'Supporters Pro', href: '/subscription', icon: Crown, highlight: 'text-amber-500' },
+    {
+      label: 'Supporters Premium',
+      href: '/business/premium',
+      icon: Crown,
+      highlight: 'text-amber-500',
+    },
   ];
 
   const utilityLinks = [

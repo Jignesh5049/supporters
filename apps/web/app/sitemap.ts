@@ -17,7 +17,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/profile',
     '/create',
     '/referral',
-    '/subscription',
     '/settings',
     '/help',
     '/about',

@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
   },
   // Development only: serve the API on the app's origin, as CloudFront does in production
   // (`/v1/*` goes to the API), so the first-party `__Host-` cookies work on localhost.
+  // The prototype's subscription page moved under the Business Hub: Premium belongs to a business.
+  async redirects() {
+    return [{ source: '/subscription', destination: '/business/premium', permanent: true }];
+  },
   async rewrites() {
     return proxyApi
       ? [
